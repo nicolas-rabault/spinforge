@@ -26,7 +26,7 @@ export function Hud({ stateRef }: { stateRef: { current: SimState } }) {
       <div style={{ height: 8, background: '#232830' }}>
         <div style={{ width: `${spinPct}%`, height: '100%', background: '#46cede' }}></div>
       </div>
-      {s.chapterValidated ? <div style={{ color: '#6fbf73' }}>Chapitre 1 validé</div> : null}
+      {s.chapterValidated ? <div style={{ color: '#6fbf73' }}>Chapitre {s.chapter} validé</div> : null}
       {s.phase === 'dead' ? (
         <button style={{ minHeight: 44 }} onClick={() => resetRun(stateRef.current)}>
           Ta toupie s'est arrêtée — Retenter (crédits conservés)

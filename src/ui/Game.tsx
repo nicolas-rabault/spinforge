@@ -12,6 +12,7 @@ export function Game() {
   const stateRef = useRef(initialState);
   const steerRef = useRef<Vec | null>(null);
   const originRef = useRef<Vec | null>(null);
+  const pointerRef = useRef<number | null>(null);
   const arenaRef = useRef<Awaited<ReturnType<typeof createArena>> | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const [, setFrame] = useState(0);
@@ -35,15 +36,19 @@ export function Game() {
   });
 
   const onDown = (e: React.PointerEvent) => {
+    if (pointerRef.current !== null) return; // un seul doigt pilote à la fois
+    pointerRef.current = e.pointerId;
     originRef.current = { x: e.clientX, y: e.clientY };
   };
   const onMove = (e: React.PointerEvent) => {
-    if (!originRef.current) return;
+    if (e.pointerId !== pointerRef.current || !originRef.current) return;
     const dx = e.clientX - originRef.current.x;
     const dy = e.clientY - originRef.current.y;
     steerRef.current = Math.hypot(dx, dy) > DEAD_ZONE_PX ? { x: dx, y: dy } : null;
   };
-  const onUp = () => {
+  const onUp = (e: React.PointerEvent) => {
+    if (e.pointerId !== pointerRef.current) return;
+    pointerRef.current = null;
     originRef.current = null;
     steerRef.current = null;
   };
@@ -54,6 +59,7 @@ export function Game() {
       onPointerMove={onMove}
       onPointerUp={onUp}
       onPointerLeave={onUp}
+      onPointerCancel={onUp}
       style={{
         touchAction: 'none',
         userSelect: 'none',
