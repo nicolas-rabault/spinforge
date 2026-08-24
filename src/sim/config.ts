@@ -7,6 +7,9 @@ export const RESTITUTION = 0.8;
 export const DAMAGE_K = 0.35;
 export const HEAL_BETWEEN_SALLES = 0.2;
 
+export const PLAYER_SPAWN = { x: 0, y: 80 };
+export const BOT_AI = { retargetEveryTicks: 10, aimJitter: 1.2 };
+
 export const PLAYER_BASE = { accel: 900, maxSpeed: 240, radius: 12, spinMax: 3000, spinDecay: 20, attack: 30, defense: 10 };
 export const BOT_BASE = { accel: 500, maxSpeed: 140, radius: 12, spinMax: 1200, spinDecay: 12, attack: 18, defense: 6 };
 export const BOT_SCALING = { spinPerSalle: 0.15, attackPerSalle: 0.08 };
