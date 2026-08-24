@@ -32,7 +32,7 @@
 - Consumes: rien (repo vide côté code).
 - Produces: `npm run dev` / `npm run test` / `npm run build` fonctionnels pour toutes les tâches suivantes.
 
-- [ ] **Step 1: Écrire `package.json`**
+- [x] **Step 1: Écrire `package.json`**
 
 ```json
 {
@@ -61,7 +61,7 @@
 }
 ```
 
-- [ ] **Step 2: Écrire `tsconfig.json`**
+- [x] **Step 2: Écrire `tsconfig.json`**
 
 ```json
 {
@@ -81,7 +81,7 @@
 }
 ```
 
-- [ ] **Step 3: Écrire `vite.config.ts`**
+- [x] **Step 3: Écrire `vite.config.ts`**
 
 ```ts
 /// <reference types="vitest/config" />
@@ -96,7 +96,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 4: Écrire `index.html`**
+- [x] **Step 4: Écrire `index.html`**
 
 ```html
 <!doctype html>
@@ -113,7 +113,7 @@ export default defineConfig({
 </html>
 ```
 
-- [ ] **Step 5: Écrire `src/main.tsx` (placeholder, remplacé en Task 9)**
+- [x] **Step 5: Écrire `src/main.tsx` (placeholder, remplacé en Task 9)**
 
 ```tsx
 import { createRoot } from 'react-dom/client';
@@ -121,7 +121,7 @@ import { createRoot } from 'react-dom/client';
 createRoot(document.getElementById('root')!).render(<h1>SpinForge</h1>);
 ```
 
-- [ ] **Step 6: Installer et vérifier**
+- [x] **Step 6: Installer et vérifier**
 
 Run: `npm install && npm run build`
 Expected: build Vite vert, aucune erreur TypeScript.
@@ -129,7 +129,7 @@ Expected: build Vite vert, aucune erreur TypeScript.
 Run: `npx vitest run --passWithNoTests`
 Expected: "No test files found" toléré, exit 0.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add package.json package-lock.json tsconfig.json vite.config.ts index.html src/main.tsx
@@ -147,7 +147,7 @@ git commit -m "feat: scaffold Vite + React + Vitest pour SpinForge"
 **Interfaces:**
 - Produces: `nextRandom(state: number): { value: number; state: number }` — `value` ∈ [0, 1), pur, l'état suivant se stocke dans `SimState.rngState`.
 
-- [ ] **Step 1: Écrire le test qui échoue**
+- [x] **Step 1: Écrire le test qui échoue**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -174,9 +174,9 @@ describe('nextRandom', () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`rng.ts` introuvable).
+- [x] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`rng.ts` introuvable).
 
-- [ ] **Step 3: Implémenter `src/sim/rng.ts` (mulberry32 à état explicite)**
+- [x] **Step 3: Implémenter `src/sim/rng.ts` (mulberry32 à état explicite)**
 
 ```ts
 export function nextRandom(state: number): { value: number; state: number } {
@@ -188,9 +188,9 @@ export function nextRandom(state: number): { value: number; state: number } {
 }
 ```
 
-- [ ] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS (3 tests).
+- [x] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS (3 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/sim/rng.ts src/sim/rng.test.ts
@@ -212,7 +212,7 @@ git commit -m "feat: RNG mulberry32 pur a etat serialisable"
   - `types.ts` : `Vec`, `Top`, `PieceLevels`, `Stats`, `Phase`, `Input`, `SimState`.
   - `economy.ts` : `upgradeCost(level: number): number`, `salleReward(salle: number, boss: boolean): number`, `playerStats(pieces: PieceLevels): Stats`, `syncPlayerStats(state: SimState): void`, `tryUpgrade(state: SimState, piece: keyof PieceLevels): boolean`.
 
-- [ ] **Step 1: Écrire `src/sim/config.ts`**
+- [x] **Step 1: Écrire `src/sim/config.ts`**
 
 ```ts
 export const TICK_S = 0.1;
@@ -231,7 +231,7 @@ export const BOSS = { spinMult: 4, attackMult: 1.5, radius: 18 };
 export const ECON = { upgradeBase: 100, upgradeGrowth: 1.08, rewardBase: 20, rewardGrowth: 1.12, bossRewardMult: 5 };
 ```
 
-- [ ] **Step 2: Écrire `src/sim/types.ts`**
+- [x] **Step 2: Écrire `src/sim/types.ts`**
 
 ```ts
 export interface Vec {
@@ -291,7 +291,7 @@ export interface SimState {
 }
 ```
 
-- [ ] **Step 3: Écrire le test qui échoue (`src/sim/economy.test.ts`)**
+- [x] **Step 3: Écrire le test qui échoue (`src/sim/economy.test.ts`)**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -358,9 +358,9 @@ describe('tryUpgrade', () => {
 });
 ```
 
-- [ ] **Step 4: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`economy.ts` introuvable).
+- [x] **Step 4: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`economy.ts` introuvable).
 
-- [ ] **Step 5: Implémenter `src/sim/economy.ts`**
+- [x] **Step 5: Implémenter `src/sim/economy.ts`**
 
 ```ts
 import { ECON, PLAYER_BASE } from './config';
@@ -407,9 +407,9 @@ export function tryUpgrade(state: SimState, piece: keyof PieceLevels): boolean {
 }
 ```
 
-- [ ] **Step 6: Vérifier le vert** — Run: `npm run test` — Expected: PASS.
+- [x] **Step 6: Vérifier le vert** — Run: `npm run test` — Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/sim/config.ts src/sim/types.ts src/sim/economy.ts src/sim/economy.test.ts
@@ -428,7 +428,7 @@ git commit -m "feat: config d'equilibrage, types de simulation et economie (cour
 - Consumes: `Top`, `Vec` (types.ts) ; `ARENA_RADIUS`, `FRICTION`, `TICK_S`, `WALL_RESTITUTION` (config.ts).
 - Produces: `applySteering(top: Top, steer: Vec | null): void`, `moveAndBounce(top: Top): void`.
 
-- [ ] **Step 1: Écrire le test qui échoue (`src/sim/physics.test.ts`)**
+- [x] **Step 1: Écrire le test qui échoue (`src/sim/physics.test.ts`)**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -484,9 +484,9 @@ describe('moveAndBounce', () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`physics.ts` introuvable).
+- [x] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`physics.ts` introuvable).
 
-- [ ] **Step 3: Implémenter `src/sim/physics.ts`**
+- [x] **Step 3: Implémenter `src/sim/physics.ts`**
 
 ```ts
 import { ARENA_RADIUS, FRICTION, TICK_S, WALL_RESTITUTION } from './config';
@@ -528,9 +528,9 @@ export function moveAndBounce(top: Top): void {
 }
 ```
 
-- [ ] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS.
+- [x] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/sim/physics.ts src/sim/physics.test.ts
@@ -549,7 +549,7 @@ git commit -m "feat: physique de pilotage, friction et rebond dans l'arene circu
 - Consumes: `Top` (types.ts) ; `DAMAGE_K`, `RESTITUTION`, `TICK_S` (config.ts).
 - Produces: `resolveCollision(a: Top, b: Top): void`, `decaySpin(top: Top): void`.
 
-- [ ] **Step 1: Écrire le test qui échoue (`src/sim/combat.test.ts`)**
+- [x] **Step 1: Écrire le test qui échoue (`src/sim/combat.test.ts`)**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -606,9 +606,9 @@ describe('resolveCollision', () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`combat.ts` introuvable).
+- [x] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`combat.ts` introuvable).
 
-- [ ] **Step 3: Implémenter `src/sim/combat.ts`**
+- [x] **Step 3: Implémenter `src/sim/combat.ts`**
 
 ```ts
 import { DAMAGE_K, RESTITUTION, TICK_S } from './config';
@@ -646,9 +646,9 @@ export function resolveCollision(a: Top, b: Top): void {
 }
 ```
 
-- [ ] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS.
+- [x] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/sim/combat.ts src/sim/combat.test.ts
@@ -667,7 +667,7 @@ git commit -m "feat: collisions elastiques et degats de rotation attaque/defense
 - Consumes: `nextRandom` (rng.ts) ; `Top` (types.ts) ; `ARENA_RADIUS`, `BOSS`, `BOT_BASE`, `BOT_SCALING`, `SALLES_PER_CHAPTER` (config.ts).
 - Produces: `botCountFor(salle: number): number`, `makeBot(salle: number, index: number, angle: number): Top`, `spawnSalle(salle: number, rngState: number): { bots: Top[]; rngState: number }`.
 
-- [ ] **Step 1: Écrire le test qui échoue (`src/sim/salle.test.ts`)**
+- [x] **Step 1: Écrire le test qui échoue (`src/sim/salle.test.ts`)**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -716,9 +716,9 @@ describe('spawnSalle', () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`salle.ts` introuvable).
+- [x] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`salle.ts` introuvable).
 
-- [ ] **Step 3: Implémenter `src/sim/salle.ts`**
+- [x] **Step 3: Implémenter `src/sim/salle.ts`**
 
 ```ts
 import { ARENA_RADIUS, BOSS, BOT_BASE, BOT_SCALING, SALLES_PER_CHAPTER } from './config';
@@ -767,9 +767,9 @@ export function spawnSalle(salle: number, rngState: number): { bots: Top[]; rngS
 }
 ```
 
-- [ ] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS.
+- [x] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/sim/salle.ts src/sim/salle.test.ts
@@ -788,7 +788,7 @@ git commit -m "feat: spawn des salles, scaling des bots et boss en salle 10"
 - Consumes: tout ce qui précède (`physics`, `combat`, `salle`, `economy`, `rng`, `config`, `types`).
 - Produces (utilisés par l'UI) : `createInitialState(seed: number): SimState`, `tick(state: SimState, input: Input): void`, `resetRun(state: SimState): void`.
 
-- [ ] **Step 1: Écrire le test qui échoue (`src/sim/sim.test.ts`)**
+- [x] **Step 1: Écrire le test qui échoue (`src/sim/sim.test.ts`)**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -864,9 +864,9 @@ describe('progression', () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`sim.ts` introuvable).
+- [x] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`sim.ts` introuvable).
 
-- [ ] **Step 3: Implémenter `src/sim/sim.ts`**
+- [x] **Step 3: Implémenter `src/sim/sim.ts`**
 
 ```ts
 import { HEAL_BETWEEN_SALLES, PLAYER_BASE, SALLES_PER_CHAPTER } from './config';
@@ -976,9 +976,9 @@ export function tick(state: SimState, input: Input): void {
 }
 ```
 
-- [ ] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS (toute la suite).
+- [x] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS (toute la suite).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/sim/sim.ts src/sim/sim.test.ts
@@ -996,7 +996,7 @@ git commit -m "feat: boucle de simulation complete - tick, progression, mort, va
 - Consumes: `SimState` (types.ts), `ARENA_RADIUS` (config.ts), PixiJS 8 (`Application`, `Graphics`).
 - Produces: `createArena(container: HTMLElement): Promise<{ draw(state: SimState): void; destroy(): void }>`.
 
-- [ ] **Step 1: Implémenter `src/render/arena.ts`**
+- [x] **Step 1: Implémenter `src/render/arena.ts`**
 
 ```ts
 import { Application, Graphics } from 'pixi.js';
@@ -1030,9 +1030,9 @@ export async function createArena(container: HTMLElement) {
 }
 ```
 
-- [ ] **Step 2: Vérifier la compilation** — Run: `npm run build` — Expected: vert (le rendu sera vérifié visuellement en Task 9).
+- [x] **Step 2: Vérifier la compilation** — Run: `npm run build` — Expected: vert (le rendu sera vérifié visuellement en Task 9).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/render/arena.ts
@@ -1051,7 +1051,7 @@ git commit -m "feat: rendu PixiJS de l'arene (cercles joueur/bots)"
 - Consumes: `createInitialState`, `tick`, `resetRun` (sim.ts) ; `createArena` (arena.ts) ; `TICK_S` (config.ts) ; `Hud` (Task 10 — voir note Step 3).
 - Produces: `useGameLoop(stateRef: { current: SimState }, steerRef: { current: Vec | null }, onFrame: () => void): void` ; composant `Game`.
 
-- [ ] **Step 1: Implémenter `src/ui/useGameLoop.ts` (accumulateur à pas fixe)**
+- [x] **Step 1: Implémenter `src/ui/useGameLoop.ts` (accumulateur à pas fixe)**
 
 ```ts
 import { useEffect } from 'react';
@@ -1086,7 +1086,7 @@ export function useGameLoop(
 }
 ```
 
-- [ ] **Step 2: Implémenter `src/ui/Game.tsx` (joystick relatif au point de contact, zone morte 8 px)**
+- [x] **Step 2: Implémenter `src/ui/Game.tsx` (joystick relatif au point de contact, zone morte 8 px)**
 
 ```tsx
 import { useEffect, useRef, useState } from 'react';
@@ -1172,7 +1172,7 @@ export function Hud({ stateRef }: { stateRef: { current: SimState } }) {
 }
 ```
 
-- [ ] **Step 3: Remplacer `src/main.tsx`**
+- [x] **Step 3: Remplacer `src/main.tsx`**
 
 ```tsx
 import { createRoot } from 'react-dom/client';
@@ -1181,12 +1181,12 @@ import { Game } from './ui/Game';
 createRoot(document.getElementById('root')!).render(<Game />);
 ```
 
-- [ ] **Step 4: Vérification manuelle**
+- [x] **Step 4: Vérification manuelle**
 
 Run: `npm run build` — Expected: vert.
 Run: `npm run dev`, ouvrir http://localhost:5173 — Expected: arène sombre, cercle cyan (joueur) et cercle(s) rouge(s) (bots) ; glisser la souris/le doigt fait accélérer le joueur dans la direction du glissement ; relâcher le laisse glisser avec friction ; les chocs repoussent les toupies ; vider la salle fait apparaître la suivante.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/ui/useGameLoop.ts src/ui/Game.tsx src/ui/Hud.tsx src/main.tsx
@@ -1205,7 +1205,7 @@ git commit -m "feat: boucle de jeu a pas fixe, joystick virtuel et montage React
 - Consumes: `tryUpgrade`, `upgradeCost` (economy.ts) ; `resetRun` (sim.ts) ; `SALLES_PER_CHAPTER` (config.ts) ; types.
 - Produces: `formatCredits(n: number): string` ; composant `Hud({ stateRef })`.
 
-- [ ] **Step 1: Écrire le test qui échoue (`src/ui/format.test.ts`)**
+- [x] **Step 1: Écrire le test qui échoue (`src/ui/format.test.ts`)**
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -1227,9 +1227,9 @@ describe('formatCredits', () => {
 });
 ```
 
-- [ ] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`format.ts` introuvable). Note : le glob de test de `vite.config.ts` est `src/**/*.test.ts`, il couvre `src/ui/`.
+- [x] **Step 2: Vérifier l'échec** — Run: `npm run test` — Expected: FAIL (`format.ts` introuvable). Note : le glob de test de `vite.config.ts` est `src/**/*.test.ts`, il couvre `src/ui/`.
 
-- [ ] **Step 3: Implémenter `src/ui/format.ts`**
+- [x] **Step 3: Implémenter `src/ui/format.ts`**
 
 ```ts
 export function formatCredits(n: number): string {
@@ -1239,9 +1239,9 @@ export function formatCredits(n: number): string {
 }
 ```
 
-- [ ] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS.
+- [x] **Step 4: Vérifier le vert** — Run: `npm run test` — Expected: PASS.
 
-- [ ] **Step 5: Remplacer `src/ui/Hud.tsx`**
+- [x] **Step 5: Remplacer `src/ui/Hud.tsx`**
 
 ```tsx
 import { formatCredits } from './format';
@@ -1298,11 +1298,11 @@ export function Hud({ stateRef }: { stateRef: { current: SimState } }) {
 }
 ```
 
-- [ ] **Step 6: Vérification manuelle**
+- [x] **Step 6: Vérification manuelle**
 
 Run: `npm run dev` — Expected: crédits qui montent en vidant des salles ; barre de spin qui descend sous les chocs ; boutons d'amélioration désactivés tant que trop chers, qui débitent et montent le niveau sinon ; mourir affiche « Retenter » et le clic repart salle 1 avec les crédits.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/ui/format.ts src/ui/format.test.ts src/ui/Hud.tsx
@@ -1320,7 +1320,7 @@ git commit -m "feat: HUD - credits, salle, barre de spin, ameliorations, ecran d
 - Consumes: tout le jalon.
 - Produces: jalon 1 taggé.
 
-- [ ] **Step 1: Écrire `README.md`**
+- [x] **Step 1: Écrire `README.md`**
 
 ```markdown
 # SpinForge
@@ -1339,7 +1339,7 @@ Jeu hybride Archero × idle : pilote ta toupie au doigt, vide les salles, améli
 - Spec : `docs/game-design.md` · Roadmap : `docs/roadmap.md` · Règles d'archi : `CLAUDE.md`
 ```
 
-- [ ] **Step 2: Passe finale de vérification**
+- [x] **Step 2: Passe finale de vérification**
 
 Run: `npm run test && npm run build`
 Expected: tout vert.
@@ -1350,7 +1350,7 @@ Checklist manuelle (`npm run dev`) — les critères d'acceptation du jalon 1 (`
 - Mourir → « Retenter », crédits conservés.
 - Les 4 améliorations débitent `100 × 1,08^niveau` et changent le comportement (Lame = plus de dégâts, Pointe = plus rapide…).
 
-- [ ] **Step 3: Commit et tag**
+- [x] **Step 3: Commit et tag**
 
 ```bash
 git add README.md
