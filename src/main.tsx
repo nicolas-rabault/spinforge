@@ -1,3 +1,4 @@
 import { createRoot } from 'react-dom/client';
+import { Game } from './ui/Game';
 
-createRoot(document.getElementById('root')!).render(<h1>SpinForge</h1>);
+createRoot(document.getElementById('root')!).render(<Game />);
