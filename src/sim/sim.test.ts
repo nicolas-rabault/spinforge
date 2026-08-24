@@ -12,6 +12,17 @@ function runTicks(seed: number, n: number): string {
   return JSON.stringify(s);
 }
 
+// Force la salle à se vider régulièrement : sans ça, 300 ticks se jouent
+// entièrement dans la salle 1 et le déterminisme n'est testé que sur la physique.
+function runTicksThroughSalles(seed: number, n: number): string {
+  const s = createInitialState(seed);
+  for (let i = 0; i < n; i++) {
+    if (i % 25 === 24) for (const b of s.bots) b.spin = 0.0001;
+    tick(s, { steer: i % 20 < 10 ? { x: 1, y: 0.5 } : null });
+  }
+  return JSON.stringify(s);
+}
+
 describe('createInitialState', () => {
   it('démarre chapitre 1, salle 1, phase fighting, avec les bots de la salle 1', () => {
     const s = createInitialState(42);
@@ -30,6 +41,15 @@ describe('déterminisme', () => {
 
   it('seeds différentes ⇒ états différents', () => {
     expect(runTicks(42, 300)).not.toBe(runTicks(7, 300));
+  });
+
+  it('reste déterministe à travers les transitions de salle et la validation du chapitre', () => {
+    const a = runTicksThroughSalles(42, 300);
+    expect(a).toBe(runTicksThroughSalles(42, 300));
+    expect(a).not.toBe(runTicksThroughSalles(7, 300));
+    // Garde-fou : si ce scénario cessait de franchir des salles, il ne testerait
+    // plus rien de plus que le test précédent.
+    expect(JSON.parse(a).chapterValidated).toBe(true);
   });
 });
 
