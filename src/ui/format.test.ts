@@ -14,4 +14,9 @@ describe('formatCredits', () => {
   it('millions en « 2,50 M »', () => {
     expect(formatCredits(2500000)).toBe('2,50 M');
   });
+
+  it('bascule en M plutôt que d’afficher « 1000,0 k »', () => {
+    expect(formatCredits(999999)).toBe('1,00 M');
+    expect(formatCredits(999949)).toBe('999,9 k');
+  });
 });
