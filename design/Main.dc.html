@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap">
+  <style>
+    body { margin: 0; background: #14171d; color: #e8eaee; font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 15px; line-height: 1.55; }
+    a { color: #46cede; } a:hover { color: #7ee3ef; }
+    h1, h2 { font-family: "Space Grotesk", system-ui, sans-serif; margin: 0; }
+    p { margin: 0; }
+    .kicker { font-size: 11px; letter-spacing: 0.18em; color: #46cede; font-weight: 600; }
+    .h2 { font-size: 19px; font-weight: 700; letter-spacing: 0.02em; }
+    .muted { color: #9aa3b2; }
+    table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+    th { text-align: left; font-size: 11px; letter-spacing: 0.12em; color: #9aa3b2; font-weight: 600; padding: 8px 10px; border-bottom: 1px solid #313845; }
+    td { padding: 9px 10px; border-bottom: 1px solid #232830; vertical-align: top; }
+    .card { background: #1c2027; border: 1px solid #313845; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+  </style>
+</helmet>
+<div style="display: flex; flex-direction: column; gap: 36px; padding: 48px; background: #14171d; min-height: 2000px; box-sizing: border-box">
+
+  <div style="display: flex; flex-direction: column; gap: 10px">
+    <p class="kicker">SPINFORGE · 1/4 · CONCEPTION V0.1 · 24 AOÛT 2026</p>
+    <h1 style="font-size: 44px; line-height: 1.05; letter-spacing: -0.01em">SpinForge</h1>
+    <p style="font-size: 18px; color: #f0a566; font-style: italic">« Ta toupie se bat même quand tu dors. »</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px">
+    <h2 class="h2">Le pitch</h2>
+    <p>SpinForge croise deux recettes éprouvées : le <strong>run piloté</strong> d'Archero — on dirige sa toupie dans l'arène, salle après salle — et la <strong>boucle des idle games</strong> (farm hors-ligne, coffres, fusion, prestige). Le joueur démarre avec une toupie minable : au doigt, il lui donne sa direction, esquive les pièges et percute les adversaires pour franchir les salles de chaque chapitre. Pendant son absence, la toupie <strong>rejoue automatiquement le meilleur chapitre validé</strong> et accumule des crédits. Chaque salle rapporte des crédits, les crédits ouvrent des coffres de pièces, les doublons fusionnent en versions supérieures, et la puissance débloque des chapitres toujours plus riches. Il n'y a pas de niveau maximum : c'est une course à l'infini, ponctuée de murs pensés pour être franchis en revenant chaque jour.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">La boucle cœur</h2>
+    <svg viewBox="0 0 680 270" width="644" height="256" fill="none" role="img" aria-label="Boucle de jeu">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 1 L 9 5 L 0 9" stroke="#9aa3b2" stroke-width="1.5" fill="none"></path>
+        </marker>
+      </defs>
+      <rect x="10" y="20" width="190" height="54" stroke="#46cede" stroke-width="1.5"></rect>
+      <text x="105" y="43" text-anchor="middle" fill="#46cede" font-size="13" font-weight="600" font-family="Space Grotesk, sans-serif">RUN PILOTÉ</text>
+      <text x="105" y="61" text-anchor="middle" fill="#9aa3b2" font-size="11">salles + boss</text>
+      <rect x="245" y="20" width="190" height="54" stroke="#9aa3b2" stroke-width="1.5"></rect>
+      <text x="340" y="43" text-anchor="middle" fill="#e8eaee" font-size="13" font-weight="600" font-family="Space Grotesk, sans-serif">CRÉDITS</text>
+      <text x="340" y="61" text-anchor="middle" fill="#9aa3b2" font-size="11">× 1,12 par salle</text>
+      <rect x="480" y="20" width="190" height="54" stroke="#9aa3b2" stroke-width="1.5"></rect>
+      <text x="575" y="43" text-anchor="middle" fill="#e8eaee" font-size="13" font-weight="600" font-family="Space Grotesk, sans-serif">COFFRES</text>
+      <text x="575" y="61" text-anchor="middle" fill="#9aa3b2" font-size="11">pity garanti</text>
+      <rect x="480" y="180" width="190" height="54" stroke="#9aa3b2" stroke-width="1.5"></rect>
+      <text x="575" y="203" text-anchor="middle" fill="#e8eaee" font-size="13" font-weight="600" font-family="Space Grotesk, sans-serif">PIÈCES</text>
+      <text x="575" y="221" text-anchor="middle" fill="#9aa3b2" font-size="11">4 emplacements</text>
+      <rect x="245" y="180" width="190" height="54" stroke="#9aa3b2" stroke-width="1.5"></rect>
+      <text x="340" y="203" text-anchor="middle" fill="#e8eaee" font-size="13" font-weight="600" font-family="Space Grotesk, sans-serif">FUSION 3 → 1</text>
+      <text x="340" y="221" text-anchor="middle" fill="#9aa3b2" font-size="11">doublons → rang supérieur</text>
+      <rect x="10" y="180" width="190" height="54" stroke="#f0a566" stroke-width="1.5"></rect>
+      <text x="105" y="203" text-anchor="middle" fill="#f0a566" font-size="13" font-weight="600" font-family="Space Grotesk, sans-serif">PUISSANCE</text>
+      <text x="105" y="221" text-anchor="middle" fill="#9aa3b2" font-size="11">arènes plus riches</text>
+      <line x1="200" y1="47" x2="242" y2="47" stroke="#9aa3b2" stroke-width="1.5" marker-end="url(#arr)"></line>
+      <line x1="435" y1="47" x2="477" y2="47" stroke="#9aa3b2" stroke-width="1.5" marker-end="url(#arr)"></line>
+      <line x1="575" y1="74" x2="575" y2="177" stroke="#9aa3b2" stroke-width="1.5" marker-end="url(#arr)"></line>
+      <line x1="480" y1="207" x2="438" y2="207" stroke="#9aa3b2" stroke-width="1.5" marker-end="url(#arr)"></line>
+      <line x1="245" y1="207" x2="203" y2="207" stroke="#9aa3b2" stroke-width="1.5" marker-end="url(#arr)"></line>
+      <line x1="105" y1="180" x2="105" y2="77" stroke="#f0a566" stroke-width="1.5" marker-end="url(#arr)"></line>
+      <text x="340" y="132" text-anchor="middle" fill="#9aa3b2" font-size="12" font-style="italic">hors-ligne : farm auto du meilleur chapitre validé, plafonné à 4 h (extensible 12 h)</text>
+    </svg>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Trois boucles imbriquées</h2>
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div class="card">
+        <p class="kicker">LA MINUTE — PILOTER &amp; GRIMPER</p>
+        <p style="font-size: 14px">Le joueur glisse le doigt : la toupie file dans cette direction et frappe ce qu'elle percute. Un chapitre = <strong>10 salles, la dixième est le boss</strong> ; chaque salle franchie offre un <strong>choix d'atout temporaire</strong> (à la Archero) et ouvre la porte vers la suivante. Le mode <strong>AUTO</strong> en jeu, débloqué au chapitre 3, rejoue les chapitres déjà validés : c'est lui qui farme, jamais lui qui progresse — hors-ligne, ce farm tourne tout seul dès le premier chapitre validé.</p>
+      </div>
+      <div class="card">
+        <p class="kicker">LA SESSION — 5 À 15 MIN, 2 À 4 × PAR JOUR</p>
+        <p style="font-size: 14px">Récolter le farm hors-ligne, ouvrir les coffres accumulés, fusionner les doublons, monter les pièces de niveau, tenter un run pour franchir le mur du moment, puis refermer l'app — le farm hors-ligne repart tout seul. C'est la session type de tout le cycle de vie du jeu.</p>
+      </div>
+      <div class="card">
+        <p class="kicker">LA SEMAINE — LE MÉTA-JEU</p>
+        <p style="font-size: 14px">Débloquer le chapitre suivant, déclencher une Refonte (prestige) quand la courbe s'aplatit, jouer l'événement limité du moment, compléter le catalogue de toupies et expérimenter des builds par type.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Ce qu'on copie des idle games à succès</h2>
+    <table>
+      <thead><tr><th>MÉCANIQUE</th><th>VU DANS</th><th>POURQUOI ÇA RETIENT</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Gains hors-ligne plafonnés</strong> (4 h → 12 h)</td><td class="muted">AFK Arena, Idle Heroes</td><td>Force 2-3 retours par jour — laisser le plafond plein, c'est « perdre » des crédits.</td></tr>
+        <tr><td><strong>Murs de progression + boss gates</strong></td><td class="muted">Archero, Survivor.io</td><td>Chaque mur a une solution visible : fusionner, améliorer ses pièces, ou déclencher une Refonte.</td></tr>
+        <tr><td><strong>Fusion 3 → 1</strong></td><td class="muted">Survivor.io (forge)</td><td>Les doublons de gacha deviennent du progrès, jamais du déchet.</td></tr>
+        <tr><td><strong>Pity timer</strong> (garanti au 10ᵉ / 30ᵉ)</td><td class="muted">Survivor.io, standard gacha</td><td>Dépenser reste toujours rationnel : le prochain coffre rapproche du garanti.</td></tr>
+        <tr><td><strong>Prestige à monnaie permanente</strong></td><td class="muted">Cookie Clicker, AdVenture Capitalist</td><td>Recommencer devient une récompense : chaque cycle est plus rapide que le précédent.</td></tr>
+        <tr><td><strong>Quêtes quotidiennes + pass</strong></td><td class="muted">tout le genre</td><td>Structure la session, installe l'habitude et les séries (streaks).</td></tr>
+        <tr><td><strong>Événements limités</strong></td><td class="muted">AFK Arena, Top War</td><td>Pics de réengagement mensuels, arènes et pièces exclusives temporaires.</td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="font-size: 13px">Règle d'équilibrage : <strong style="color: #e8eaee">~60 % des revenus viennent de l'idle</strong> (farm auto, hors-ligne), <strong style="color: #e8eaee">mais la progression des chapitres est 100 % active</strong> — on n'avance qu'en pilotant, comme dans Archero. Le jeu reste généreux avec l'absent et flatteur avec le présent.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Rythme visé</h2>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+      <div class="card" style="padding: 14px 16px">
+        <p class="kicker">JOUR 1</p>
+        <p style="font-size: 13px">Chapitres 1-2, première fusion Rare, ~30 min cumulées en 4 sessions.</p>
+      </div>
+      <div class="card" style="padding: 14px 16px">
+        <p class="kicker">SEMAINE 1</p>
+        <p style="font-size: 13px">Chapitre 4, première Refonte, premier build par type assumé.</p>
+      </div>
+      <div class="card" style="padding: 14px 16px">
+        <p class="kicker">MOIS 1</p>
+        <p style="font-size: 13px">Chapitre 7, premières pièces Légende, arbre de Refonte entamé.</p>
+      </div>
+      <div class="card" style="padding: 14px 16px">
+        <p class="kicker">MOIS 3 +</p>
+        <p style="font-size: 13px">Mode Vortex ∞, pièces Légende+N, classements et événements.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

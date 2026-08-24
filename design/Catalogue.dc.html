@@ -1,0 +1,172 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap">
+  <style>
+    body { margin: 0; background: #14171d; color: #e8eaee; font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 15px; line-height: 1.55; }
+    a { color: #46cede; } a:hover { color: #7ee3ef; }
+    h1, h2 { font-family: "Space Grotesk", system-ui, sans-serif; margin: 0; }
+    p { margin: 0; }
+    .kicker { font-size: 11px; letter-spacing: 0.18em; color: #46cede; font-weight: 600; }
+    .h2 { font-size: 19px; font-weight: 700; letter-spacing: 0.02em; }
+    .muted { color: #9aa3b2; }
+    table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+    th { text-align: left; font-size: 10.5px; letter-spacing: 0.12em; color: #9aa3b2; font-weight: 600; padding: 7px 8px; border-bottom: 1px solid #313845; }
+    td { padding: 7px 8px; border-bottom: 1px solid #232830; vertical-align: top; }
+    .card { background: #1c2027; border: 1px solid #313845; padding: 14px 16px; }
+    .type { font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; white-space: nowrap; }
+    .arch { color: #9aa3b2; font-size: 11px; font-style: italic; }
+  </style>
+</helmet>
+<div style="display: flex; flex-direction: column; gap: 34px; padding: 48px; background: #14171d; min-height: 3450px; box-sizing: border-box">
+
+  <div style="display: flex; flex-direction: column; gap: 10px">
+    <p class="kicker">SPINFORGE · 3/4</p>
+    <h1 style="font-size: 34px; line-height: 1.1">Catalogue &amp; univers</h1>
+    <p class="muted" style="font-size: 13.5px">Miroir assumé du catalogue de référence : mêmes rôles mécaniques, mêmes archétypes, mais noms, robes et rendus originaux. Les équivalents entre parenthèses (≈) sont des références internes de design — ils n'apparaissent jamais dans le jeu.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px">
+    <h2 class="h2">Le lore en trois lignes</h2>
+    <p style="font-size: 14px">À <strong>Gyrapolis</strong>, une météorite — le <strong style="color: #46cede">Cœur Gyre</strong> — s'est écrasée au centre de la ville. Ses débris, forgés en toupies, tournent sans jamais vraiment s'arrêter. Les quatre premières, les <strong>Fondateurs</strong>, ont donné naissance aux arènes de quartier ; leurs champions s'affrontent pour approcher le cratère : plus on s'en rapproche, plus les débris sont purs, plus les toupies sont puissantes.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Anatomie d'une toupie — 4 pièces, 4 emplacements</h2>
+    <svg viewBox="0 0 680 290" width="644" height="274" fill="none" role="img" aria-label="Vue éclatée d'une toupie">
+      <ellipse cx="170" cy="40" rx="30" ry="12" stroke="#f0a566" stroke-width="2"></ellipse>
+      <ellipse cx="170" cy="100" rx="110" ry="26" stroke="#46cede" stroke-width="2"></ellipse>
+      <path d="M 60 100 L 45 92 M 280 100 L 295 92 M 170 74 L 170 64" stroke="#46cede" stroke-width="2"></path>
+      <ellipse cx="170" cy="168" rx="70" ry="18" stroke="#9aa3b2" stroke-width="2"></ellipse>
+      <path d="M 135 220 L 205 220 L 170 278 Z" stroke="#e8eaee" stroke-width="2"></path>
+      <line x1="205" y1="40" x2="360" y2="40" stroke="#313845" stroke-width="1.5"></line>
+      <line x1="285" y1="100" x2="360" y2="100" stroke="#313845" stroke-width="1.5"></line>
+      <line x1="245" y1="168" x2="360" y2="168" stroke="#313845" stroke-width="1.5"></line>
+      <line x1="210" y1="245" x2="360" y2="245" stroke="#313845" stroke-width="1.5"></line>
+      <text x="372" y="36" fill="#f0a566" font-size="13" font-weight="600" font-family="Space Grotesk, sans-serif">NOYAU — signature</text>
+      <text x="372" y="52" fill="#9aa3b2" font-size="12">la capacité spéciale, déclenchable</text>
+      <text x="372" y="96" fill="#46cede" font-size="13" font-weight="600" font-family="Space Grotesk, sans-serif">LAME — signature</text>
+      <text x="372" y="112" fill="#9aa3b2" font-size="12">l'attaque — dégâts au contact (≈ Energy Layer)</text>
+      <text x="372" y="164" fill="#e8eaee" font-size="13" font-weight="600" font-family="Space Grotesk, sans-serif">DISQUE — générique</text>
+      <text x="372" y="180" fill="#9aa3b2" font-size="12">la masse — défense, stabilité (≈ Forge Disc)</text>
+      <text x="372" y="241" fill="#e8eaee" font-size="13" font-weight="600" font-family="Space Grotesk, sans-serif">POINTE — générique</text>
+      <text x="372" y="257" fill="#9aa3b2" font-size="12">le contact au sol — vitesse, endurance (≈ Performance Tip)</text>
+    </svg>
+    <p style="font-size: 13.5px">Comme dans le catalogue de référence : <strong>Lame et Noyau sont propres à chaque toupie</strong>, <strong>Disques et Pointes sont génériques</strong> et tombent des coffres — c'est là que la fusion tourne à plein régime. Toutes les pièces sont interchangeables : 4 emplacements × un catalogue qui grandit = des milliers de builds. Chaque pièce progresse sur deux axes infinis : sa rareté (fusion) et son niveau (crédits + fragments).</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Quatre types, un triangle des forces</h2>
+    <svg viewBox="0 0 680 250" width="644" height="236" fill="none" role="img" aria-label="Triangle des types">
+      <defs>
+        <marker id="tarr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 1 L 9 5 L 0 9" stroke="#9aa3b2" stroke-width="1.5" fill="none"></path>
+        </marker>
+      </defs>
+      <line x1="370" y1="45" x2="510" y2="185" stroke="#9aa3b2" stroke-width="1.5" marker-end="url(#tarr)"></line>
+      <line x1="470" y1="210" x2="210" y2="210" stroke="#9aa3b2" stroke-width="1.5" marker-end="url(#tarr)"></line>
+      <line x1="180" y1="185" x2="320" y2="45" stroke="#9aa3b2" stroke-width="1.5" marker-end="url(#tarr)"></line>
+      <text x="345" y="32" text-anchor="middle" fill="#e86a5a" font-size="15" font-weight="700" font-family="Space Grotesk, sans-serif">ATTAQUE</text>
+      <text x="530" y="212" text-anchor="start" fill="#6fbf73" font-size="15" font-weight="700" font-family="Space Grotesk, sans-serif">ENDURANCE</text>
+      <text x="160" y="212" text-anchor="end" fill="#5aa7e8" font-size="15" font-weight="700" font-family="Space Grotesk, sans-serif">DÉFENSE</text>
+      <text x="345" y="150" text-anchor="middle" fill="#f0a566" font-size="14" font-weight="700" font-family="Space Grotesk, sans-serif">ÉQUILIBRE</text>
+      <text x="345" y="168" text-anchor="middle" fill="#9aa3b2" font-size="11">neutre, +10 % partout</text>
+      <text x="345" y="240" text-anchor="middle" fill="#9aa3b2" font-size="12" font-style="italic">+25 % de dégâts sur le type dominé — assez pour compter, pas assez pour tout décider</text>
+    </svg>
+    <div class="card">
+      <p style="font-size: 13.5px">La « vie » d'une toupie, c'est sa <strong style="color: #46cede">rotation</strong> (tours/min). Les chocs la font chuter ; à zéro, la toupie s'arrête. Certaines Lames tournent à <strong>gauche</strong> : contre une rotation droite, leurs chocs frontaux sont amplifiés — la mécanique fétiche du genre.</p>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Saison 0 — Les Quatre Fondateurs</h2>
+    <table>
+      <thead><tr><th>TOUPIE</th><th>TYPE</th><th>MOTIF &amp; ROBE</th><th>CAPACITÉ (NOYAU)</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Typhon Primal</strong></td><td><span class="type" style="color: #e86a5a">ATTAQUE</span></td><td>dragon de tempête, bleu &amp; blanc <span class="arch">(≈ Dragoon)</span></td><td>Tornade Galopante : balaie toute l'arène.</td></tr>
+        <tr><td><strong>Brasier Solaire</strong></td><td><span class="type" style="color: #f0a566">ÉQUILIBRE</span></td><td>phénix écarlate &amp; or <span class="arch">(≈ Dranzer)</span></td><td>Spirale Ascendante : décolle puis frappe en piqué.</td></tr>
+        <tr><td><strong>Carapace Abyssale</strong></td><td><span class="type" style="color: #5aa7e8">DÉFENSE</span></td><td>tortue titan, violet sombre <span class="arch">(≈ Draciel)</span></td><td>Forteresse : se verrouille au centre, inébranlable.</td></tr>
+        <tr><td><strong>Tigre Foudre</strong></td><td><span class="type" style="color: #6fbf73">ENDURANCE</span></td><td>tigre blanc électrique <span class="arch">(≈ Driger)</span></td><td>Griffe Éclair : contre-attaque instantanée après esquive.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Saison 1 — La Génération Rafale</h2>
+    <table>
+      <thead><tr><th>TOUPIE</th><th>TYPE</th><th>MOTIF &amp; ROBE</th><th>CAPACITÉ (NOYAU)</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Sleipnir Azur</strong></td><td><span class="type" style="color: #e86a5a">ATTAQUE</span></td><td>étalon ailé bleu, lame à 3 ailes <span class="arch">(≈ Valtryek)</span></td><td>Assaut Céleste : charge frontale surpuissante. L'icône du jeu.</td></tr>
+        <tr><td><strong>Hydre Écarlate</strong></td><td><span class="type" style="color: #f0a566">ÉQUILIBRE</span></td><td>dragon bicéphale rouge &amp; noir <span class="arch">(≈ Spryzen)</span></td><td>Choisit son sens de rotation avant chaque combat.</td></tr>
+        <tr><td><strong>Ajax Vaillant</strong></td><td><span class="type" style="color: #f0a566">ÉQUILIBRE</span></td><td>chevalier rouge &amp; bleu, épée-bouclier <span class="arch">(≈ Achilles)</span></td><td>Alterne posture épée (attaque) et bouclier (défense).</td></tr>
+        <tr><td><strong>Drake Nocturne</strong></td><td><span class="type" style="color: #e86a5a">ATTAQUE</span></td><td>dragon noir &amp; bleu nuit, <strong>rotation gauche</strong> <span class="arch">(≈ Luinor)</span></td><td>Croc Inversé : chocs frontaux dévastateurs.</td></tr>
+        <tr><td><strong>Wyrm Doré</strong></td><td><span class="type" style="color: #6fbf73">ENDURANCE</span></td><td>serpent-dragon d'or, <strong>rotation gauche</strong> <span class="arch">(≈ Fafnir)</span></td><td>Sa lame caoutchoutée aspire la rotation adverse.</td></tr>
+        <tr><td><strong>Estoc Royal</strong></td><td><span class="type" style="color: #e86a5a">ATTAQUE</span></td><td>épéiste couronné, bleu roi &amp; or <span class="arch">(≈ Xcalius)</span></td><td>Percée Royale : un coup unique à dégâts massifs.</td></tr>
+        <tr><td><strong>Rafale d'Émeraude</strong></td><td><span class="type" style="color: #6fbf73">ENDURANCE</span></td><td>moulin à quatre pales, vert <span class="arch">(≈ Roktavor)</span></td><td>Regagne de la rotation en encaissant le vent des chocs.</td></tr>
+        <tr><td><strong>Molosse Stygien</strong></td><td><span class="type" style="color: #5aa7e8">DÉFENSE</span></td><td>chien tricéphale de bronze <span class="arch">(≈ Kerbeus)</span></td><td>Chaque tête absorbe un coup critique (3 charges).</td></tr>
+        <tr><td><strong>Faucheur Pâle</strong></td><td><span class="type" style="color: #e86a5a">ATTAQUE</span></td><td>spectre à double faux, gris d'os <span class="arch">(≈ Doomscizor)</span></td><td>Moisson : ignore 50 % de la masse adverse.</td></tr>
+        <tr><td><strong>Vouivre d'Ivoire</strong></td><td><span class="type" style="color: #5aa7e8">DÉFENSE</span></td><td>wyverne blanche &amp; argent <span class="arch">(≈ Wyvron)</span></td><td>Sommet libre : les coups venus d'en haut sont annulés.</td></tr>
+        <tr><td><strong>Phénix Cendré</strong></td><td><span class="type" style="color: #5aa7e8">DÉFENSE</span></td><td>rapace de braise sous la cendre <span class="arch">(≈ Revive Phoenix)</span></td><td>Son armure se détache à 0 rotation : la toupie survit, une fois par combat.</td></tr>
+        <tr><td><strong>Simorgh Vermeil</strong></td><td><span class="type" style="color: #6fbf73">ENDURANCE</span></td><td>oiseau solaire vermillon <span class="arch">(≈ Garuda)</span></td><td>Vol Plané : friction quasi nulle, tourne 30 % plus longtemps.</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 13.5px">Débloquer une toupie (jalon de chapitre, événement, boutique) donne son <strong>châssis</strong> — le corps de la toupie elle-même, porteur du bonus passif de type, pas un 5ᵉ emplacement — plus sa Lame et son Noyau signature en rang Commun. Leurs doublons, indispensables à la fusion, tombent ensuite des coffres Arène et Mythique. La Saison 1 constitue le gros du lancement ; le catalogue s'étend ensuite par <strong>saisons de 4 toupies</strong> : la collection est un axe de rétention à part entière.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Pièces génériques — Disques &amp; Pointes</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <table>
+        <thead><tr><th>DISQUE (MASSE)</th><th>EFFET</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Lourd</strong></td><td>Masse brute — le standard Défense.</td></tr>
+          <tr><td><strong>Gravité</strong></td><td>Anneau lesté : inertie max, démarrage lent.</td></tr>
+          <tr><td><strong>Éventail</strong></td><td>Large et plat : stabilise l'Endurance.</td></tr>
+          <tr><td><strong>Axial</strong></td><td>Centre de gravité bas : anti-basculement.</td></tr>
+          <tr><td><strong>Colosse</strong></td><td>Le plus lourd du jeu, pénalise la vitesse.</td></tr>
+          <tr><td><strong>Météorite</strong></td><td>Masse asymétrique : trajectoires imprévisibles.</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead><tr><th>POINTE (SOL)</th><th>EFFET</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Plate</strong></td><td>Course large et agressive — l'Attaque de référence.</td></tr>
+          <tr><td><strong>Aiguille</strong></td><td>Friction minimale au centre : l'endurance pure.</td></tr>
+          <tr><td><strong>Orbitale</strong></td><td>Bout libre sur roulement : encaisse sans ralentir.</td></tr>
+          <tr><td><strong>Gyroscope</strong></td><td>Bille libre : se redresse après chaque choc.</td></tr>
+          <tr><td><strong>Furie</strong></td><td>Caoutchouc plat : vitesse extrême, s'épuise vite.</td></tr>
+          <tr><td><strong>Ressort</strong></td><td>Amortit les impacts verticaux, anti-éjection.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="font-size: 13px">6 disques × 6 pointes au lancement, extensibles par saison — chaque coffre en contient, chaque doublon nourrit la fusion. Leurs noms sont volontairement des descriptifs fonctionnels (lourd, plate, aiguille…), pas des marques.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Huit arènes, huit règles du jeu</h2>
+    <table>
+      <thead><tr><th>CH.</th><th>ARÈNE</th><th>GIMMICK MÉCANIQUE</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><strong>Hangar Rouillé</strong></td><td>Sol plat, aucun piège — le tutoriel.</td></tr>
+        <tr><td>2</td><td><strong>Dojo Néon</strong></td><td>Murs élastiques : les rebonds amplifient l'Attaque.</td></tr>
+        <tr><td>3</td><td><strong>Marché Souterrain</strong></td><td>Piliers mobiles qui coupent les trajectoires.</td></tr>
+        <tr><td>4</td><td><strong>Cratère de Magma</strong></td><td>Geysers périodiques : rester mobile ou brûler.</td></tr>
+        <tr><td>5</td><td><strong>Temple sous la Glace</strong></td><td>Friction réduite : l'Endurance y règne.</td></tr>
+        <tr><td>6</td><td><strong>Jardin Suspendu</strong></td><td>Arène inclinée qui bascule ; les bords éjectent.</td></tr>
+        <tr><td>7</td><td><strong>Station Orbitale</strong></td><td>Gravité réduite : chocs amplifiés, chutes faciles.</td></tr>
+        <tr><td>8</td><td><strong>Le Vortex</strong></td><td>Mode infini : modificateur aléatoire toutes les 10 salles.</td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="font-size: 13px">Chaque gimmick favorise un type différent — c'est ce qui force à varier les builds au lieu d'empiler du dégât brut (leçon d'Archero).</p>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

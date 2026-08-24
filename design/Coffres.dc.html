@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap">
+  <style>
+    body { margin: 0; background: #ffffff; color: #111111; font-family: "Patrick Hand", "Comic Sans MS", cursive; }
+    a { color: #111111; } a:hover { color: #555555; }
+    p { margin: 0; }
+    .box { border: 2px solid #111111; }
+    .buy { flex: 1 1 0; min-height: 44px; display: flex; align-items: center; justify-content: center; border: 2px solid #111111; font-size: 15px; }
+    .quest { display: flex; align-items: center; gap: 10px; border: 2px solid #111111; padding: 8px 10px; font-size: 14.5px; min-height: 44px; box-sizing: border-box; }
+    .tab { flex: 1 1 0; display: flex; align-items: center; justify-content: center; border: 2px solid #111111; font-size: 16px; min-height: 52px; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #ffffff; display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 12px 16px">
+
+  <p style="font-size: 26px">Coffres</p>
+
+  <div class="box" style="padding: 12px; display: flex; flex-direction: column; gap: 8px">
+    <div style="display: flex; align-items: baseline; gap: 8px">
+      <p style="font-size: 19px">Bronze</p>
+      <p style="margin-left: auto; font-size: 15px; color: #555555">pièces Commun → Rare</p>
+    </div>
+    <div style="display: flex; gap: 8px">
+      <div class="buy" style="background: #eeeeee">×1 — 2 000 crédits</div>
+      <div class="buy">×10 — 18 000</div>
+    </div>
+  </div>
+
+  <div class="box" style="padding: 12px; display: flex; flex-direction: column; gap: 8px; border-width: 4px">
+    <div style="display: flex; align-items: baseline; gap: 8px">
+      <p style="font-size: 19px">Arène</p>
+      <p style="margin-left: auto; font-size: 15px; color: #555555">Bon → Excellent</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px">
+      <p style="font-size: 14px">Excellent garanti : 7 / 10</p>
+      <div style="flex: 1 1 0; height: 10px; border: 2px solid #111111">
+        <div style="width: 70%; height: 100%; background: #cccccc"></div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px">
+      <div class="buy" style="background: #eeeeee">×1 — 300 gemmes</div>
+      <div class="buy">×10 — 2 680</div>
+    </div>
+    <div class="buy" style="background: #111111; color: #ffffff">GRATUIT dans 1 h 12</div>
+  </div>
+
+  <div class="box" style="padding: 12px; display: flex; flex-direction: column; gap: 8px">
+    <div style="display: flex; align-items: baseline; gap: 8px">
+      <p style="font-size: 19px">Mythique</p>
+      <p style="margin-left: auto; font-size: 15px; color: #555555">Excellent → Légende</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px">
+      <p style="font-size: 14px">Légende garantie : 4 / 30</p>
+      <div style="flex: 1 1 0; height: 10px; border: 2px solid #111111">
+        <div style="width: 13%; height: 100%; background: #cccccc"></div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px">
+      <div class="buy" style="background: #eeeeee">×1 — 1 500 gemmes</div>
+      <div class="buy">×10 — 13 500</div>
+    </div>
+  </div>
+
+  <div style="flex: 1 1 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end">
+    <p style="font-size: 17px">Quêtes du jour</p>
+    <div class="quest"><span class="box" style="width: 20px; height: 20px; background: #111111"></span><span style="text-decoration: line-through">Franchir 30 salles</span><span style="margin-left: auto; color: #555555">20 gemmes ✓</span></div>
+    <div class="quest"><span class="box" style="width: 20px; height: 20px"></span><span>Fusionner 3 pièces</span><span style="margin-left: auto; color: #555555">1 coffre Bronze</span></div>
+    <div class="quest"><span class="box" style="width: 20px; height: 20px"></span><span>Récolter le farm 2×</span><span style="margin-left: auto; color: #555555">30 gemmes</span></div>
+  </div>
+
+  <div style="display: flex; gap: 8px">
+    <div class="tab">Combat</div>
+    <div class="tab">Forge</div>
+    <div class="tab" style="background: #111111; color: #ffffff">Coffres</div>
+    <div class="tab">Toupies</div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

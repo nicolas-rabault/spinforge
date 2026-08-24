@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap">
+  <style>
+    body { margin: 0; background: #ffffff; color: #111111; font-family: "Patrick Hand", "Comic Sans MS", cursive; }
+    a { color: #111111; } a:hover { color: #555555; }
+    p { margin: 0; }
+    .box { border: 2px solid #111111; }
+    .chip { border: 2px solid #111111; padding: 6px 12px; font-size: 15px; white-space: nowrap; }
+    .tab { flex: 1 1 0; display: flex; align-items: center; justify-content: center; border: 2px solid #111111; font-size: 16px; min-height: 52px; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #ffffff; display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 12px 16px">
+
+  <div style="display: flex; gap: 8px; align-items: center">
+    <span class="chip" style="background: #eeeeee">Crédits 12,4 k</span>
+    <span class="chip" style="background: #eeeeee">Gemmes 87</span>
+    <span class="chip" style="margin-left: auto; min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; box-sizing: border-box">≡</span>
+  </div>
+
+  <div class="box" style="padding: 10px 14px; display: flex; flex-direction: column; gap: 4px">
+    <p style="font-size: 16px">Chapitre 2 — Dojo Néon</p>
+    <p style="font-size: 26px; line-height: 1">SALLE 7 / 10</p>
+    <div style="display: flex; align-items: center; gap: 8px">
+      <p style="font-size: 14px; color: #555555">Boss : salle 10</p>
+      <div style="flex: 1 1 0; height: 10px; border: 2px solid #111111">
+        <div style="width: 70%; height: 100%; background: #cccccc"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex: 1 1 0; display: flex; align-items: center; justify-content: center">
+    <svg viewBox="0 0 340 340" width="340" height="340" fill="none" role="img" aria-label="Arène pilotée">
+      <circle cx="170" cy="170" r="155" stroke="#111111" stroke-width="3"></circle>
+      <rect x="143" y="4" width="54" height="24" fill="#ffffff"></rect>
+      <path d="M 145 26 L 145 6 M 195 26 L 195 6" stroke="#111111" stroke-width="3"></path>
+      <text x="170" y="44" text-anchor="middle" font-size="13" fill="#555555" font-family="Patrick Hand, cursive">porte → salle 8</text>
+      <defs>
+        <marker id="warr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 9 5 L 0 10 Z" fill="#111111"></path>
+        </marker>
+      </defs>
+      <path d="M 52 128 l 11 -20 l 11 20 Z M 74 128 l 11 -20 l 11 20 Z" stroke="#111111" stroke-width="2" fill="#cccccc"></path>
+      <circle cx="110" cy="235" r="28" stroke="#111111" stroke-width="3" fill="#eeeeee"></circle>
+      <text x="110" y="241" text-anchor="middle" font-size="16" fill="#111111" font-family="Patrick Hand, cursive">TOI</text>
+      <line x1="132" y1="216" x2="212" y2="152" stroke="#111111" stroke-width="3" marker-end="url(#warr)"></line>
+      <circle cx="238" cy="130" r="24" stroke="#111111" stroke-width="2" fill="#ffffff"></circle>
+      <text x="238" y="136" text-anchor="middle" font-size="14" fill="#111111" font-family="Patrick Hand, cursive">BOT</text>
+      <path d="M 206 148 L 218 138 M 210 158 L 224 150" stroke="#111111" stroke-width="2"></path>
+      <circle cx="252" cy="252" r="20" stroke="#111111" stroke-width="2" fill="#ffffff"></circle>
+      <text x="252" y="258" text-anchor="middle" font-size="13" fill="#111111" font-family="Patrick Hand, cursive">BOT</text>
+      <path d="M 70 275 Q 95 300 130 285" stroke="#cccccc" stroke-width="2" fill="none"></path>
+    </svg>
+  </div>
+
+  <p style="text-align: center; font-size: 15px; color: #555555">+ 240 crédits / salle · vide la salle pour ouvrir la porte</p>
+
+  <p style="font-size: 14.5px; line-height: 1.25; text-align: center">Glisse n'importe où : la toupie fonce dans cette direction. Relâche : elle file sur sa lancée.</p>
+
+  <div style="display: flex; gap: 10px; align-items: center">
+    <svg viewBox="0 0 92 92" width="92" height="92" fill="none" role="img" aria-label="Joystick">
+      <circle cx="46" cy="46" r="42" stroke="#111111" stroke-width="2" stroke-dasharray="7 7"></circle>
+      <circle cx="60" cy="32" r="18" stroke="#111111" stroke-width="3" fill="#eeeeee"></circle>
+    </svg>
+    <div class="box" style="flex: 1 1 0; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-style: dashed; color: #555555; text-align: center; padding: 4px">
+      <span style="font-size: 15px">AUTO</span>
+      <span style="font-size: 12px">chapitres validés</span>
+    </div>
+    <div class="box" style="width: 96px; min-height: 64px; display: flex; align-items: center; justify-content: center; font-size: 16px; background: #111111; color: #ffffff; text-align: center">CAPA-<br>CITÉ !</div>
+  </div>
+
+  <div style="display: flex; gap: 8px">
+    <div class="tab" style="background: #111111; color: #ffffff">Combat</div>
+    <div class="tab">Forge</div>
+    <div class="tab">Coffres</div>
+    <div class="tab">Toupies</div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

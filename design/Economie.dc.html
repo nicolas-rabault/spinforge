@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap">
+  <style>
+    body { margin: 0; background: #14171d; color: #e8eaee; font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 15px; line-height: 1.55; }
+    a { color: #46cede; } a:hover { color: #7ee3ef; }
+    h1, h2 { font-family: "Space Grotesk", system-ui, sans-serif; margin: 0; }
+    p { margin: 0; }
+    .kicker { font-size: 11px; letter-spacing: 0.18em; color: #46cede; font-weight: 600; }
+    .h2 { font-size: 19px; font-weight: 700; letter-spacing: 0.02em; }
+    .muted { color: #9aa3b2; }
+    table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+    th { text-align: left; font-size: 11px; letter-spacing: 0.12em; color: #9aa3b2; font-weight: 600; padding: 8px 10px; border-bottom: 1px solid #313845; }
+    td { padding: 9px 10px; border-bottom: 1px solid #232830; vertical-align: top; }
+    .card { background: #1c2027; border: 1px solid #313845; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+    .chip { font-size: 11.5px; font-weight: 600; padding: 4px 10px; border: 1px solid; white-space: nowrap; }
+  </style>
+</helmet>
+<div style="display: flex; flex-direction: column; gap: 36px; padding: 48px; background: #14171d; min-height: 2150px; box-sizing: border-box">
+
+  <div style="display: flex; flex-direction: column; gap: 10px">
+    <p class="kicker">SPINFORGE · 2/4</p>
+    <h1 style="font-size: 34px; line-height: 1.1">Économie &amp; systèmes</h1>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Quatre monnaies, quatre rôles</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <div class="card">
+        <p style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px">Crédits <span class="muted" style="font-weight: 400; font-size: 12px">· soft</span></p>
+        <p style="font-size: 13px"><span class="muted">Sources :</span> chaque salle franchie, farm auto, quêtes.<br><span class="muted">Puits :</span> niveaux de pièces, Coffre de Bronze, relances.</p>
+      </div>
+      <div class="card">
+        <p style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; color: #f0a566">Gemmes <span class="muted" style="font-weight: 400; font-size: 12px">· premium</span></p>
+        <p style="font-size: 13px"><span class="muted">Sources :</span> boss, quêtes, succès, achats.<br><span class="muted">Puits :</span> Coffres d'Arène et Mythique, accélérations.</p>
+      </div>
+      <div class="card">
+        <p style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px">Fragments <span class="muted" style="font-weight: 400; font-size: 12px">· artisanat</span></p>
+        <p style="font-size: 13px"><span class="muted">Sources :</span> démantèlement des pièces indésirables.<br><span class="muted">Puits :</span> paliers de niveau élevés, réglage fin des builds.</p>
+      </div>
+      <div class="card">
+        <p style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; color: #46cede">Étoiles de Refonte <span class="muted" style="font-weight: 400; font-size: 12px">· prestige</span></p>
+        <p style="font-size: 13px"><span class="muted">Sources :</span> uniquement en déclenchant une Refonte.<br><span class="muted">Puits :</span> arbre d'atouts permanents. Jamais réinitialisées.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Coffres — la machine à pièces</h2>
+    <table>
+      <thead><tr><th>COFFRE</th><th>PRIX</th><th>CONTENU</th><th>PITY</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Bronze</strong></td><td>2 000 crédits · ×10 : 18 000</td><td>1 pièce, Commun → Rare</td><td class="muted">—</td></tr>
+        <tr><td><strong>Arène</strong></td><td>300 gemmes · ×10 : 2 680<br><span class="muted">1 gratuit / 4 h</span></td><td>1 pièce, Bon → Excellent</td><td>Excellent garanti au 10ᵉ</td></tr>
+        <tr><td><strong>Mythique</strong></td><td>1 500 gemmes · ×10 : 13 500</td><td>1 pièce, Excellent → Légende</td><td>Légende garantie au 30ᵉ</td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="font-size: 13px">Prix et paliers calqués sur Survivor.io (300 / 2 680 gemmes, garanti au 10ᵉ). Le coffre gratuit toutes les 4 h est un rendez-vous de session à lui seul. Les coffres Arène et Mythique mêlent pièces génériques et <strong style="color: #e8eaee">doublons signature</strong> des toupies déjà débloquées — c'est la seule source de fusion pour les Lames et Noyaux.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">L'échelle de rareté — 11 rangs, puis l'infini</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+      <span class="chip" style="color: #8a919d; border-color: #8a919d">Commun</span>
+      <span class="chip" style="color: #6fbf73; border-color: #6fbf73">Bon</span>
+      <span class="chip" style="color: #5aa7e8; border-color: #5aa7e8">Rare</span>
+      <span class="chip" style="color: #a678e8; border-color: #a678e8">Excellent · +1 · +2</span>
+      <span class="chip" style="color: #e8c25a; border-color: #e8c25a">Épique · +1 · +2 · +3</span>
+      <span class="chip" style="color: #e86a5a; border-color: #e86a5a">Légende</span>
+      <span class="chip" style="color: #e8eaee; border-color: #e8eaee">Légende +N&nbsp;→&nbsp;∞</span>
+    </div>
+    <p style="font-size: 13.5px">La règle de base est <strong>3 identiques → 1 rang au-dessus</strong> ; elle s'assouplit aux rangs supérieurs :</p>
+    <table>
+      <thead><tr><th>PALIER FRANCHI</th><th>RÈGLE DE FUSION</th></tr></thead>
+      <tbody>
+        <tr><td>Commun → Excellent</td><td><strong>3 pièces identiques</strong> → 1 pièce du rang supérieur.</td></tr>
+        <tr><td>Excellent → Épique +3</td><td>Chaque palier (+1, +2…) : 2 identiques + <strong>1 pièce sacrifiée</strong> du même emplacement (les stocks morts servent).</td></tr>
+        <tr><td>Épique +3 → Légende</td><td><strong>3 Épique +3 identiques</strong> → 1 Légende.</td></tr>
+        <tr><td>Légende +N</td><td>2 Légende identiques (même emplacement, même +N) → +1. Sans limite : c'est la progression infinie du gacha.</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 13.5px">Chaque rang franchi débloque en plus un <strong>talent de pièce</strong> (à la Survivor.io) : la fusion change le gameplay, pas seulement les chiffres.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Les courbes qui fabriquent les murs</h2>
+    <div class="card" style="font-size: 14px; display: flex; flex-direction: column; gap: 8px">
+      <p><span style="color: #46cede; font-family: 'Space Grotesk', sans-serif">coût(niveau) = base × 1,08 ^ niveau</span> — le prix des améliorations grimpe vite.</p>
+      <p><span style="color: #f0a566; font-family: 'Space Grotesk', sans-serif">revenu(salle) = base × 1,12 ^ salle</span> — mais avancer rapporte encore plus vite.</p>
+      <p class="muted" style="font-size: 13px">Le mur apparaît quand le joueur bute sur une salle : son revenu stagne, les coûts non. Les sorties du mur sont toujours les trois mêmes : fusionner, améliorer ses pièces, ou déclencher une Refonte. Le mur n'est jamais un bug, c'est le produit.</p>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">La Refonte — le prestige</h2>
+    <table>
+      <thead><tr><th>RESET</th><th>CONSERVÉ</th><th>GAGNÉ</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Progression des chapitres, niveaux des pièces, crédits</td>
+          <td>Catalogue de toupies, raretés des pièces, gemmes, quêtes — et la <strong>référence de farm</strong> : le meilleur chapitre jamais validé reste la cible du farm hors-ligne</td>
+          <td><strong style="color: #46cede">Étoiles</strong> = f(salle max atteinte)<br>+2 % de revenus permanents / étoile</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size: 13.5px">Les Étoiles alimentent un <strong>arbre d'atouts</strong> : plafond hors-ligne 12 h, auto-fusion, vitesse du farm AUTO ×3, second emplacement de toupie… Chaque Refonte doit rendre le cycle suivant <em>visiblement</em> plus rapide — c'est le contrat moral du prestige.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <h2 class="h2">Hors-ligne &amp; générosité</h2>
+    <p style="font-size: 14px">En ton absence, la toupie <strong>rejoue en boucle le meilleur chapitre jamais validé</strong> — automatique dès le chapitre 1, sans rien activer, et la Refonte n'y touche pas (le farm ne progresse jamais, il rapporte). Au retour : écran « Pendant ton absence » — salles simulées, crédits accumulés (plafond 4 h de base), option <strong>×2 contre une pub récompensée</strong> ou quelques gemmes. Les pubs restent optionnelles et rentables (×2 gains 15 min, coffre gratuit, relance de boss) : c'est le modèle économique du genre, jamais un péage.</p>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
