@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commandes
 
 ```bash
-npm run dev     # serveur Vite (http://localhost:5173)
+npm run dev     # serveur Vite (http://localhost:5173/spinforge/)
 npm run test    # vitest run (tests unitaires de la simulation)
 npm run build   # tsc + vite build
 ```

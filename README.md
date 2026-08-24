@@ -16,7 +16,7 @@ Le design est figé, le code démarre. La page de jeu publiera le build dès le 
 
 | Jalon | Contenu | État |
 |---|---|---|
-| 1 — La boucle nue | Pilotage au doigt, combat déterministe, salles + boss, crédits, améliorations | 🚧 en cours |
+| 1 — La boucle nue | Pilotage au doigt, combat déterministe, salles + boss, crédits, améliorations | ✅ livré |
 | 2 — Le gacha | Coffres, inventaire, fusion, raretés, toupies Fondateurs | ⏳ |
 | 3 — L'idle | Farm hors-ligne plafonné, mode AUTO, chapitres 1-4, sauvegarde | ⏳ |
 | 4 — Le long terme | Refonte, arbre d'atouts, Vortex infini, PWA | ⏳ |
@@ -27,7 +27,7 @@ Détail : [`docs/roadmap.md`](docs/roadmap.md) · Spec complète : [`docs/game-d
 
 ```bash
 npm install
-npm run dev     # http://localhost:5173
+npm run dev     # http://localhost:5173/spinforge/
 npm run test    # tests unitaires de la simulation (Vitest)
 npm run build   # build de production
 ```
