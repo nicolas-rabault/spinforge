@@ -17,6 +17,7 @@ Le design est figé, le code démarre. La page de jeu publiera le build dès le 
 | Jalon | Contenu | État |
 |---|---|---|
 | 1 — La boucle nue | Pilotage au doigt, combat déterministe, salles + boss, crédits, améliorations | ✅ livré |
+| 1.5 — L'habillage | Direction artistique, toupies qui tournent, retour d'impact, sons | ⏳ |
 | 2 — Le gacha | Coffres, inventaire, fusion, raretés, toupies Fondateurs | ⏳ |
 | 3 — L'idle | Farm hors-ligne plafonné, mode AUTO, chapitres 1-4, sauvegarde | ⏳ |
 | 4 — Le long terme | Refonte, arbre d'atouts, Vortex infini, PWA | ⏳ |
