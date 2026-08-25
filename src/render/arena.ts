@@ -2,7 +2,7 @@ import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
 import { PALETTE, spinTint } from '../theme';
 import type { SimState } from '../sim/types';
-import { createTextures, destroyTextures, floorTexture, type Shape } from './textures';
+import { createTextures, destroyTextures, floorTexture, FLOOR_EDGE, FLOOR_OVERSCAN, type Shape } from './textures';
 import { FEEL } from './feel';
 import { createTopView, type TopView } from './topView';
 import { lerp, snapshotById, takeSnapshot, type Snapshot } from './snapshot';
@@ -11,9 +11,10 @@ import { createEffects, type Effects } from './effects';
 
 /** Marge entre le bord de l'anneau et le bord du canvas. */
 const MARGIN = 1.1;
-/** Rayon visuel du disque du sol, même facteur de bord que floorTexture() (textures.ts) :
- * un cercle, pas le carré de la texture qui le contient. */
-const FLOOR_VISUAL_RADIUS = ARENA_RADIUS * 1.06 * 0.94;
+/** Rayon visuel du disque du sol : mêmes facteurs que floorTexture() (textures.ts),
+ * dérivés du même symbole pour que les deux ne puissent jamais diverger — un cercle,
+ * pas le carré de la texture qui le contient. */
+const FLOOR_VISUAL_RADIUS = ARENA_RADIUS * FLOOR_OVERSCAN * FLOOR_EDGE;
 
 export interface Arena {
   beforeTick(state: SimState): void;
@@ -27,13 +28,27 @@ export interface Arena {
 export async function createArena(host: HTMLElement): Promise<Arena> {
   const app = new Application();
   await app.init({
-    resizeTo: host,
+    width: Math.max(1, host.clientWidth),
+    height: Math.max(1, host.clientHeight),
     background: PALETTE.bg,
     antialias: true,
     resolution: Math.min(window.devicePixelRatio || 1, 2),
     autoDensity: true,
   });
   host.appendChild(app.canvas);
+
+  // `resizeTo` du greffon Pixi n'écoute qu'un `resize` de `window`, jamais le
+  // conteneur (ResizePlugin.mjs) : quand l'hôte est gardé à display:none (onglet
+  // Forge) puis redimensionné pendant ce temps, il ignore la valeur nulle et le
+  // canvas reste figé à sa dernière taille au retour. On observe l'hôte nous-mêmes
+  // et on ignore les tailles nulles plutôt que de leur laisser écraser la dernière
+  // taille connue.
+  const resizeObserver = new ResizeObserver((entries) => {
+    const rect = entries[0]?.contentRect;
+    if (!rect || rect.width <= 0 || rect.height <= 0) return;
+    app.renderer.resize(rect.width, rect.height);
+  });
+  resizeObserver.observe(host);
 
   const tex = createTextures();
   const world = new Container();
@@ -45,7 +60,7 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
 
   const floor = new Sprite(Texture.EMPTY);
   floor.anchor.set(0.5);
-  floor.width = floor.height = ARENA_RADIUS * 2 * 1.06;
+  floor.width = floor.height = ARENA_RADIUS * 2 * FLOOR_OVERSCAN;
   floorLayer.addChild(floor);
 
   // Un cercle, pas un carré : le voile doit épouser le disque du sol, pas
@@ -112,13 +127,15 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       for (const hit of events.hits) {
         const view = views.get(hit.id);
         view?.flash(hit.power);
-        const top = [state.player, ...state.bots].find((t) => t.id === hit.id);
-        const radius = top?.radius ?? 12;
-        const ratio = top ? Math.max(0, Math.min(1, top.spin / top.spinMax)) : 0;
+        // hit.id vient de after.tops, lui-même construit à partir de state.player et
+        // state.bots dans ce même appel : la toupie qui a émis le choc est donc
+        // nécessairement présente ici, aucun repli n'est atteignable.
+        const top = [state.player, ...state.bots].find((t) => t.id === hit.id)!;
+        const ratio = Math.max(0, Math.min(1, top.spin / top.spinMax));
         const camp = hit.id === 'player' ? 'player' : after.salle === SALLES_PER_CHAPTER ? 'boss' : 'bot';
         effects.hit(
-          hit.x + hit.nx * radius,
-          hit.y + hit.ny * radius,
+          hit.x + hit.nx * top.radius,
+          hit.y + hit.ny * top.radius,
           hit.nx,
           hit.ny,
           hit.power,
@@ -128,7 +145,7 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       for (const death of events.deaths) {
         const view = views.get(death.id);
         view?.kill();
-        effects.wave(death.x, death.y, 34, 0xffd9a0);
+        effects.wave(death.x, death.y, FEEL.waveRadius, 0xffd9a0);
       }
       if (events.bossEntered) {
         bossEntry = FEEL.bossEntryLife;
@@ -187,11 +204,15 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       for (const top of tops) {
         live.add(top.id);
         const view = viewFor(top.id, top.isPlayer, top.radius, state.salle);
-        // Une toupie présente dans l'état (typiquement le joueur après un Retenter)
-        // ne doit jamais rester figée dans sa pose d'agonie : on la ressuscite.
-        // Les vues orphelines (bots retirés de state.bots) ne passent pas par cette
-        // boucle, donc leur agonie va bien à son terme dans la boucle de nettoyage.
-        view.revive();
+        // Le joueur reste dans state.player même mort (sim.ts ne fait que basculer
+        // phase à 'dead', il ne le retire jamais) : reviver sans condition annulerait
+        // kill() à l'image même où il vient d'être appelé, et l'agonie ne jouerait
+        // jamais. spin > 0 distingue exactement les deux cas : une toupie morte a un
+        // spin nul ou négatif, une toupie relancée par « Retenter » repart à son spin
+        // maximum. Les bots sont déjà filtrés sur spin > 0 par la simulation
+        // (state.bots = state.bots.filter(b => b.spin > 0)), donc leur comportement
+        // ici est inchangé — ils passaient déjà cette condition.
+        if (top.spin > 0) view.revive();
         const p = prev?.get(top.id);
         const useLerp = p && !snapPositions;
         const x = useLerp ? lerp(p.x, top.pos.x, alpha) : top.pos.x;
@@ -219,6 +240,7 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       }
     },
     destroy() {
+      resizeObserver.disconnect();
       for (const view of views.values()) view.destroy();
       views.clear();
       if (floor.texture !== Texture.EMPTY) floor.texture.destroy(true);

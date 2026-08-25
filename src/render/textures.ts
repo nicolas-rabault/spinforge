@@ -10,6 +10,16 @@ const HOOK: Record<Shape, number> = { player: 0, bot: 0.16 };
 /** Trois niveaux d'usure : intact, ébréché, très ébréché. */
 const WEAR_CHIP = [0, 0.34, 0.6];
 
+/** Rayon du disque dessiné dans floorTexture(), en fraction du canevas carré qui le
+ * contient. Exporté pour qu'arena.ts en dérive le rayon visuel du sol au lieu de
+ * réestimer le même facteur de son côté — source unique des deux bugs de débordement
+ * (voile carré du boss, éclair débordant) déjà rencontrés sur cette branche. */
+export const FLOOR_EDGE = 0.94;
+/** Facteur de surdimensionnement du sprite du sol par rapport à ARENA_RADIUS × 2 :
+ * la plaque déborde légèrement de l'anneau de jeu pour ne jamais laisser voir la page
+ * derrière au bord. Même raison d'être exportée que FLOOR_EDGE. */
+export const FLOOR_OVERSCAN = 1.06;
+
 export interface Textures {
   body: Record<Shape, Texture[]>;
   rim: Record<Shape, Texture[]>;
@@ -155,7 +165,7 @@ export function destroyTextures(t: Textures): void {
 export function floorTexture(pixelSize: number): Texture {
   const { el, ctx } = canvas(pixelSize);
   const c = pixelSize / 2;
-  const r = c * 0.94;
+  const r = c * FLOOR_EDGE;
 
   const g = ctx.createRadialGradient(c, c - r * 0.3, r * 0.1, c, c, r);
   g.addColorStop(0, hex(PALETTE.floorInner));
