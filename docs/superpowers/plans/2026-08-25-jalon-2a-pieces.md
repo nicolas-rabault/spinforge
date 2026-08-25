@@ -22,6 +22,11 @@ Ces contraintes s'appliquent à **toutes** les tâches. Elles viennent de `CLAUD
 - **Tests** : Vitest, colocalisés (`src/**/*.test.ts`), imports explicites depuis `vitest` — pas de globals.
 - **Commits** en français, format `type(scope): sujet`, comme l'historique existant.
 - **Le farm ne progresse jamais** — pilier de design, aucune de ces tâches ne doit l'entamer.
+- **Le partage de charge est un acquis.** Ajouté à `resolveCollision` le 2026-08-25 après mesure
+  (`docs/ameliorations.md`), il est ce qui rend le pilotage payant. `docs/game-design.md`
+  § Combat en fait une règle du jeu. Toute réécriture de `combat.ts` doit le préserver, ainsi
+  que les deux tests de `combat.test.ts` qui le verrouillent. La base économique associée est
+  `rewardBase = 70`, **pas 120**.
 
 ## Hors périmètre
 
@@ -97,7 +102,7 @@ Refactor pur : aucun comportement ne change. C'est le socle de tout le reste, et
 
 **Interfaces:**
 - Consumes: rien.
-- Produces: `BALANCE: Balance` et les constantes nommées `TICK_S`, `ARENA_RADIUS`, `SALLES_PER_CHAPTER`, `FRICTION`, `WALL_RESTITUTION`, `RESTITUTION`, `DAMAGE_K`, `HEAL_BETWEEN_SALLES`, `PLAYER_SPAWN`, `BOT_AI`, `PLAYER_BASE`, `BOT_BASE`, `BOT_SCALING`, `BOSS`, `BOT_SPAWN_RING`, `ECON`, `PIECE_EFFECT` — **mêmes noms et mêmes formes qu'aujourd'hui**, plus `RARITY`, `TALENTS`, `FUSION`, `CHESTS`, `BOTS_PER_SALLE`. Les tâches suivantes n'importent que depuis `./config`.
+- Produces: `BALANCE: Balance` et les constantes nommées `TICK_S`, `ARENA_RADIUS`, `SALLES_PER_CHAPTER`, `FRICTION`, `WALL_RESTITUTION`, `RESTITUTION`, `DAMAGE_K`, `HEAL_BETWEEN_SALLES`, `PLAYER_SPAWN`, `BOT_AI`, `PLAYER_BASE`, `BOT_BASE`, `BOT_SCALING`, `BOSS`, `BOT_SPAWN_RING`, `ECON`, `PIECE_EFFECT`, `CHARGE_BONUS` — **mêmes noms et mêmes formes qu'aujourd'hui**, plus `RARITY`, `TALENTS`, `FUSION`, `CHESTS`, `BOTS_PER_SALLE`. Les tâches suivantes n'importent que depuis `./config`.
 
 - [ ] **Step 1: Activer `resolveJsonModule`**
 
@@ -109,14 +114,14 @@ Dans `tsconfig.json`, ajouter à `compilerOptions` :
 
 - [ ] **Step 2: Écrire `src/content/balance.json`**
 
-Les valeurs sous `arena`, `combat`, `chapter`, `player`, `bot`, `boss`, `econ` et `pieceEffect` sont **exactement celles de l'actuel `src/sim/config.ts`** — ne rien recalibrer ici. `econ.bossGems`, `rarity`, `talents`, `fusion` et `chests` sont nouveaux et viennent de la spec ; `bossGems` et les deux `speedThreshold` seront réglés par la Task 11.
+Les valeurs sous `arena`, `combat`, `chapter`, `player`, `bot`, `boss`, `econ` et `pieceEffect` sont **exactement celles de l'actuel `src/sim/config.ts`** — ne rien recalibrer ici. Deux d'entre elles viennent de la passe du 2026-08-25 et sont faciles à écraser par réflexe : `combat.chargeBonus` vaut **0,3** (c'est `CHARGE_BONUS`) et `econ.rewardBase` vaut **70**, pas 120. Vérifier dans le fichier source avant d'écrire. `econ.bossGems`, `rarity`, `talents`, `fusion` et `chests` sont nouveaux et viennent de la spec ; `bossGems` et les deux `speedThreshold` seront réglés par la Task 11.
 
 ```json
 {
   "version": 1,
   "tickSeconds": 0.1,
   "arena": { "radius": 150, "friction": 0.94, "wallRestitution": 0.8, "restitution": 0.8 },
-  "combat": { "damageK": 0.35, "healBetweenSalles": 0.2 },
+  "combat": { "damageK": 0.35, "chargeBonus": 0.3, "healBetweenSalles": 0.2 },
   "chapter": { "sallesPerChapter": 10, "botsPerSalle": [1, 1, 1, 2, 2, 2, 3, 3, 3, 1] },
   "player": {
     "spawn": { "x": 0, "y": 80 },
@@ -131,7 +136,7 @@ Les valeurs sous `arena`, `combat`, `chapter`, `player`, `bot`, `boss`, `econ` e
   "boss": { "spinMult": 4, "attackMult": 1.5, "radius": 18 },
   "econ": {
     "upgradeBase": 100, "upgradeGrowth": 1.08,
-    "rewardBase": 120, "rewardGrowth": 1.13, "bossRewardMult": 10,
+    "rewardBase": 70, "rewardGrowth": 1.13, "bossRewardMult": 10,
     "bossGems": 40
   },
   "pieceEffect": {
@@ -224,7 +229,7 @@ export interface Balance {
   version: number;
   tickSeconds: number;
   arena: { radius: number; friction: number; wallRestitution: number; restitution: number };
-  combat: { damageK: number; healBetweenSalles: number };
+  combat: { damageK: number; chargeBonus: number; healBetweenSalles: number };
   chapter: { sallesPerChapter: number; botsPerSalle: number[] };
   player: {
     spawn: { x: number; y: number };
@@ -274,6 +279,7 @@ export const FRICTION = BALANCE.arena.friction;
 export const WALL_RESTITUTION = BALANCE.arena.wallRestitution;
 export const RESTITUTION = BALANCE.arena.restitution;
 export const DAMAGE_K = BALANCE.combat.damageK;
+export const CHARGE_BONUS = BALANCE.combat.chargeBonus;
 export const HEAL_BETWEEN_SALLES = BALANCE.combat.healBetweenSalles;
 export const SALLES_PER_CHAPTER = BALANCE.chapter.sallesPerChapter;
 export const BOTS_PER_SALLE = BALANCE.chapter.botsPerSalle;
@@ -2142,7 +2148,13 @@ L'import de `HEAL_BETWEEN_SALLES` dans `sim.ts` devient inutile — le retirer.
 
 - [ ] **Step 6: Écrire les tests des six talents de combat (ils doivent échouer)**
 
-Ajouter à `src/sim/combat.test.ts` (conserver les quatre tests existants) :
+Ajouter à `src/sim/combat.test.ts`. **Conserver les six tests existants**, dont les deux qui
+verrouillent le partage de charge : ils sont la preuve que foncer paie, et les casser rouvrirait
+le défaut le plus grave remonté par le premier test joueur.
+
+Le helper `headOn` ci-dessous lance les deux toupies à ±100 : un choc frontal parfait, donc
+`share = 0,5` et `chargeWeight = 1` des deux côtés. Les mesures de talent ci-dessous sont donc
+prises sur un choc où la charge est neutre — c'est voulu, chaque test n'isole qu'un effet.
 
 ```ts
 import { NEUTRAL_TALENTS } from './talents';
@@ -2292,7 +2304,7 @@ Expected: FAIL sur les nouveaux tests (les quatre anciens restent verts).
 - [ ] **Step 8: Réécrire `src/sim/combat.ts`**
 
 ```ts
-import { DAMAGE_K, RESTITUTION, TICK_S } from './config';
+import { CHARGE_BONUS, DAMAGE_K, RESTITUTION, TICK_S } from './config';
 import type { Top } from './types';
 
 /** Décroissance effective d'un tick pour cette toupie. Le rendu s'en sert pour
@@ -2311,12 +2323,23 @@ export function decaySpin(top: Top): void {
   top.spin -= decayPerTick(top) * TICK_S;
 }
 
-/** Dégâts qu'`att` inflige à `def` pour un impact donné. Percée retire une part
- *  de la défense, Estoc majore au-delà d'un seuil de vitesse. */
-function damage(att: Top, def: Top, impact: number): number {
+function clamp01(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+
+/** 1 quand les deux avancent autant, 1 + CHARGE_BONUS pour un assaut pur. */
+function chargeWeight(share: number): number {
+  return 1 - CHARGE_BONUS + 2 * CHARGE_BONUS * share;
+}
+
+/** Dégâts qu'`att` inflige à `def` pour un impact donné. `share` est la part du
+ *  rapprochement qu'`att` a elle-même provoquée. Les trois facteurs se composent :
+ *  la charge module selon qui a foncé, Percée retire une part de la défense,
+ *  Estoc majore au-delà d'un seuil de vitesse. */
+function damage(att: Top, def: Top, impact: number, share: number): number {
   const defense = def.defense * (1 - att.talents.defenseIgnore);
   const bonus = impact >= att.talents.estocThreshold ? 1 + att.talents.estocBonus : 1;
-  return ((impact * att.attack) / (att.attack + defense)) * DAMAGE_K * bonus;
+  return ((impact * att.attack) / (att.attack + defense)) * DAMAGE_K * chargeWeight(share) * bonus;
 }
 
 export function resolveCollision(a: Top, b: Top): void {
@@ -2336,6 +2359,14 @@ export function resolveCollision(a: Top, b: Top): void {
   const rvy = b.vel.y - a.vel.y;
   const vrel = rvx * nx + rvy * ny;
   if (vrel >= 0) return;
+  const impact = -vrel;
+
+  // Qui a provoqué le rapprochement ? Se lit IMPÉRATIVEMENT avant l'impulsion, qui
+  // échange précisément les vitesses des deux toupies et inverserait la réponse —
+  // récompensant alors la passivité. `impact` étant la somme exacte des deux
+  // vitesses de fermeture, les deux poids de charge somment toujours à 2 : un choc
+  // frontal reste rigoureusement ce qu'il était.
+  const share = clamp01((a.vel.x * nx + a.vel.y * ny) / impact);
 
   // Impulsion pondérée par les masses. À masses égales (1 et 1), j vaut
   // -(1+e)·vrel/2 et chacun en reçoit la moitié — exactement le calcul du jalon 1.
@@ -2347,10 +2378,9 @@ export function resolveCollision(a: Top, b: Top): void {
   b.vel.x += (j / mb) * nx * b.talents.impulseTaken;
   b.vel.y += (j / mb) * ny * b.talents.impulseTaken;
 
-  const impact = -vrel;
   // Frôlement protège son porteur seul : chaque camp teste son propre seuil.
-  const toB = impact < b.talents.frolementThreshold ? 0 : damage(a, b, impact);
-  const toA = impact < a.talents.frolementThreshold ? 0 : damage(b, a, impact);
+  const toB = impact < b.talents.frolementThreshold ? 0 : damage(a, b, impact, share);
+  const toA = impact < a.talents.frolementThreshold ? 0 : damage(b, a, impact, 1 - share);
   // Riposte renvoie une part de ce que son porteur vient d'encaisser.
   b.spin -= toB + toA * a.talents.riposte;
   a.spin -= toA + toB * b.talents.riposte;
@@ -2370,7 +2400,11 @@ Expected: PASS — les quatre anciens **et** les nouveaux.
 Le calcul d'impulsion a été réécrit ; à masses neutres il doit produire exactement les mêmes nombres qu'avant.
 
 Run: `npm run test`
-Expected: tous verts, **y compris les trois tests de déterminisme de `sim.test.ts`** — s'ils cassent, c'est que la réécriture de l'impulsion a changé la physique neutre, et il faut corriger la formule plutôt que le test.
+Expected: tous verts, et en particulier :
+- **les deux tests de partage de charge** de `combat.test.ts` — s'ils cassent, la part de charge
+  a probablement été calculée après l'impulsion au lieu d'avant ;
+- **les trois tests de déterminisme de `sim.test.ts`** — s'ils cassent, la réécriture de
+  l'impulsion a changé la physique neutre, et c'est la formule qu'il faut corriger, pas le test.
 
 - [ ] **Step 11: Commit**
 
@@ -3959,7 +3993,7 @@ console.log('Salles par chapitre      : %d', SALLES_PER_CHAPTER);
 - [ ] **Step 3: Lancer une première mesure**
 
 Run: `npm run calibrate`
-Expected: le tableau s'affiche. La validation du chapitre 1 doit ressortir **autour de 2 h** — c'est le garde-fou : l'économie de base n'a pas été touchée par ce jalon, donc si ce chiffre s'est déplacé, quelque chose a cassé et il faut le comprendre avant d'aller plus loin.
+Expected: le tableau s'affiche. Le garde-fou est **≈ 21 runs** pour valider le chapitre 1, soit environ **1,8 h** avec la stratégie « foncer sur le bot le plus proche » — les chiffres mesurés le 2026-08-25 après le passage de `rewardBase` à 70 (`docs/ameliorations.md`). L'économie de base n'est pas touchée par ce jalon : si ce nombre s'est déplacé, quelque chose a cassé et il faut le comprendre avant d'aller plus loin. C'est le **nombre de runs** qui fait foi, la durée dépendant de la vitesse à laquelle un run se joue.
 
 - [ ] **Step 4: Régler `econ.bossGems` sur la cible**
 

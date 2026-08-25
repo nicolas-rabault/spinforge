@@ -29,6 +29,11 @@ neuf pièces identiques. Cela ne tient pas dans une session, et aujourd'hui `App
 4. **Aucun nom officiel Beyblade.** Le catalogue de `docs/game-design.md` fait foi.
 5. **Textes joueur en français**, code et identifiants en anglais.
 6. Le test de déterminisme existant doit rester vrai **au mot près**.
+7. **Le partage de charge est un acquis, pas une base négociable.** Ajouté le 2026-08-25 après
+   mesure (`docs/ameliorations.md`), il est ce qui rend le pilotage payant : sans lui, un joueur
+   qui ne touche jamais l'écran valide le chapitre 1 aussi vite qu'un joueur qui charge. Toute
+   réécriture de `resolveCollision` doit le préserver, ainsi que les deux tests qui le
+   verrouillent. `docs/game-design.md` § Combat en fait désormais une règle du jeu.
 
 ---
 
@@ -109,8 +114,8 @@ devinerait. Deux flux séparés, et un test explicite le vérifie (§ 11).
 devient son chargeur typé — il reste la porte unique par laquelle la simulation lit un chiffre,
 donc la règle 3 de `CLAUDE.md` tient sans réécriture.
 
-Le fichier reprend l'intégralité des constantes de l'actuel `config.ts`, plus tout ce que ce
-jalon introduit. Il fait entrer au passage le **nombre de bots par salle**, aujourd'hui codé en
+Le fichier reprend l'intégralité des constantes de l'actuel `config.ts` — `CHARGE_BONUS`
+compris, arrivé avec le partage de charge — plus tout ce que ce jalon introduit. Il fait entrer au passage le **nombre de bots par salle**, aujourd'hui codé en
 dur dans `salle.ts` sous la forme `Math.min(1 + Math.floor((salle - 1) / 3), 3)` — dernier
 manquement à la règle 3, et la roadmap programme sa reprise précisément ici. Il devient un
 tableau explicite, indexé par `salle - 1` :
@@ -259,6 +264,11 @@ Chacun tient en quelques lignes dans `combat.ts` ou `physics.ts`. Toutes leurs c
 dans le JSON, y compris les deux seuils de vitesse d'*Estoc* et de *Frôlement*, qui sont des
 valeurs à régler par la mesure (§ 6.4) et non des vérités.
 
+Les talents de dégâts **se composent** avec le partage de charge, ils ne le remplacent pas :
+la part de charge module d'abord les dégâts selon qui a foncé, puis *Estoc* et *Percée*
+s'appliquent par-dessus. Un assaut mené par une Lame Légendaire cumule donc les deux effets —
+c'est voulu, la Lame est la pièce de l'attaque et charger est la manière d'attaquer.
+
 *Second souffle* est le seul à demander un état : `RunState.secondSouffleUsed`.
 
 ---
@@ -312,11 +322,18 @@ jalon 1.5 : **fixer une cible en temps de jeu et laisser la mesure trouver la co
 
 > **Cible : le premier coffre Arène tombe dans l'heure qui suit la validation du chapitre 1.**
 
-Le contexte qui justifie cette cible : un chapitre complet rapporte ≈ 5 300 crédits (neuf salles
-à `120 × 1,13^(s−1)`, plus le boss ×10). Un Bronze ×10 coûte donc ≈ 3,4 chapitres, ce qui est
-sain. Mais avec un seul chapitre disponible et aucune quête, **Mythique et Arène ×10 restent
-hors de portée à ce jalon** — assumé : ce sont les cibles longues d'un jeu qui aura huit
-chapitres et des quêtes. Elles sont construites et testées ici, pas atteintes.
+Le contexte qui justifie cette cible : un chapitre complet rapporte **≈ 3 180 crédits** (neuf
+salles à `70 × 1,13^(s−1)`, soit ≈ 1 080, plus le boss ×10, soit ≈ 2 100). Un Bronze ×10 coûte
+donc **≈ 5,7 chapitres** — de l'ordre d'une demi-heure de jeu une fois le chapitre 1 maîtrisé,
+ce qui reste sain pour un idle.
+
+> Ces chiffres sont ceux de la base **70**, retenue le 2026-08-25 en contrepartie du partage de
+> charge : le pilotage étant devenu payant, le chapitre 1 tombait à 1,43 h à l'ancienne base de
+> 120. La calibration du § 11 doit repartir de 70.
+
+Mais avec un seul chapitre disponible et aucune quête, **Mythique et Arène ×10 restent hors de
+portée à ce jalon** — assumé : ce sont les cibles longues d'un jeu qui aura huit chapitres et
+des quêtes. Elles sont construites et testées ici, pas atteintes.
 
 ---
 
@@ -433,6 +450,11 @@ bouge pas, c'est un garde-fou de non-régression — puis mesurer les gemmes par
 gain du boss sur la cible du § 6.4, ainsi que les deux seuils de vitesse d'*Estoc* et de
 *Frôlement*.
 
+Le garde-fou de non-régression est **≈ 21 runs**, chiffre retrouvé à l'identique de part et
+d'autre du recalibrage du 2026-08-25 ; la durée associée est d'environ **1,8 h** avec la
+stratégie « foncer sur le bot le plus proche ». C'est le nombre de runs qui fait foi, la durée
+dépendant de la vitesse à laquelle un run se joue.
+
 ---
 
 ## 12 · Critères d'acceptation
@@ -441,6 +463,7 @@ gain du boss sur la cible du § 6.4, ainsi que les deux seuils de vitesse d'*Est
 2. On fusionne jusqu'à **changer de rang**, et le rang affiché change.
 3. On équipe une pièce et **le combat en est changé** — au minimum une stat, et un talent visible
    dès qu'un palier nommé est atteint.
+   Le partage de charge reste en vigueur : ses deux tests passent toujours.
 4. **Les deux pity sont vérifiés par test** (Arène au 10ᵉ, Mythique au 30ᵉ).
 5. **Un rechargement de page conserve tout** : crédits, gemmes, inventaire, équipement, niveaux,
    compteurs de pity.
