@@ -52,10 +52,24 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   dim.alpha = 0;
   floorLayer.addChild(dim);
 
+  // La porte du haut, qui s'allume pendant la transition de salle.
+  const door = new Graphics();
+  floorLayer.addChild(door);
+
+  // Un cercle, pas un carré, même raison que dim : un voile carré déborderait
+  // du disque du sol et découperait un angle droit visible dans les coins.
+  const flash = new Graphics().circle(0, 0, ARENA_RADIUS * 1.2).fill(0xffe2b2);
+  flash.alpha = 0;
+  flash.blendMode = 'add';
+  floorLayer.addChild(flash);
+
   const views = new Map<string, TopView>();
   let before: Snapshot | null = null;
   let snapPositions = true;
   let bossEntry = 0; // secondes restantes d'entrée du boss
+  let reforge = 0; // secondes restantes de transition de salle
+  let reforgeFlash = 0; // secondes restantes d'éclair
+  let lastReforgeAt = -Infinity;
   let floorPx = 0;
   let lastDraw = performance.now();
 
@@ -119,7 +133,18 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       }
       // Au changement de salle, la simulation téléporte le joueur au point de
       // départ : interpoler ferait glisser la toupie à travers l'arène.
-      if (before.salle !== after.salle) snapPositions = true;
+      if (before.salle !== after.salle) {
+        snapPositions = true;
+        const now = performance.now() / 1000;
+        // Dix transitions par chapitre : on atténue quand elles s'enchaînent.
+        const quick = now - lastReforgeAt < FEEL.reforgeQuickWindow;
+        lastReforgeAt = now;
+        reforge = FEEL.reforgeLife;
+        reforgeFlash = FEEL.reforgeFlashLife * (quick ? FEEL.reforgeQuickScale : 1);
+        for (const bot of state.bots) {
+          effects.wave(bot.pos.x, bot.pos.y, 30, PALETTE.ember);
+        }
+      }
     },
     draw(state, alpha) {
       const now = performance.now();
@@ -133,6 +158,16 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       } else if (dim.alpha !== 0) {
         dim.alpha = 0;
       }
+      if (reforge > 0) reforge = Math.max(0, reforge - dt);
+      if (reforgeFlash > 0) reforgeFlash = Math.max(0, reforgeFlash - dt);
+      flash.alpha = reforgeFlash > 0 ? 0.5 * (reforgeFlash / FEEL.reforgeFlashLife) : 0;
+
+      // La porte s'allume le temps de la transition — la simulation n'a jamais
+      // d'état « salle vide » à représenter autrement.
+      const lit = reforge > 0 ? reforge / FEEL.reforgeLife : 0;
+      door.clear();
+      door.arc(0, 0, ARENA_RADIUS, -1.9, -1.24);
+      door.stroke({ width: 3 + 4 * lit, color: PALETTE.ember, alpha: 0.22 + 0.7 * lit });
       world.x = app.screen.width / 2 + effects.shake.x * world.scale.x;
       world.y = app.screen.height / 2 + effects.shake.y * world.scale.y;
 
@@ -154,7 +189,9 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
         const y = useLerp ? lerp(p.y, top.pos.y, alpha) : top.pos.y;
         const ratio = Math.max(0, Math.min(1, top.spin / top.spinMax));
         const speedRatio = Math.hypot(top.vel.x, top.vel.y) / top.maxSpeed;
-        view.sync(x, y, ratio, speedRatio, dt);
+        // Les nouvelles toupies tombent du plafond pendant la reforge.
+        const drop = reforge > 0 && !top.isPlayer ? -(reforge / FEEL.reforgeLife) * ARENA_RADIUS * 0.7 : 0;
+        view.sync(x, y + drop, ratio, speedRatio, dt);
       }
       snapPositions = false;
 
