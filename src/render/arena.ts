@@ -56,9 +56,9 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   const door = new Graphics();
   floorLayer.addChild(door);
 
-  // Un cercle, pas un carré, même raison que dim : un voile carré déborderait
-  // du disque du sol et découperait un angle droit visible dans les coins.
-  const flash = new Graphics().circle(0, 0, ARENA_RADIUS * 1.2).fill(0xffe2b2);
+  // Même rayon que dim, à dessein : un second rayon dupliqué aurait fini par
+  // déborder du disque du sol, exactement le défaut que dim a déjà corrigé.
+  const flash = new Graphics().circle(0, 0, FLOOR_VISUAL_RADIUS).fill(0xffe2b2);
   flash.alpha = 0;
   flash.blendMode = 'add';
   floorLayer.addChild(flash);
