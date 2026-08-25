@@ -1,26 +1,97 @@
-export const TICK_S = 0.1;
-export const ARENA_RADIUS = 150;
-export const SALLES_PER_CHAPTER = 10;
-export const FRICTION = 0.94;
-export const WALL_RESTITUTION = 0.8;
-export const RESTITUTION = 0.8;
-export const DAMAGE_K = 0.35;
-/**
- * Part des dégâts qui dépend de qui a foncé. À 0, la vitesse relative d'impact est
- * partagée à parts égales et charger ne rapporte rien de plus qu'attendre le choc ;
- * à 0,6, celui qui provoque tout le rapprochement inflige ×1,6 et encaisse ×0,4.
- * Un choc frontal (les deux avancent autant) reste exactement ce qu'il était.
- */
-export const CHARGE_BONUS = 0.3;
-export const HEAL_BETWEEN_SALLES = 0.2;
+import raw from '../content/balance.json';
 
-export const PLAYER_SPAWN = { x: 0, y: 80 };
-export const BOT_AI = { retargetEveryTicks: 10, aimJitter: 1.2 };
+/** Emplacement d'une pièce. Répété ici plutôt qu'importé de `piece.ts` : ce
+ *  fichier est la racine des dépendances de la simulation, il n'importe rien d'elle. */
+export type SlotName = 'lame' | 'disque' | 'pointe' | 'noyau';
 
-export const PLAYER_BASE = { accel: 900, maxSpeed: 240, radius: 12, spinMax: 3000, spinDecay: 20, attack: 30, defense: 10 };
-export const BOT_BASE = { accel: 500, maxSpeed: 140, radius: 12, spinMax: 1200, spinDecay: 12, attack: 18, defense: 6 };
-export const BOT_SCALING = { spinPerSalle: 0.15, attackPerSalle: 0.08 };
-export const BOSS = { spinMult: 4, attackMult: 1.5, radius: 18 };
-export const BOT_SPAWN_RING = 0.6;
-export const ECON = { upgradeBase: 100, upgradeGrowth: 1.08, rewardBase: 70, rewardGrowth: 1.13, bossRewardMult: 10 };
-export const PIECE_EFFECT = { lameAttack: 0.1, disqueDefense: 0.1, pointeSpeed: 0.04, pointeDecay: 0.05, noyauSpin: 0.08 };
+export interface RankOdds { rank: number; p: number }
+
+export interface ChestDef {
+  currency: 'credits' | 'gems';
+  price: number;
+  price10: number;
+  slots: SlotName[];
+  ranks: RankOdds[];
+  /** 0 = ce coffre n'a pas de pity. */
+  pityThreshold: number;
+  pityRank: number;
+}
+
+export interface FusionRule {
+  /** Dernier rang de départ couvert par la règle. 0 = « tous les rangs au-delà ». */
+  throughRank: number;
+  identical: number;
+  sacrifice: number;
+}
+
+export interface Balance {
+  version: number;
+  tickSeconds: number;
+  arena: { radius: number; friction: number; wallRestitution: number; restitution: number };
+  combat: { damageK: number; chargeBonus: number; healBetweenSalles: number };
+  chapter: { sallesPerChapter: number; botsPerSalle: number[] };
+  player: {
+    spawn: { x: number; y: number };
+    base: { accel: number; maxSpeed: number; radius: number; spinMax: number; spinDecay: number; attack: number; defense: number };
+  };
+  bot: {
+    base: { accel: number; maxSpeed: number; radius: number; spinMax: number; spinDecay: number; attack: number; defense: number };
+    scaling: { spinPerSalle: number; attackPerSalle: number };
+    spawnRing: number;
+    ai: { retargetEveryTicks: number; aimJitter: number };
+  };
+  boss: { spinMult: number; attackMult: number; radius: number };
+  econ: {
+    upgradeBase: number; upgradeGrowth: number;
+    rewardBase: number; rewardGrowth: number; bossRewardMult: number;
+    bossGems: number;
+  };
+  pieceEffect: { lameAttack: number; disqueDefense: number; pointeSpeed: number; pointeDecay: number; noyauSpin: number };
+  rarity: { step: number; legendRank: number };
+  talents: {
+    estoc: { rank: number; speedThreshold: number; damageBonus: number };
+    riposte: { rank: number; reflect: number };
+    percee: { rank: number; defenseIgnore: number };
+    ancrage: { rank: number; impulseTaken: number };
+    frolement: { rank: number; speedThreshold: number };
+    masse: { rank: number; mass: number };
+    glisse: { rank: number; friction: number };
+    relance: { rank: number; ticks: number };
+    toupieFolle: { rank: number; maxSpeedAtZero: number };
+    reserve: { rank: number; heal: number };
+    secondSouffle: { rank: number; revive: number };
+    coeurGyre: { rank: number; decayMult: number };
+  };
+  fusion: FusionRule[];
+  chests: Record<string, ChestDef>;
+}
+
+/** Double assertion délibérée. TypeScript infère du JSON des types élargis
+ *  (`string[]` pour `slots`, `number` pour tout littéral), qui ne sont pas
+ *  assignables aux unions de `Balance` sans passer par `unknown`. La sûreté
+ *  réelle vient de `config.test.ts`, qui valide la forme à l'exécution. */
+export const BALANCE = raw as unknown as Balance;
+
+export const TICK_S = BALANCE.tickSeconds;
+export const ARENA_RADIUS = BALANCE.arena.radius;
+export const FRICTION = BALANCE.arena.friction;
+export const WALL_RESTITUTION = BALANCE.arena.wallRestitution;
+export const RESTITUTION = BALANCE.arena.restitution;
+export const DAMAGE_K = BALANCE.combat.damageK;
+export const CHARGE_BONUS = BALANCE.combat.chargeBonus;
+export const HEAL_BETWEEN_SALLES = BALANCE.combat.healBetweenSalles;
+export const SALLES_PER_CHAPTER = BALANCE.chapter.sallesPerChapter;
+export const BOTS_PER_SALLE = BALANCE.chapter.botsPerSalle;
+export const PLAYER_SPAWN = BALANCE.player.spawn;
+export const PLAYER_BASE = BALANCE.player.base;
+export const BOT_BASE = BALANCE.bot.base;
+export const BOT_SCALING = BALANCE.bot.scaling;
+export const BOT_SPAWN_RING = BALANCE.bot.spawnRing;
+export const BOT_AI = BALANCE.bot.ai;
+export const BOSS = BALANCE.boss;
+export const ECON = BALANCE.econ;
+export const PIECE_EFFECT = BALANCE.pieceEffect;
+export const RARITY = BALANCE.rarity;
+export const TALENTS = BALANCE.talents;
+export const FUSION = BALANCE.fusion;
+export const CHESTS = BALANCE.chests;

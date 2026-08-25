@@ -1,10 +1,9 @@
-import { ARENA_RADIUS, BOSS, BOT_BASE, BOT_SCALING, BOT_SPAWN_RING, SALLES_PER_CHAPTER } from './config';
+import { ARENA_RADIUS, BOSS, BOTS_PER_SALLE, BOT_BASE, BOT_SCALING, BOT_SPAWN_RING, SALLES_PER_CHAPTER } from './config';
 import { nextRandom } from './rng';
 import type { Top } from './types';
 
 export function botCountFor(salle: number): number {
-  if (salle === SALLES_PER_CHAPTER) return 1;
-  return Math.min(1 + Math.floor((salle - 1) / 3), 3);
+  return BOTS_PER_SALLE[Math.min(Math.max(1, salle), BOTS_PER_SALLE.length) - 1];
 }
 
 export function makeBot(salle: number, index: number, angle: number): Top {

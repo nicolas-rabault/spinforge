@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "tickSeconds": 0.1,
+  "arena": { "radius": 150, "friction": 0.94, "wallRestitution": 0.8, "restitution": 0.8 },
+  "combat": { "damageK": 0.35, "chargeBonus": 0.3, "healBetweenSalles": 0.2 },
+  "chapter": { "sallesPerChapter": 10, "botsPerSalle": [1, 1, 1, 2, 2, 2, 3, 3, 3, 1] },
+  "player": {
+    "spawn": { "x": 0, "y": 80 },
+    "base": { "accel": 900, "maxSpeed": 240, "radius": 12, "spinMax": 3000, "spinDecay": 20, "attack": 30, "defense": 10 }
+  },
+  "bot": {
+    "base": { "accel": 500, "maxSpeed": 140, "radius": 12, "spinMax": 1200, "spinDecay": 12, "attack": 18, "defense": 6 },
+    "scaling": { "spinPerSalle": 0.15, "attackPerSalle": 0.08 },
+    "spawnRing": 0.6,
+    "ai": { "retargetEveryTicks": 10, "aimJitter": 1.2 }
+  },
+  "boss": { "spinMult": 4, "attackMult": 1.5, "radius": 18 },
+  "econ": {
+    "upgradeBase": 100, "upgradeGrowth": 1.08,
+    "rewardBase": 70, "rewardGrowth": 1.13, "bossRewardMult": 10,
+    "bossGems": 40
+  },
+  "pieceEffect": {
+    "lameAttack": 0.1, "disqueDefense": 0.1,
+    "pointeSpeed": 0.04, "pointeDecay": 0.05, "noyauSpin": 0.08
+  },
+  "rarity": { "step": 1.08, "legendRank": 11 },
+  "talents": {
+    "estoc": { "rank": 4, "speedThreshold": 150, "damageBonus": 0.3 },
+    "riposte": { "rank": 7, "reflect": 0.15 },
+    "percee": { "rank": 11, "defenseIgnore": 0.25 },
+    "ancrage": { "rank": 4, "impulseTaken": 0.7 },
+    "frolement": { "rank": 7, "speedThreshold": 40 },
+    "masse": { "rank": 11, "mass": 2 },
+    "glisse": { "rank": 4, "friction": 0.96 },
+    "relance": { "rank": 7, "ticks": 20 },
+    "toupieFolle": { "rank": 11, "maxSpeedAtZero": 0.4 },
+    "reserve": { "rank": 4, "heal": 0.35 },
+    "secondSouffle": { "rank": 7, "revive": 0.2 },
+    "coeurGyre": { "rank": 11, "decayMult": 0.6 }
+  },
+  "fusion": [
+    { "throughRank": 3, "identical": 3, "sacrifice": 0 },
+    { "throughRank": 9, "identical": 2, "sacrifice": 1 },
+    { "throughRank": 10, "identical": 3, "sacrifice": 0 },
+    { "throughRank": 0, "identical": 2, "sacrifice": 0 }
+  ],
+  "chests": {
+    "bronze": {
+      "currency": "credits", "price": 2000, "price10": 18000,
+      "slots": ["disque", "pointe"],
+      "ranks": [{ "rank": 1, "p": 0.75 }, { "rank": 2, "p": 0.22 }, { "rank": 3, "p": 0.03 }],
+      "pityThreshold": 0, "pityRank": 0
+    },
+    "arene": {
+      "currency": "gems", "price": 300, "price10": 2680,
+      "slots": ["lame", "disque", "pointe", "noyau"],
+      "ranks": [{ "rank": 2, "p": 0.7 }, { "rank": 3, "p": 0.25 }, { "rank": 4, "p": 0.05 }],
+      "pityThreshold": 10, "pityRank": 4
+    },
+    "mythique": {
+      "currency": "gems", "price": 1500, "price10": 13500,
+      "slots": ["lame", "disque", "pointe", "noyau"],
+      "ranks": [{ "rank": 4, "p": 0.88 }, { "rank": 7, "p": 0.115 }, { "rank": 11, "p": 0.005 }],
+      "pityThreshold": 30, "pityRank": 11
+    }
+  }
+}
