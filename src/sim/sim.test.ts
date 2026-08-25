@@ -3,7 +3,7 @@ import { createRun, resetRun, syncRunStats, tick } from './sim';
 import { applyRunReward, createInitialMeta } from './meta';
 import { salleReward } from './economy';
 import { spawnSalle, botCountFor } from './salle';
-import { SALLES_PER_CHAPTER } from './config';
+import { SALLES_PER_CHAPTER, TALENTS } from './config';
 
 function play(seed: number, n: number, clearEvery: number | null): string {
   const meta = createInitialMeta(seed);
@@ -65,6 +65,17 @@ describe('progression', () => {
     expect(meta.credits).toBe(0);
   });
 
+  it('l’entrée dans une nouvelle salle remet à zéro la suspension de décroissance du joueur', () => {
+    const meta = createInitialMeta(1);
+    const run = createRun(meta, 1);
+    for (const b of run.bots) b.spin = 0.0001;
+    run.player.decayPauseTicks = 5; // suspension en cours (ex. talent Relance)
+    tick(run, { steer: null });
+    expect(run.salle).toBe(2); // la salle a bien été vidée
+    // Sinon jusqu'à 2 s de décroissance offerte au joueur dans la salle suivante.
+    expect(run.player.decayPauseTicks).toBe(0);
+  });
+
   it('vider la salle 10 valide le chapitre et repart en salle 1', () => {
     const meta = createInitialMeta(1);
     const run = createRun(meta, 1);
@@ -118,5 +129,25 @@ describe('syncRunStats', () => {
     meta.equipped.noyau.level = 0; // spinMax redescend
     syncRunStats(run, meta);
     expect(run.player.spin).toBe(run.player.spinMax);
+  });
+});
+
+describe('talents du joueur', () => {
+  it('createRun pose sur le joueur les talents de l’équipement de départ', () => {
+    const meta = createInitialMeta(1);
+    meta.equipped.lame.rank = 4; // Excellent — débloque Estoc
+    const run = createRun(meta, 1);
+    expect(run.player.talents.estocThreshold).toBe(TALENTS.estoc.speedThreshold);
+    expect(run.player.talents.estocBonus).toBe(TALENTS.estoc.damageBonus);
+  });
+
+  it('syncRunStats recalcule les talents du joueur d’un run déjà démarré', () => {
+    const meta = createInitialMeta(1);
+    const run = createRun(meta, 1);
+    expect(run.player.talents.impulseTaken).toBe(1); // rang 1 : Ancrage pas encore débloqué
+
+    meta.equipped.disque.rank = 4; // Excellent — débloque Ancrage
+    syncRunStats(run, meta);
+    expect(run.player.talents.impulseTaken).toBe(TALENTS.ancrage.impulseTaken);
   });
 });

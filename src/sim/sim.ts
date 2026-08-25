@@ -34,6 +34,7 @@ function startSalle(run: RunState): void {
   run.rngState = spawned.rngState;
   run.player.pos = { x: PLAYER_SPAWN.x, y: PLAYER_SPAWN.y };
   run.player.vel = { x: 0, y: 0 };
+  run.player.decayPauseTicks = 0;
 }
 
 export function createRun(meta: MetaState, seed: number): RunState {

@@ -1,11 +1,10 @@
 import { CHARGE_BONUS, DAMAGE_K, RESTITUTION, TICK_S } from './config';
 import type { Top } from './types';
 
-/** Décroissance effective d'un tick pour cette toupie. Le rendu s'en sert pour
- *  distinguer un choc de l'endurance qui s'épuise (`observer.ts`) — d'où
- *  l'export : la formule doit rester en un seul endroit. */
+/** Décroissance d'un tick pour cette toupie, talents compris. Exposée pour que
+ *  le rendu puisse un jour distinguer un choc de l'endurance qui s'épuise sans
+ *  dupliquer la formule (`observer.ts`) — personne ne la consomme encore. */
 export function decayPerTick(top: Top): number {
-  if (top.decayPauseTicks > 0) return 0;
   return top.spinDecay * top.talents.spinDecayMult;
 }
 
@@ -72,13 +71,22 @@ export function resolveCollision(a: Top, b: Top): void {
   b.vel.x += (j / mb) * nx * b.talents.impulseTaken;
   b.vel.y += (j / mb) * ny * b.talents.impulseTaken;
 
-  // Frôlement protège son porteur seul : chaque camp teste son propre seuil.
-  const toB = impact < b.talents.frolementThreshold ? 0 : damage(a, b, impact, share);
-  const toA = impact < a.talents.frolementThreshold ? 0 : damage(b, a, impact, 1 - share);
-  // Riposte renvoie une part de ce que son porteur vient d'encaisser.
-  b.spin -= toB + toA * a.talents.riposte;
-  a.spin -= toA + toB * b.talents.riposte;
+  // Dégâts bruts avant Frôlement. Riposte renvoie une part de ce que son
+  // porteur vient d'encaisser : ce renvoi doit donc, lui aussi, passer par le
+  // seuil de Frôlement de qui le reçoit — sans quoi Frôlement protègerait du
+  // coup direct mais pas de sa réplique.
+  const toB = damage(a, b, impact, share);
+  const toA = damage(b, a, impact, 1 - share);
+  const dmgB = toB + toA * a.talents.riposte;
+  const dmgA = toA + toB * b.talents.riposte;
+  // Frôlement protège son porteur seul : chaque camp teste son propre seuil,
+  // sur le total qu'il encaisserait (coup direct et réplique confondus).
+  b.spin -= impact < b.talents.frolementThreshold ? 0 : dmgB;
+  a.spin -= impact < a.talents.frolementThreshold ? 0 : dmgA;
 
-  if (a.talents.relanceTicks > 0) a.decayPauseTicks = a.talents.relanceTicks;
-  if (b.talents.relanceTicks > 0) b.decayPauseTicks = b.talents.relanceTicks;
+  // Math.max plutôt qu'une affectation conditionnelle : sans talent, relanceTicks
+  // vaut 0 et ne raccourcit jamais une pause déjà en cours ; avec, il ne fait
+  // jamais reculer une pause plus longue qu'un choc précédent aurait armée.
+  a.decayPauseTicks = Math.max(a.decayPauseTicks, a.talents.relanceTicks);
+  b.decayPauseTicks = Math.max(b.decayPauseTicks, b.talents.relanceTicks);
 }

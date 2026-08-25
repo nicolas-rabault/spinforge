@@ -137,6 +137,18 @@ describe('talent Frôlement', () => {
     // L'autre encaisse normalement : le talent ne protège que son porteur.
     expect(a.spin).toBeLessThan(1000);
   });
+
+  it('protège aussi contre la riposte que son coup a déclenchée chez l’adversaire', () => {
+    // b est protégé sous le seuil ; a porte Riposte, qui renvoie une part de ce
+    // qu'a encaisse (donc causé par b) vers... b. Ce renvoi doit lui aussi
+    // buter sur le seuil de b, pas seulement le coup direct de a.
+    const [a, b] = headOn(
+      { talents: { ...NEUTRAL_TALENTS, riposte: 0.5 } },
+      { talents: { ...NEUTRAL_TALENTS, frolementThreshold: Infinity } },
+    );
+    resolveCollision(a, b);
+    expect(b.spin).toBe(1000);
+  });
 });
 
 describe('talent Ancrage', () => {
