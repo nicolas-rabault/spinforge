@@ -4,6 +4,7 @@ import { applyRunReward, createInitialMeta } from './meta';
 import { salleReward } from './economy';
 import { spawnSalle, botCountFor } from './salle';
 import { SALLES_PER_CHAPTER, TALENTS } from './config';
+import { openChest } from './chest';
 
 function play(seed: number, n: number, clearEvery: number | null): string {
   const meta = createInitialMeta(seed);
@@ -49,6 +50,26 @@ describe('déterminisme', () => {
     // Garde-fou : si ce scénario cessait de franchir des salles, il ne testerait
     // plus rien de plus que le test précédent.
     expect(JSON.parse(a).meta.chapterValidated).toBe(true);
+  });
+
+  it('ouvrir des coffres entre deux salles ne change pas l’issue du run', () => {
+    const play = (openChests: boolean) => {
+      const meta = createInitialMeta(42);
+      meta.credits = 10_000_000;
+      const run = createRun(meta, 42);
+      for (let i = 0; i < 300; i++) {
+        if (i % 25 === 24) {
+          for (const b of run.bots) b.spin = 0.0001;
+          if (openChests) openChest(meta, 'bronze', 10);
+        }
+        const salleBefore = run.salle;
+        const reward = tick(run, { steer: i % 20 < 10 ? { x: 1, y: 0.5 } : null });
+        if (reward) applyRunReward(meta, reward, salleBefore);
+      }
+      return JSON.stringify(run);
+    };
+    // C'est tout l'intérêt d'avoir séparé les deux flux de RNG.
+    expect(play(true)).toBe(play(false));
   });
 });
 
