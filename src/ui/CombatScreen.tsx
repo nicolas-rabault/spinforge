@@ -79,7 +79,7 @@ export function CombatScreen({
       onPointerUp={onUp}
       onPointerLeave={onUp}
       onPointerCancel={onUp}
-      style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', touchAction: 'none' }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', minHeight: 0, touchAction: 'none' }}
     >
       <section style={{ border: '1px solid var(--line)', background: 'var(--panel)', borderRadius: 11, padding: '9px 12px' }}>
         <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
@@ -98,7 +98,18 @@ export function CombatScreen({
         </div>
       </section>
 
-      <div ref={hostRef} style={{ width: '100%', aspectRatio: '1 / 1', borderRadius: 14, overflow: 'hidden', background: '#05070b' }} />
+      {/* Ce panneau prend tout l'espace vertical restant (flex: 1 1 0, minHeight: 0
+          l'autorise à se comprimer sous sa taille naturelle) ; le conteneur de
+          requête (containerType: size) donne à ses unités cq la taille réellement
+          disponible, et min(100cqw, 100cqh) choisit le plus grand carré qui y tient
+          — l'arène reste carrée sur toute taille d'écran, sans jamais pousser la
+          barre d'onglets hors du viewport. */}
+      <div style={{ flex: '1 1 0', minHeight: 0, containerType: 'size', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div
+          ref={hostRef}
+          style={{ width: 'min(100cqw, 100cqh)', aspectRatio: '1 / 1', borderRadius: 14, overflow: 'hidden', background: '#05070b' }}
+        />
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
         <span style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '.07em' }}>SPIN</span>
@@ -112,7 +123,7 @@ export function CombatScreen({
           onClick={() => { resetRun(stateRef.current); onTick(); }}
           style={{
             minHeight: 48, borderRadius: 11, cursor: 'pointer', border: '1px solid var(--ember)',
-            background: 'var(--ember)', color: '#151109', font: '600 15px Oswald, ui-sans-serif, sans-serif',
+            background: 'var(--ember)', color: 'var(--ink)', font: '600 15px Oswald, ui-sans-serif, sans-serif',
           }}
         >
           Ta toupie s'est arrêtée — Retenter

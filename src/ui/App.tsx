@@ -15,7 +15,7 @@ export function App() {
   return (
     <div
       style={{
-        minHeight: '100vh', maxWidth: 460, margin: '0 auto', padding: '14px 16px 12px',
+        height: '100vh', boxSizing: 'border-box', maxWidth: 460, margin: '0 auto', padding: '14px 16px 12px',
         display: 'flex', flexDirection: 'column', gap: 10,
         background: 'var(--bg)', color: 'var(--text)', userSelect: 'none',
       }}
@@ -37,7 +37,7 @@ export function App() {
       {/* L'écran de combat reste monté quand on passe en Forge : détruire l'app
           PixiJS à chaque changement d'onglet coûterait un rechargement complet
           des textures. On le masque, la boucle se met en pause. */}
-      <div style={{ display: tab === 'combat' ? 'flex' : 'none', flexDirection: 'column', flex: '1 1 0' }}>
+      <div style={{ display: tab === 'combat' ? 'flex' : 'none', flexDirection: 'column', flex: '1 1 0', minHeight: 0 }}>
         <CombatScreen stateRef={stateRef} running={tab === 'combat'} onTick={redraw} />
       </div>
       {tab === 'forge' ? <ForgeScreen stateRef={stateRef} onChanged={redraw} /> : null}

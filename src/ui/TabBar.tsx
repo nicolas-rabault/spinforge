@@ -14,7 +14,7 @@ export function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void
             fontFamily: 'Oswald, ui-sans-serif, sans-serif', fontSize: 15, letterSpacing: '.02em',
             border: `1px solid ${tab === t ? 'var(--ember)' : 'var(--line)'}`,
             background: tab === t ? 'var(--ember)' : 'var(--panel)',
-            color: tab === t ? '#151109' : 'var(--text)',
+            color: tab === t ? 'var(--ink)' : 'var(--text)',
             fontWeight: tab === t ? 600 : 500,
           }}
         >

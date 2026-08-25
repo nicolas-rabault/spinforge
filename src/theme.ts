@@ -16,6 +16,7 @@ export const PALETTE = {
   bot: 0xff7c30,
   boss: 0xba78ff,
   ember: 0xffc24a,
+  ink: 0x151109,
   text: 0xe8eaee,
   muted: 0x8a94a6,
 } as const;
