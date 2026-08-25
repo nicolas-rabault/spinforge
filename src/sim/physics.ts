@@ -2,9 +2,10 @@ import { ARENA_RADIUS, TICK_S, WALL_RESTITUTION } from './config';
 import type { Top, Vec } from './types';
 
 /** Vitesse maximale effective. Toupie folle la relève à mesure que le spin
- *  baisse : à spin nul, `maxSpeed × (1 + toupieFolle)`. */
+ *  baisse : à spin nul, `maxSpeed × (1 + toupieFolle)`. Valeur neutre
+ *  (`toupieFolle = 0`) traverse le calcul sans branche : `maxSpeed × (1 + 0 ×
+ *  lost)` vaut `maxSpeed` au bit près, quel que soit `lost`. */
 function effectiveMaxSpeed(top: Top): number {
-  if (top.talents.toupieFolle === 0) return top.maxSpeed;
   const lost = top.spinMax > 0 ? 1 - Math.max(0, Math.min(1, top.spin / top.spinMax)) : 1;
   return top.maxSpeed * (1 + top.talents.toupieFolle * lost);
 }
