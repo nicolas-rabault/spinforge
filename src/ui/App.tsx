@@ -10,7 +10,14 @@ import { TabBar, type Tab } from './TabBar';
 export function App() {
   const [initialMeta] = useState(() => createInitialMeta(Date.now() >>> 0));
   const metaRef = useRef(initialMeta);
-  const runRef = useRef(createRun(initialMeta, Date.now() >>> 0));
+  // `useState(() => …)` et non `useRef(createRun(…))` : l'argument d'un useRef est
+  // réévalué à chaque rendu, or App se re-rend à chaque tick — createRun tournerait
+  // une dizaine de fois par seconde, et muterait le méta le jour où il y touchera.
+  // La graine du run est dérivée de celle du méta : prises dans la même milliseconde,
+  // les deux seraient identiques, et le premier tirage de coffre reproduirait
+  // exactement le premier angle de spawn. Deux flux séparés doivent l'être vraiment.
+  const [initialRun] = useState(() => createRun(initialMeta, (Date.now() ^ 0x9e3779b9) >>> 0));
+  const runRef = useRef(initialRun);
   const [tab, setTab] = useState<Tab>('combat');
   const [, setFrame] = useState(0);
   const redraw = () => setFrame((f) => f + 1);
