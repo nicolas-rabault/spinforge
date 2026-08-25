@@ -1,8 +1,39 @@
 import { CHARGE_BONUS, DAMAGE_K, RESTITUTION, TICK_S } from './config';
 import type { Top } from './types';
 
+/** Décroissance effective d'un tick pour cette toupie. Le rendu s'en sert pour
+ *  distinguer un choc de l'endurance qui s'épuise (`observer.ts`) — d'où
+ *  l'export : la formule doit rester en un seul endroit. */
+export function decayPerTick(top: Top): number {
+  if (top.decayPauseTicks > 0) return 0;
+  return top.spinDecay * top.talents.spinDecayMult;
+}
+
 export function decaySpin(top: Top): void {
-  top.spin -= top.spinDecay * TICK_S;
+  if (top.decayPauseTicks > 0) {
+    top.decayPauseTicks--;
+    return;
+  }
+  top.spin -= decayPerTick(top) * TICK_S;
+}
+
+function clamp01(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+
+/** 1 quand les deux avancent autant, 1 + CHARGE_BONUS pour un assaut pur. */
+function chargeWeight(share: number): number {
+  return 1 - CHARGE_BONUS + 2 * CHARGE_BONUS * share;
+}
+
+/** Dégâts qu'`att` inflige à `def` pour un impact donné. `share` est la part du
+ *  rapprochement qu'`att` a elle-même provoquée. Les trois facteurs se composent :
+ *  la charge module selon qui a foncé, Percée retire une part de la défense,
+ *  Estoc majore au-delà d'un seuil de vitesse. */
+function damage(att: Top, def: Top, impact: number, share: number): number {
+  const defense = def.defense * (1 - att.talents.defenseIgnore);
+  const bonus = impact >= att.talents.estocThreshold ? 1 + att.talents.estocBonus : 1;
+  return ((impact * att.attack) / (att.attack + defense)) * DAMAGE_K * chargeWeight(share) * bonus;
 }
 
 export function resolveCollision(a: Top, b: Top): void {
@@ -23,28 +54,31 @@ export function resolveCollision(a: Top, b: Top): void {
   const vrel = rvx * nx + rvy * ny;
   if (vrel >= 0) return;
   const impact = -vrel;
-  // Qui a provoqué le rapprochement ? Se lit AVANT l'impulsion de rebond, qui
-  // échange précisément les vitesses des deux toupies et inverserait donc la
-  // réponse. `impact` est la somme exacte des deux vitesses de fermeture, donc
-  // `share` les répartit entre assaillant et assailli et les deux poids somment
-  // toujours à 2. Sans ce partage, foncer et attendre infligeaient rigoureusement
-  // les mêmes dégâts : mesuré à l'autopilote, un joueur qui ne touchait jamais
-  // l'écran validait le chapitre 1 aussi vite qu'un joueur qui charge.
+
+  // Qui a provoqué le rapprochement ? Se lit IMPÉRATIVEMENT avant l'impulsion, qui
+  // échange précisément les vitesses des deux toupies et inverserait la réponse —
+  // récompensant alors la passivité. `impact` étant la somme exacte des deux
+  // vitesses de fermeture, les deux poids de charge somment toujours à 2 : un choc
+  // frontal reste rigoureusement ce qu'il était.
   const share = clamp01((a.vel.x * nx + a.vel.y * ny) / impact);
-  const j = (-(1 + RESTITUTION) * vrel) / 2;
-  a.vel.x -= j * nx;
-  a.vel.y -= j * ny;
-  b.vel.x += j * nx;
-  b.vel.y += j * ny;
-  b.spin -= ((impact * a.attack) / (a.attack + b.defense)) * DAMAGE_K * chargeWeight(share);
-  a.spin -= ((impact * b.attack) / (b.attack + a.defense)) * DAMAGE_K * chargeWeight(1 - share);
-}
 
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
-}
+  // Impulsion pondérée par les masses. À masses égales (1 et 1), j vaut
+  // -(1+e)·vrel/2 et chacun en reçoit la moitié — exactement le calcul du jalon 1.
+  const ma = a.talents.mass;
+  const mb = b.talents.mass;
+  const j = (-(1 + RESTITUTION) * vrel) / (1 / ma + 1 / mb);
+  a.vel.x -= (j / ma) * nx * a.talents.impulseTaken;
+  a.vel.y -= (j / ma) * ny * a.talents.impulseTaken;
+  b.vel.x += (j / mb) * nx * b.talents.impulseTaken;
+  b.vel.y += (j / mb) * ny * b.talents.impulseTaken;
 
-/** 1 quand les deux avancent autant, 1 + CHARGE_BONUS pour un assaut pur. */
-function chargeWeight(share: number): number {
-  return 1 - CHARGE_BONUS + 2 * CHARGE_BONUS * share;
+  // Frôlement protège son porteur seul : chaque camp teste son propre seuil.
+  const toB = impact < b.talents.frolementThreshold ? 0 : damage(a, b, impact, share);
+  const toA = impact < a.talents.frolementThreshold ? 0 : damage(b, a, impact, 1 - share);
+  // Riposte renvoie une part de ce que son porteur vient d'encaisser.
+  b.spin -= toB + toA * a.talents.riposte;
+  a.spin -= toA + toB * b.talents.riposte;
+
+  if (a.talents.relanceTicks > 0) a.decayPauseTicks = a.talents.relanceTicks;
+  if (b.talents.relanceTicks > 0) b.decayPauseTicks = b.talents.relanceTicks;
 }

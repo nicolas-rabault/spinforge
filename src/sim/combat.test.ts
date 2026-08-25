@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decaySpin, resolveCollision } from './combat';
-import { TICK_S } from './config';
+import { TALENTS, TICK_S } from './config';
 import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
 
@@ -67,5 +67,126 @@ describe('resolveCollision', () => {
     resolveCollision(a, b);
     expect(a.spin).toBe(1000);
     expect(b.spin).toBe(1000);
+  });
+});
+
+/** Deux toupies qui se rentrent dedans de face, en collision garantie : un choc
+ *  frontal parfait, donc share = 0,5 et chargeWeight = 1 des deux côtés — la
+ *  charge est neutre, chaque test ci-dessous n'isole donc qu'un seul talent. */
+function headOn(a: Partial<Top>, b: Partial<Top>): [Top, Top] {
+  return [
+    top({ id: 'a', pos: { x: -10, y: 0 }, vel: { x: 100, y: 0 }, ...a }),
+    top({ id: 'b', pos: { x: 10, y: 0 }, vel: { x: -100, y: 0 }, ...b }),
+  ];
+}
+
+describe('talent Estoc', () => {
+  it('majore les dégâts au-delà du seuil de vitesse', () => {
+    const [a0, b0] = headOn({}, {});
+    resolveCollision(a0, b0);
+    const plain = 1000 - b0.spin;
+
+    const [a1, b1] = headOn({ talents: { ...NEUTRAL_TALENTS, estocThreshold: 0, estocBonus: TALENTS.estoc.damageBonus } }, {});
+    resolveCollision(a1, b1);
+    expect(1000 - b1.spin).toBeCloseTo(plain * (1 + TALENTS.estoc.damageBonus), 6);
+  });
+
+  it('ne fait rien sous le seuil', () => {
+    const [a0, b0] = headOn({}, {});
+    resolveCollision(a0, b0);
+    const plain = 1000 - b0.spin;
+
+    const [a1, b1] = headOn({ talents: { ...NEUTRAL_TALENTS, estocThreshold: Infinity, estocBonus: 5 } }, {});
+    resolveCollision(a1, b1);
+    expect(1000 - b1.spin).toBeCloseTo(plain, 6);
+  });
+});
+
+describe('talent Percée', () => {
+  it('ignore une part de la défense adverse', () => {
+    const [a0, b0] = headOn({}, { defense: 100 });
+    resolveCollision(a0, b0);
+    const plain = 1000 - b0.spin;
+
+    const [a1, b1] = headOn({ talents: { ...NEUTRAL_TALENTS, defenseIgnore: 0.5 } }, { defense: 100 });
+    resolveCollision(a1, b1);
+    expect(1000 - b1.spin).toBeGreaterThan(plain);
+  });
+});
+
+describe('talent Riposte', () => {
+  it('renvoie une part des dégâts encaissés à l’agresseur', () => {
+    const [a0, b0] = headOn({}, {});
+    resolveCollision(a0, b0);
+    const takenByA = 1000 - a0.spin;
+    const takenByB = 1000 - b0.spin;
+
+    const [a1, b1] = headOn({}, { talents: { ...NEUTRAL_TALENTS, riposte: 0.5 } });
+    resolveCollision(a1, b1);
+    expect(1000 - a1.spin).toBeCloseTo(takenByA + takenByB * 0.5, 6);
+    // Le porteur du talent n'encaisse pas plus pour autant.
+    expect(1000 - b1.spin).toBeCloseTo(takenByB, 6);
+  });
+});
+
+describe('talent Frôlement', () => {
+  it('annule les dégâts subis sous le seuil', () => {
+    const [a, b] = headOn({}, { talents: { ...NEUTRAL_TALENTS, frolementThreshold: Infinity } });
+    resolveCollision(a, b);
+    expect(b.spin).toBe(1000);
+    // L'autre encaisse normalement : le talent ne protège que son porteur.
+    expect(a.spin).toBeLessThan(1000);
+  });
+});
+
+describe('talent Ancrage', () => {
+  it('réduit l’impulsion reçue sans changer celle de l’autre', () => {
+    const [a0, b0] = headOn({}, {});
+    resolveCollision(a0, b0);
+
+    const [a1, b1] = headOn({}, { talents: { ...NEUTRAL_TALENTS, impulseTaken: 0.5 } });
+    resolveCollision(a1, b1);
+    expect(Math.abs(b1.vel.x)).toBeLessThan(Math.abs(b0.vel.x));
+    expect(a1.vel.x).toBeCloseTo(a0.vel.x, 6);
+  });
+});
+
+describe('talent Masse', () => {
+  it('fait reculer l’autre davantage et soi-même moins', () => {
+    const [a0, b0] = headOn({}, {});
+    resolveCollision(a0, b0);
+
+    const [a1, b1] = headOn({ talents: { ...NEUTRAL_TALENTS, mass: 2 } }, {});
+    resolveCollision(a1, b1);
+    expect(Math.abs(a1.vel.x)).toBeLessThan(Math.abs(a0.vel.x));
+    expect(Math.abs(b1.vel.x)).toBeGreaterThan(Math.abs(b0.vel.x));
+  });
+});
+
+describe('talent Relance', () => {
+  it('arme la suspension de décroissance sur le porteur uniquement', () => {
+    const [a, b] = headOn({ talents: { ...NEUTRAL_TALENTS, relanceTicks: 20 } }, {});
+    resolveCollision(a, b);
+    expect(a.decayPauseTicks).toBe(20);
+    expect(b.decayPauseTicks).toBe(0);
+  });
+});
+
+describe('décroissance modulée', () => {
+  it('Cœur Gyre ralentit la perte naturelle', () => {
+    const t = top({ talents: { ...NEUTRAL_TALENTS, spinDecayMult: 0.5 } });
+    decaySpin(t);
+    expect(1000 - t.spin).toBeCloseTo(10 * 0.5 * 0.1, 10);
+  });
+
+  it('Relance suspend la perte et consomme un tick', () => {
+    const t = top({ decayPauseTicks: 2 });
+    decaySpin(t);
+    expect(t.spin).toBe(1000);
+    expect(t.decayPauseTicks).toBe(1);
+    decaySpin(t);
+    expect(t.decayPauseTicks).toBe(0);
+    decaySpin(t);
+    expect(t.spin).toBeLessThan(1000);
   });
 });

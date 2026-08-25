@@ -1,10 +1,10 @@
-import { BOT_AI, HEAL_BETWEEN_SALLES, PLAYER_BASE, PLAYER_SPAWN, SALLES_PER_CHAPTER } from './config';
+import { BOT_AI, PLAYER_BASE, PLAYER_SPAWN, SALLES_PER_CHAPTER } from './config';
 import { salleReward, playerStats } from './economy';
 import { decaySpin, resolveCollision } from './combat';
 import { applySteering, clampToArena, moveAndBounce } from './physics';
 import { nextRandom } from './rng';
 import { spawnSalle } from './salle';
-import { NEUTRAL_TALENTS } from './talents';
+import { resolveTalents } from './talents';
 import type { Input, MetaState, RunReward, RunState, Top } from './types';
 
 function makePlayer(meta: MetaState): Top {
@@ -23,7 +23,7 @@ function makePlayer(meta: MetaState): Top {
     defense: stats.defense,
     maxSpeed: stats.maxSpeed,
     accel: PLAYER_BASE.accel,
-    talents: NEUTRAL_TALENTS,
+    talents: resolveTalents(meta),
     decayPauseTicks: 0,
   };
 }
@@ -75,6 +75,7 @@ export function syncRunStats(run: RunState, meta: MetaState): void {
   run.player.spinMax = stats.spinMax;
   run.player.spinDecay = stats.spinDecay;
   run.player.spin = Math.min(run.player.spin, stats.spinMax);
+  run.player.talents = resolveTalents(meta);
 }
 
 function refreshBotAims(run: RunState): void {
@@ -117,7 +118,10 @@ export function tick(run: RunState, input: Input): RunReward | null {
     const reward = salleReward(run.salle, boss);
     if (boss) run.salle = 1;
     else run.salle++;
-    run.player.spin = Math.min(run.player.spinMax, run.player.spin + HEAL_BETWEEN_SALLES * run.player.spinMax);
+    run.player.spin = Math.min(
+      run.player.spinMax,
+      run.player.spin + run.player.talents.healBetweenSalles * run.player.spinMax,
+    );
     startSalle(run);
     return reward;
   }
