@@ -53,6 +53,16 @@ describe('robustesse', () => {
     delete meta.equipped;
     expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
   });
+
+  it('rejette `equipped: null` sans lever d’exception', () => {
+    const meta = { ...filled(), equipped: null };
+    expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
+  });
+
+  it('rejette un champ obligatoire posé à `null` plutôt qu’absent', () => {
+    const meta = { ...filled(), pity: null };
+    expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
+  });
 });
 
 describe('migration', () => {

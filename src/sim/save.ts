@@ -36,14 +36,15 @@ function hydrate(partial: Record<string, unknown>): MetaState {
  *  une version antérieure, et le compléter en silence masquerait le problème. */
 function isComplete(m: Record<string, unknown>): boolean {
   const slots = ['lame', 'disque', 'pointe', 'noyau'];
-  const equipped = m.equipped as Record<string, unknown> | undefined;
+  const equipped = m.equipped as Record<string, unknown> | null | undefined;
   return (
     typeof m.rngState === 'number' &&
     typeof m.credits === 'number' &&
     typeof m.gems === 'number' &&
     Array.isArray(m.inventory) &&
     typeof m.pity === 'object' && m.pity !== null &&
-    equipped !== undefined && slots.every((s) => typeof equipped[s] === 'object' && equipped[s] !== null)
+    typeof equipped === 'object' && equipped !== null &&
+    slots.every((s) => typeof equipped[s] === 'object' && equipped[s] !== null)
   );
 }
 
@@ -54,13 +55,23 @@ export function deserializeMeta(json: string): MetaState | null {
   } catch {
     return null;
   }
-  if (typeof parsed !== 'object' || parsed === null) return null;
-  const env = parsed as Partial<Envelope>;
-  if (typeof env.v !== 'number' || env.v > SAVE_SCHEMA) return null;
-  if (typeof env.meta !== 'object' || env.meta === null) return null;
+  try {
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    const env = parsed as Partial<Envelope>;
+    if (typeof env.v !== 'number' || env.v > SAVE_SCHEMA) return null;
+    if (typeof env.meta !== 'object' || env.meta === null) return null;
 
-  const raw = env.meta as Record<string, unknown>;
-  // Schéma courant : exigence stricte. Schéma antérieur : on complète.
-  if (env.v === SAVE_SCHEMA && !isComplete(raw)) return null;
-  return hydrate(structuredClone(raw));
+    const raw = env.meta as Record<string, unknown>;
+    // Schéma courant : exigence stricte. Schéma antérieur : on complète.
+    if (env.v === SAVE_SCHEMA && !isComplete(raw)) return null;
+    return hydrate(raw);
+  } catch {
+    // Filet : toute forme imprévue (un champ non nul mais du mauvais type,
+    // une structure inattendue que les gardes ci-dessus n'ont pas anticipée)
+    // doit retourner null, jamais laisser une exception s'échapper jusqu'à
+    // l'appelant. Un blob dont la forme surprend est, par définition, un
+    // blob illisible — c'est la promesse même de désérialiser une donnée
+    // qu'on ne contrôle pas.
+    return null;
+  }
 }
