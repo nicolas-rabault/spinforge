@@ -1,7 +1,7 @@
 import { BOT_AI, HEAL_BETWEEN_SALLES, PLAYER_BASE, PLAYER_SPAWN, SALLES_PER_CHAPTER } from './config';
 import { salleReward, syncPlayerStats } from './economy';
 import { decaySpin, resolveCollision } from './combat';
-import { applySteering, moveAndBounce } from './physics';
+import { applySteering, clampToArena, moveAndBounce } from './physics';
 import { nextRandom } from './rng';
 import { spawnSalle } from './salle';
 import type { Input, SimState, Top } from './types';
@@ -83,6 +83,8 @@ export function tick(state: SimState, input: Input): void {
       resolveCollision(state.bots[i], state.bots[j]);
     }
   }
+  clampToArena(state.player);
+  for (const bot of state.bots) clampToArena(bot);
   decaySpin(state.player);
   for (const bot of state.bots) decaySpin(bot);
   state.bots = state.bots.filter((b) => b.spin > 0);

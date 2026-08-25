@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applySteering, moveAndBounce } from './physics';
+import { applySteering, clampToArena, moveAndBounce } from './physics';
 import { ARENA_RADIUS, FRICTION, TICK_S } from './config';
 import type { Top } from './types';
 
@@ -13,39 +13,69 @@ function top(over: Partial<Top> = {}): Top {
   };
 }
 
-describe('applySteering', () => {
-  it('accélère dans la direction visée (normalisée)', () => {
+describe("applySteering", () => {
+  it("accélère dans la direction visée (normalisée)", () => {
     const t = top();
     applySteering(t, { x: 10, y: 0 });
     expect(t.vel.x).toBeCloseTo(900 * TICK_S, 5);
     expect(t.vel.y).toBe(0);
   });
 
-  it('freine par friction quand on relâche', () => {
+  it("freine par friction quand on relâche", () => {
     const t = top({ vel: { x: 100, y: 0 } });
     applySteering(t, null);
     expect(t.vel.x).toBeCloseTo(100 * FRICTION, 5);
   });
 
-  it('plafonne à maxSpeed', () => {
+  it("plafonne à maxSpeed", () => {
     const t = top({ vel: { x: 239, y: 0 } });
     applySteering(t, { x: 1, y: 0 });
     expect(Math.hypot(t.vel.x, t.vel.y)).toBeCloseTo(240, 5);
   });
 });
 
-describe('moveAndBounce', () => {
-  it('avance de vel × TICK_S', () => {
+describe("moveAndBounce", () => {
+  it("avance de vel × TICK_S", () => {
     const t = top({ vel: { x: 50, y: -30 } });
     moveAndBounce(t);
     expect(t.pos.x).toBeCloseTo(5, 5);
     expect(t.pos.y).toBeCloseTo(-3, 5);
   });
 
-  it('rebondit sur le bord et reste dans l’arène', () => {
+  it("rebondit sur le bord et reste dans l’arène", () => {
     const t = top({ pos: { x: ARENA_RADIUS, y: 0 }, vel: { x: 100, y: 0 } });
     moveAndBounce(t);
     expect(t.pos.x).toBeCloseTo(ARENA_RADIUS - t.radius, 5);
     expect(t.vel.x).toBeLessThan(0);
+  });
+});
+
+describe("clampToArena", () => {
+  it("repousse une toupie sortie de l’anneau sur le bord", () => {
+    const t = top({ pos: { x: 200, y: 0 } });
+    clampToArena(t);
+    expect(Math.hypot(t.pos.x, t.pos.y)).toBeCloseTo(ARENA_RADIUS - t.radius, 5);
+    expect(t.pos.x).toBeGreaterThan(0);
+  });
+
+  it("conserve la direction de la position", () => {
+    const t = top({ pos: { x: 300, y: 400 } }); // direction 3/4/5
+    clampToArena(t);
+    const d = Math.hypot(t.pos.x, t.pos.y);
+    expect(t.pos.x / d).toBeCloseTo(0.6, 5);
+    expect(t.pos.y / d).toBeCloseTo(0.8, 5);
+  });
+
+  it("ne touche ni à la vitesse ni à une toupie déjà à l’intérieur", () => {
+    const t = top({ pos: { x: 10, y: 10 }, vel: { x: 50, y: -20 } });
+    clampToArena(t);
+    expect(t.pos).toEqual({ x: 10, y: 10 });
+    expect(t.vel).toEqual({ x: 50, y: -20 });
+  });
+
+  it("ne divise pas par zéro au centre exact", () => {
+    const t = top({ pos: { x: 0, y: 0 } });
+    clampToArena(t);
+    expect(t.pos).toEqual({ x: 0, y: 0 });
   });
 });

@@ -35,3 +35,16 @@ export function moveAndBounce(top: Top): void {
     }
   }
 }
+
+/**
+ * Repousse une toupie à l'intérieur de l'anneau sans toucher à sa vitesse.
+ * Appelé après les collisions, qui déplacent les positions sans les re-borner.
+ */
+export function clampToArena(top: Top): void {
+  const d = Math.hypot(top.pos.x, top.pos.y);
+  const limit = ARENA_RADIUS - top.radius;
+  if (d <= limit || d === 0) return;
+  const k = limit / d;
+  top.pos.x *= k;
+  top.pos.y *= k;
+}
