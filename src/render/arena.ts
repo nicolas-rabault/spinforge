@@ -6,7 +6,7 @@ import { createTextures, destroyTextures, floorTexture, type Shape } from './tex
 import { FEEL } from './feel';
 import { createTopView, type TopView } from './topView';
 import { lerp, snapshotById, takeSnapshot, type Snapshot } from './snapshot';
-import { observe } from './observer';
+import { observe, type RenderEvents } from './observer';
 import { createEffects, type Effects } from './effects';
 
 /** Marge entre le bord de l'anneau et le bord du canvas. */
@@ -18,6 +18,8 @@ const FLOOR_VISUAL_RADIUS = ARENA_RADIUS * 1.06 * 0.94;
 export interface Arena {
   beforeTick(state: SimState): void;
   afterTick(state: SimState): void;
+  /** Les événements du dernier tick, consommés une seule fois (sonorisation). */
+  consumeEvents(): RenderEvents | null;
   draw(state: SimState, alpha: number): void;
   destroy(): void;
 }
@@ -68,6 +70,7 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   let snapPositions = true;
   let bossEntry = 0; // secondes restantes d'entrée du boss
   let reforge = 0; // secondes restantes de transition de salle
+  let pending: RenderEvents | null = null;
   let reforgeFlash = 0; // secondes restantes d'éclair
   let lastReforgeAt = -Infinity;
   let floorPx = 0;
@@ -105,6 +108,7 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       if (!before) return;
       const after = takeSnapshot(state);
       const events = observe(before, after);
+      pending = events;
       for (const hit of events.hits) {
         const view = views.get(hit.id);
         view?.flash(hit.power);
@@ -145,6 +149,11 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
           effects.wave(bot.pos.x, bot.pos.y, 30, PALETTE.ember);
         }
       }
+    },
+    consumeEvents() {
+      const e = pending;
+      pending = null;
+      return e;
     },
     draw(state, alpha) {
       const now = performance.now();

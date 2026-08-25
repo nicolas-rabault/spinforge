@@ -5,15 +5,17 @@ import { chapterOf } from '../content/chapters';
 import { SALLES_PER_CHAPTER } from '../sim/config';
 import { resetRun } from '../sim/sim';
 import type { SimState, Vec } from '../sim/types';
+import type { Audio } from '../audio/audio';
 
 const DEAD_ZONE_PX = 8;
 
 export function CombatScreen({
-  stateRef, running, onTick,
+  stateRef, running, onTick, audio,
 }: {
   stateRef: { current: SimState };
   running: boolean;
   onTick: () => void;
+  audio: Audio;
 }) {
   const steerRef = useRef<Vec | null>(null);
   const originRef = useRef<Vec | null>(null);
@@ -44,6 +46,14 @@ export function CombatScreen({
       beforeTick: (state) => arenaRef.current?.beforeTick(state),
       afterTick: (state) => {
         arenaRef.current?.afterTick(state);
+        const events = arenaRef.current?.consumeEvents();
+        if (events) {
+          // Les frôlements entre bots ne méritent pas un son ; les tiens, toujours.
+          for (const hit of events.hits) if (hit.id === 'player' || hit.power > 0.25) audio.hit(hit.power);
+          if (events.deaths.some((d) => d.isPlayer)) audio.death();
+          if (events.salleChanged) { audio.door(); audio.reforge(); }
+          audio.setSpin(state.player.spin / state.player.spinMax);
+        }
         if (state.salle !== SALLES_PER_CHAPTER) {
           bannerDoneRef.current = false;
         } else if (!bannerDoneRef.current) {
@@ -59,6 +69,9 @@ export function CombatScreen({
   );
 
   const onDown = (e: React.PointerEvent) => {
+    // Doit démarrer même si le doigt tombe sur un bouton : le contexte audio
+    // ne peut naître qu'au premier geste, avant le garde anti-glissement.
+    audio.start();
     // Glisser n'importe où pilote la toupie — sauf sur un bouton.
     if ((e.target as HTMLElement).closest('button')) return;
     if (pointerRef.current !== null) return;
