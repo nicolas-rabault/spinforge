@@ -4,19 +4,20 @@ import { useGameLoop } from './useGameLoop';
 import { chapterOf } from '../content/chapters';
 import { SALLES_PER_CHAPTER } from '../sim/config';
 import { resetRun } from '../sim/sim';
-import type { MetaState, RunState, RunReward, Vec } from '../sim/types';
+import type { MetaState, RunState, Vec } from '../sim/types';
 import type { Audio } from '../audio/audio';
 
 const DEAD_ZONE_PX = 8;
 const ONBOARDED_KEY = 'spinforge.onboarded';
 
 export function CombatScreen({
-  runRef, metaRef, running, onTick, audio,
+  runRef, metaRef, running, onTick, onMetaChanged, audio,
 }: {
   runRef: { current: RunState };
   metaRef: { current: MetaState };
   running: boolean;
   onTick: () => void;
+  onMetaChanged: () => void;
   audio: Audio;
 }) {
   const steerRef = useRef<Vec | null>(null);
@@ -78,7 +79,7 @@ export function CombatScreen({
         onTick();
       },
       draw: (run, alpha) => arenaRef.current?.draw(run, alpha),
-      onReward: (_reward: RunReward) => { onTick(); },
+      onReward: () => { onMetaChanged(); },
     },
     running,
   );
