@@ -1,5 +1,13 @@
-import { ARENA_RADIUS, FRICTION, TICK_S, WALL_RESTITUTION } from './config';
+import { ARENA_RADIUS, TICK_S, WALL_RESTITUTION } from './config';
 import type { Top, Vec } from './types';
+
+/** Vitesse maximale effective. Toupie folle la relève à mesure que le spin
+ *  baisse : à spin nul, `maxSpeed × (1 + toupieFolle)`. */
+function effectiveMaxSpeed(top: Top): number {
+  if (top.talents.toupieFolle === 0) return top.maxSpeed;
+  const lost = top.spinMax > 0 ? 1 - Math.max(0, Math.min(1, top.spin / top.spinMax)) : 1;
+  return top.maxSpeed * (1 + top.talents.toupieFolle * lost);
+}
 
 export function applySteering(top: Top, steer: Vec | null): void {
   if (steer) {
@@ -7,12 +15,13 @@ export function applySteering(top: Top, steer: Vec | null): void {
     top.vel.x += (steer.x / len) * top.accel * TICK_S;
     top.vel.y += (steer.y / len) * top.accel * TICK_S;
   } else {
-    top.vel.x *= FRICTION;
-    top.vel.y *= FRICTION;
+    top.vel.x *= top.talents.friction;
+    top.vel.y *= top.talents.friction;
   }
+  const max = effectiveMaxSpeed(top);
   const speed = Math.hypot(top.vel.x, top.vel.y);
-  if (speed > top.maxSpeed) {
-    const k = top.maxSpeed / speed;
+  if (speed > max) {
+    const k = max / speed;
     top.vel.x *= k;
     top.vel.y *= k;
   }

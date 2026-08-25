@@ -1,10 +1,12 @@
 import { CHARGE_BONUS, DAMAGE_K, RESTITUTION, TICK_S } from './config';
 import type { Top } from './types';
 
-/** Décroissance d'un tick pour cette toupie, talents compris. Exposée pour que
- *  le rendu puisse un jour distinguer un choc de l'endurance qui s'épuise sans
- *  dupliquer la formule (`observer.ts`) — personne ne la consomme encore. */
+/** Décroissance d'un tick pour cette toupie, talents compris. 0 pendant une
+ *  suspension (Relance) : `decaySpin` la teste déjà avant d'appeler cette
+ *  fonction, mais `snapshot.ts` (rendu) l'appelle désormais directement pour
+ *  prédire le tick à venir, et doit voir la même pause. */
 export function decayPerTick(top: Top): number {
+  if (top.decayPauseTicks > 0) return 0;
   return top.spinDecay * top.talents.spinDecayMult;
 }
 

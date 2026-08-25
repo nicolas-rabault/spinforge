@@ -7,7 +7,7 @@ import type { Snapshot, TopSnapshot } from './snapshot';
 function topSnap(over: Partial<TopSnapshot> = {}): TopSnapshot {
   return {
     id: 'player', x: 0, y: 0,
-    spin: 1000, spinDecay: 20, isPlayer: true,
+    spin: 1000, decayPerTick: 20, isPlayer: true,
     ...over,
   };
 }
@@ -17,7 +17,7 @@ function snapshot(tops: TopSnapshot[], over: Partial<Snapshot> = {}): Snapshot {
 }
 
 /** Le spin qu'une toupie aurait après un tick sans aucun choc. */
-const decayed = (t: TopSnapshot) => t.spin - t.spinDecay * TICK_S;
+const decayed = (t: TopSnapshot) => t.spin - t.decayPerTick * TICK_S;
 
 describe('observe — chocs', () => {
   it('n’émet rien quand seule la décroissance normale s’applique', () => {
@@ -105,4 +105,26 @@ describe('observe — progression', () => {
     const r = observe(snapshot([p]), snapshot([p]));
     expect(r).toEqual({ hits: [], deaths: [], salleChanged: false, bossEntered: false, chapterValidated: false });
   });
+});
+
+it('ne masque pas un choc quand la décroissance est suspendue', () => {
+  const before: Snapshot = {
+    salle: 1, phase: 'fighting',
+    tops: [
+      { id: 'player', x: 0, y: 0, spin: 1000, decayPerTick: 0, isPlayer: true },
+      { id: 'bot-1-0', x: 30, y: 0, spin: 500, decayPerTick: 12, isPlayer: false },
+    ],
+  };
+  const after: Snapshot = {
+    salle: 1, phase: 'fighting',
+    tops: [
+      { id: 'player', x: 0, y: 0, spin: 950, decayPerTick: 0, isPlayer: true },
+      { id: 'bot-1-0', x: 30, y: 0, spin: 500 - 1.2, decayPerTick: 12, isPlayer: false },
+    ],
+  };
+  const events = observe(before, after);
+  // Le joueur a perdu 50 sans décroissance : c'est un choc, il doit être vu.
+  expect(events.hits.some((h) => h.id === 'player')).toBe(true);
+  // Le bot n'a perdu que son endurance : ce n'en est pas un.
+  expect(events.hits.some((h) => h.id === 'bot-1-0')).toBe(false);
 });

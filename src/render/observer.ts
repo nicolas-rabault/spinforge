@@ -59,7 +59,7 @@ export function observe(before: Snapshot, after: Snapshot): RenderEvents {
     const prev = wasThere.get(top.id);
     if (!prev) continue;
     // Ce qui a été perdu au-delà de la décroissance d'endurance est un choc.
-    const extra = prev.spin - top.spin - prev.spinDecay * TICK_S;
+    const extra = prev.spin - top.spin - prev.decayPerTick * TICK_S;
     if (extra <= FEEL.hitEpsilon) continue;
     const { nx, ny } = nearest(top, after.tops);
     hits.push({

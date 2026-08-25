@@ -151,3 +151,51 @@ describe('talents du joueur', () => {
     expect(run.player.talents.impulseTaken).toBe(TALENTS.ancrage.impulseTaken);
   });
 });
+
+describe('talent Second souffle', () => {
+  it('accorde un sursis au lieu de la mort, une seule fois par run', () => {
+    const meta = createInitialMeta(1);
+    meta.equipped.noyau.rank = 7; // Épique : Réserve + Second souffle
+    const run = createRun(meta, 1);
+
+    run.player.spin = 0.0001;
+    tick(run, { steer: null });
+    expect(run.phase).toBe('fighting');
+    expect(run.player.spin).toBeCloseTo(run.player.spinMax * 0.2, 5);
+    expect(run.secondSouffleUsed).toBe(true);
+
+    run.player.spin = 0.0001;
+    tick(run, { steer: null });
+    expect(run.phase).toBe('dead');
+  });
+
+  it('resetRun réarme le sursis', () => {
+    const meta = createInitialMeta(1);
+    meta.equipped.noyau.rank = 7;
+    const run = createRun(meta, 1);
+    run.secondSouffleUsed = true;
+    resetRun(run, meta);
+    expect(run.secondSouffleUsed).toBe(false);
+  });
+
+  it('sans le talent, spin à zéro tue toujours', () => {
+    const meta = createInitialMeta(1);
+    const run = createRun(meta, 1);
+    run.player.spin = 0.0001;
+    tick(run, { steer: null });
+    expect(run.phase).toBe('dead');
+  });
+});
+
+describe('talent Réserve', () => {
+  it('rend davantage de spin entre deux salles', () => {
+    const meta = createInitialMeta(1);
+    meta.equipped.noyau.rank = 4; // Excellent : Réserve
+    const run = createRun(meta, 1);
+    run.player.spin = 100;
+    for (const b of run.bots) b.spin = 0.0001;
+    tick(run, { steer: null });
+    // 0,35 du spin max au lieu de 0,20.
+    expect(run.player.spin).toBeGreaterThan(100 + 0.3 * run.player.spinMax);
+  });
+});

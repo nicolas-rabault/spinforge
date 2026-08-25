@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decaySpin, resolveCollision } from './combat';
+import { decayPerTick, decaySpin, resolveCollision } from './combat';
 import { TALENTS, TICK_S } from './config';
 import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
@@ -20,6 +20,16 @@ describe('decaySpin', () => {
     const t = top({ spinDecay: 20 });
     decaySpin(t);
     expect(t.spin).toBeCloseTo(1000 - 20 * TICK_S, 5);
+  });
+});
+
+describe('decayPerTick', () => {
+  it('vaut 0 pendant une suspension de décroissance (Relance)', () => {
+    // decaySpin teste déjà decayPauseTicks avant d'appeler decayPerTick, mais
+    // snapshot.ts (rendu) l'appelle désormais directement pour prédire le
+    // tick à venir : lui aussi doit voir la pause.
+    const t = top({ decayPauseTicks: 3 });
+    expect(decayPerTick(t)).toBe(0);
   });
 });
 

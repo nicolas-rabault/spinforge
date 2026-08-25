@@ -111,8 +111,14 @@ export function tick(run: RunState, input: Input): RunReward | null {
   for (const bot of run.bots) decaySpin(bot);
   run.bots = run.bots.filter((b) => b.spin > 0);
   if (run.player.spin <= 0) {
-    run.phase = 'dead';
-    return null;
+    // Second souffle : un sursis par run, sinon la mort.
+    if (!run.secondSouffleUsed && run.player.talents.secondSouffle > 0) {
+      run.secondSouffleUsed = true;
+      run.player.spin = run.player.spinMax * run.player.talents.secondSouffle;
+    } else {
+      run.phase = 'dead';
+      return null;
+    }
   }
   if (run.bots.length === 0) {
     const boss = run.salle === SALLES_PER_CHAPTER;

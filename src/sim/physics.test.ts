@@ -81,3 +81,47 @@ describe("clampToArena", () => {
     expect(t.pos).toEqual({ x: 0, y: 0 });
   });
 });
+
+function movingTop(overrides: Partial<Top> = {}): Top {
+  return {
+    id: 't', isPlayer: false, aim: null,
+    pos: { x: 0, y: 0 }, vel: { x: 100, y: 0 },
+    radius: 12, spin: 1000, spinMax: 1000, spinDecay: 10,
+    attack: 30, defense: 10, maxSpeed: 200, accel: 500,
+    talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
+    ...overrides,
+  };
+}
+
+describe('talent Glisse', () => {
+  it('conserve mieux la vitesse en roue libre', () => {
+    const plain = movingTop();
+    applySteering(plain, null);
+
+    const glisse = movingTop({ talents: { ...NEUTRAL_TALENTS, friction: 0.99 } });
+    applySteering(glisse, null);
+
+    expect(glisse.vel.x).toBeGreaterThan(plain.vel.x);
+    expect(plain.vel.x).toBeCloseTo(100 * FRICTION, 10);
+  });
+});
+
+describe('talent Toupie folle', () => {
+  it('ne change rien à spin plein', () => {
+    const t = movingTop({ vel: { x: 1000, y: 0 }, talents: { ...NEUTRAL_TALENTS, toupieFolle: 0.4 } });
+    applySteering(t, null);
+    expect(t.vel.x).toBeCloseTo(200, 6);
+  });
+
+  it('relève la vitesse maximale à mesure que le spin baisse', () => {
+    const t = movingTop({ vel: { x: 1000, y: 0 }, spin: 0, talents: { ...NEUTRAL_TALENTS, toupieFolle: 0.4 } });
+    applySteering(t, null);
+    expect(t.vel.x).toBeCloseTo(200 * 1.4, 6);
+  });
+
+  it('ne fait rien sans le talent', () => {
+    const t = movingTop({ vel: { x: 1000, y: 0 }, spin: 0 });
+    applySteering(t, null);
+    expect(t.vel.x).toBeCloseTo(200, 6);
+  });
+});

@@ -1,3 +1,4 @@
+import { decayPerTick } from '../sim/combat';
 import type { Phase, RunState } from '../sim/types';
 
 /** Ce que le rendu retient d'une toupie entre deux ticks. */
@@ -6,7 +7,10 @@ export interface TopSnapshot {
   x: number;
   y: number;
   spin: number;
-  spinDecay: number;
+  /** Décroissance **effective** du tick à venir, talents compris. `observe()`
+   *  la retranche pour isoler ce qui vient d'un choc ; la valeur brute
+   *  `spinDecay` mentirait dès qu'un talent module l'endurance. */
+  decayPerTick: number;
   isPlayer: boolean;
 }
 
@@ -22,7 +26,7 @@ function snap(top: RunState['player']): TopSnapshot {
     x: top.pos.x,
     y: top.pos.y,
     spin: top.spin,
-    spinDecay: top.spinDecay,
+    decayPerTick: decayPerTick(top),
     isPlayer: top.isPlayer,
   };
 }
