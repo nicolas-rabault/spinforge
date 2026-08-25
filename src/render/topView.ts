@@ -29,7 +29,7 @@ export function createTopView(tex: Textures, shape: Shape, camp: Camp, radius: n
   const halo = new Sprite(tex.halo);
   halo.anchor.set(0.5);
   halo.blendMode = 'add';
-  halo.width = halo.height = size * FEEL.haloRadiusMult * 2;
+  halo.width = halo.height = size * FEEL.haloRadiusMult;
 
   const shadow = new Sprite(tex.shadow);
   shadow.anchor.set(0.5);
