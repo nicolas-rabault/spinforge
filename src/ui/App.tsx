@@ -21,7 +21,7 @@ export function App() {
   return (
     <div
       style={{
-        height: '100vh', boxSizing: 'border-box', maxWidth: 460, margin: '0 auto', padding: '14px 16px 12px',
+        height: '100%', boxSizing: 'border-box', maxWidth: 460, margin: '0 auto', padding: '14px 16px 12px',
         display: 'flex', flexDirection: 'column', gap: 10,
         background: 'var(--bg)', color: 'var(--text)', userSelect: 'none',
       }}

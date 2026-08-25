@@ -6,6 +6,11 @@
     <title>SpinForge</title>
     <style>
       html, body { margin: 0; background: #0b0e13; }
+      /* Chrome Android résout `vh` sur le viewport barre d'URL rétractée : à 100vh,
+         le bas de l'app — la barre d'onglets — tombe sous la ligne de flottaison au
+         chargement. `dvh` suit la hauteur réellement visible ; la paire laisse un
+         repli aux moteurs qui ignorent l'unité dynamique. */
+      #root { height: 100vh; height: 100dvh; }
       body {
         font-family: Inter, ui-sans-serif, system-ui, sans-serif;
         -webkit-font-smoothing: antialiased;
