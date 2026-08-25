@@ -46,7 +46,7 @@ Chaque pièce progresse sur deux axes infinis : **niveau** (crédits/fragments) 
 
 **Courbes** :
 - `coût(niveau) = 100 × 1,08^niveau`
-- `revenu(salle) = 20 × 1,12^(salle−1)` par salle vidée ; boss ×5. (Base indicative jalon 1, à équilibrer.)
+- `revenu(salle) = 120 × 1,13^(salle−1)` par salle vidée ; boss ×10. (Calibré au jalon 1.5 par mesure : un chapitre 1 se valide en ~21 runs, soit ~2 h.)
 
 **Coffres** : Bronze (2 000 crédits, ×10 : 18 000 — pièces Commun→Rare) · Arène (300 gemmes, ×10 : 2 680, 1 gratuit/4 h — Bon→Excellent, Excellent garanti au 10ᵉ) · Mythique (1 500 gemmes, ×10 : 13 500 — Excellent→Légende, Légende garantie au 30ᵉ). Arène et Mythique mêlent pièces génériques et **doublons signature** des toupies débloquées (seule source de fusion des Lames/Noyaux).
 

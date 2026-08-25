@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { playerStats, salleReward, tryUpgrade, upgradeCost } from './economy';
-import { PLAYER_BASE } from './config';
+import { ECON, PLAYER_BASE } from './config';
 import type { SimState, Top } from './types';
 
 function fakeState(credits: number): SimState {
@@ -25,10 +25,13 @@ describe('courbes', () => {
     expect(upgradeCost(10)).toBeCloseTo(215.89, 1);
   });
 
-  it('revenu = 20 × 1,12^(salle−1), boss ×5', () => {
-    expect(salleReward(1, false)).toBe(20);
-    expect(salleReward(5, false)).toBeCloseTo(31.47, 2);
-    expect(salleReward(10, true)).toBeCloseTo(277.31, 1);
+  it('revenu = rewardBase × rewardGrowth^(salle−1), boss × bossRewardMult', () => {
+    expect(salleReward(1, false)).toBeCloseTo(ECON.rewardBase, 5);
+    expect(salleReward(5, false)).toBeCloseTo(ECON.rewardBase * Math.pow(ECON.rewardGrowth, 4), 5);
+    expect(salleReward(10, true)).toBeCloseTo(
+      ECON.rewardBase * Math.pow(ECON.rewardGrowth, 9) * ECON.bossRewardMult,
+      5,
+    );
   });
 });
 

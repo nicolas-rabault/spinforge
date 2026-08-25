@@ -56,15 +56,14 @@ Refonte + arbre d'atouts (référence de farm conservée), Génération Rafale (
 À traiter au jalon 1.5 sauf mention contraire. Aucun de ces points n'est bloquant ; tous ont
 été constatés et arbitrés pendant la revue du jalon 1.
 
-**Décision de design en attente — équilibrage du chapitre 1.** Mesuré : un pilote parfait
-(autopilote « fonce sur le bot le plus proche » + achats gloutons) valide le chapitre 1 après
-~120-150 runs, soit ~12 h de jeu. Les morts se concentrent en salle 4 (passage de 1 à 2 bots)
-et sur le boss (~45, plus que les salles 4 à 9 réunies). Cause structurelle : le boss a 11 280
-de spin contre 3 000 au joueur alors que les ratios d'échange sont quasi identiques (0,83 vs
-0,82) — le joueur n'a aucun levier hors améliorations. Les molettes sont dans
-`src/sim/config.ts` : `BOSS.spinMult` (4), `BOT_SCALING.spinPerSalle` (0,15),
-`ECON.rewardBase`/`rewardGrowth` (20 / 1,12). La spec marque ces nombres « à équilibrer » —
-c'est une décision de game design, pas un bug.
+**Équilibrage du chapitre 1 — tranché au jalon 1.5.** Mesuré à l'autopilote (« fonce sur le bot le plus
+proche » + achats gloutons, 5 seeds, médianes) : le chapitre 1 demandait ~124 runs, soit ~12 h. Réglage
+retenu « MUR ~2 h » : seule l'économie bouge (`ECON.rewardBase` 20 → 120, `rewardGrowth` 1,12 → 1,13,
+`bossRewardMult` 5 → 10), le combat et le boss restent intacts. Résultat : 21 runs, ~2 h 08, et le boss
+demeure de loin la salle la plus meurtrière (8 morts contre 3 pour la suivante) — conformément au pilier
+« le mur n'est jamais un bug, c'est le produit ». Le balayage a montré que les deux leviers sont
+indépendants : l'économie commande la durée, `BOSS.spinMult` commande la forme de la difficulté.
+Détail : `docs/superpowers/specs/2026-08-24-jalon-1-5-habillage-design.md` § 6.
 
 **Rendu**
 - Les toupies dépassent visiblement de l'anneau dessiné sur ~4,3 % des frames (médiane 2,1
