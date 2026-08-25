@@ -1,13 +1,12 @@
 import { Application, Container, Sprite, Texture } from 'pixi.js';
 import { ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
-import { PALETTE } from '../theme';
+import { PALETTE, spinTint } from '../theme';
 import type { SimState } from '../sim/types';
 import { createTextures, destroyTextures, floorTexture, type Shape } from './textures';
 import { createTopView, type TopView } from './topView';
 import { lerp, snapshotById, takeSnapshot, type Snapshot } from './snapshot';
 import { observe } from './observer';
 import { createEffects, type Effects } from './effects';
-import { spinTint } from '../theme';
 
 /** Marge entre le bord de l'anneau et le bord du canvas. */
 const MARGIN = 1.1;

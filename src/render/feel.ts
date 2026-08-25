@@ -27,7 +27,7 @@ export const FEEL = {
 
   // impact — hitReference est ABSOLU : normaliser contre spinMax ferait faiblir
   // les chocs à mesure que le joueur monte son Noyau.
-  hitReference: 70,
+  hitReference: 90,
   hitEpsilon: 1e-6,
   flashLife: 0.11,
   waveLife: 0.38,
