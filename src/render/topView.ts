@@ -27,7 +27,13 @@ function wearIndex(ratio: number): number {
   return 0;
 }
 
-export function createTopView(tex: Textures, shape: Shape, camp: Camp, radius: number): TopView {
+export function createTopView(
+  tex: Textures,
+  shape: Shape,
+  camp: Camp,
+  radius: number,
+  isBoss = false,
+): TopView {
   const container = new Container();
   const trail = new Container();
   const size = radius * 2;
@@ -36,6 +42,15 @@ export function createTopView(tex: Textures, shape: Shape, camp: Camp, radius: n
   halo.anchor.set(0.5);
   halo.blendMode = 'add';
   halo.width = halo.height = size * FEEL.haloRadiusMult;
+  if (isBoss) halo.width = halo.height = size * FEEL.bossHaloMult;
+
+  const ring = isBoss ? new Sprite(tex.wave) : null;
+  if (ring) {
+    ring.anchor.set(0.5);
+    ring.blendMode = 'add';
+    ring.width = ring.height = size * 1.9;
+    ring.alpha = 0.35;
+  }
 
   const shadow = new Sprite(tex.shadow);
   shadow.anchor.set(0.5);
@@ -66,6 +81,7 @@ export function createTopView(tex: Textures, shape: Shape, camp: Camp, radius: n
   const pivot = new Container();
   pivot.addChild(body, rim, core);
   container.addChild(halo, shadow, trail, pivot, flashSprite);
+  if (ring) container.addChildAt(ring, 1);
 
   const ghosts: Ghost[] = [];
   let angle = Math.random() * Math.PI * 2;
@@ -90,6 +106,11 @@ export function createTopView(tex: Textures, shape: Shape, camp: Camp, radius: n
         shadow.alpha = 1 - dying;
       }
       pivot.rotation = angle;
+      if (ring) {
+        ring.rotation = angle * FEEL.bossRingSpeed;
+        ring.tint = spinTint(camp, ratio);
+        ring.alpha = 0.2 + 0.25 * ratio;
+      }
 
       const tint = spinTint(camp, ratio);
       rim.tint = tint;

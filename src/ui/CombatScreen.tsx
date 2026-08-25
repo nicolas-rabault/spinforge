@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createArena } from '../render/arena';
 import { useGameLoop } from './useGameLoop';
 import { chapterOf } from '../content/chapters';
@@ -20,6 +20,9 @@ export function CombatScreen({
   const pointerRef = useRef<number | null>(null);
   const arenaRef = useRef<Awaited<ReturnType<typeof createArena>> | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
+  const [banner, setBanner] = useState<string | null>(null);
+  // Sans ce garde-fou, le bandeau se rejouerait à chaque tick passé en salle 10.
+  const bannerDoneRef = useRef(false);
 
   useEffect(() => {
     let disposed = false;
@@ -41,6 +44,13 @@ export function CombatScreen({
       beforeTick: (state) => arenaRef.current?.beforeTick(state),
       afterTick: (state) => {
         arenaRef.current?.afterTick(state);
+        if (state.salle !== SALLES_PER_CHAPTER) {
+          bannerDoneRef.current = false;
+        } else if (!bannerDoneRef.current) {
+          bannerDoneRef.current = true;
+          setBanner(chapterOf(state.chapter).boss);
+          window.setTimeout(() => setBanner(null), 2100);
+        }
         onTick();
       },
       draw: (state, alpha) => arenaRef.current?.draw(state, alpha),
@@ -105,10 +115,21 @@ export function CombatScreen({
           — l'arène reste carrée sur toute taille d'écran, sans jamais pousser la
           barre d'onglets hors du viewport. */}
       <div style={{ flex: '1 1 0', minHeight: 0, containerType: 'size', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div
-          ref={hostRef}
-          style={{ width: 'min(100cqw, 100cqh)', aspectRatio: '1 / 1', borderRadius: 14, overflow: 'hidden', background: '#05070b' }}
-        />
+        <div style={{ position: 'relative', width: 'min(100cqw, 100cqh)', aspectRatio: '1 / 1' }}>
+          <div ref={hostRef} style={{ position: 'absolute', inset: 0, borderRadius: 14, overflow: 'hidden', background: '#05070b' }} />
+          {banner ? (
+            <div
+              style={{
+                position: 'absolute', left: 0, right: 0, top: '50%', transform: 'translateY(-50%)',
+                background: 'rgba(8,10,15,.82)', borderTop: '2px solid var(--boss)', borderBottom: '2px solid var(--boss)',
+                padding: '10px 0', textAlign: 'center', pointerEvents: 'none',
+                font: '600 17px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.06em', textTransform: 'uppercase',
+              }}
+            >
+              {banner}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>

@@ -3,6 +3,7 @@ import { ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
 import { PALETTE, spinTint } from '../theme';
 import type { SimState } from '../sim/types';
 import { createTextures, destroyTextures, floorTexture, type Shape } from './textures';
+import { FEEL } from './feel';
 import { createTopView, type TopView } from './topView';
 import { lerp, snapshotById, takeSnapshot, type Snapshot } from './snapshot';
 import { observe } from './observer';
@@ -42,9 +43,17 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   floor.width = floor.height = ARENA_RADIUS * 2 * 1.06;
   floorLayer.addChild(floor);
 
+  const dim = new Sprite(Texture.WHITE);
+  dim.anchor.set(0.5);
+  dim.tint = 0x04050a;
+  dim.alpha = 0;
+  dim.width = dim.height = ARENA_RADIUS * 2 * 1.06;
+  floorLayer.addChild(dim);
+
   const views = new Map<string, TopView>();
   let before: Snapshot | null = null;
   let snapPositions = true;
+  let bossEntry = 0; // secondes restantes d'entrée du boss
   let floorPx = 0;
   let lastDraw = performance.now();
 
@@ -65,7 +74,7 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
     if (!view) {
       const shape: Shape = isPlayer ? 'player' : 'bot';
       const boss = !isPlayer && salle === SALLES_PER_CHAPTER;
-      view = createTopView(tex, shape, isPlayer ? 'player' : boss ? 'boss' : 'bot', radius);
+      view = createTopView(tex, shape, isPlayer ? 'player' : boss ? 'boss' : 'bot', radius, boss);
       topLayer.addChild(view.container);
       views.set(id, view);
     }
@@ -101,6 +110,11 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
         view?.kill();
         effects.wave(death.x, death.y, 34, 0xffd9a0);
       }
+      if (events.bossEntered) {
+        bossEntry = FEEL.bossEntryLife;
+        const boss = state.bots[0];
+        if (boss) effects.wave(boss.pos.x, boss.pos.y, ARENA_RADIUS * 1.4, PALETTE.boss);
+      }
       // Au changement de salle, la simulation téléporte le joueur au point de
       // départ : interpoler ferait glisser la toupie à travers l'arène.
       if (before.salle !== after.salle) snapPositions = true;
@@ -111,6 +125,12 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       lastDraw = now;
       layout();
       effects.update(dt);
+      if (bossEntry > 0) {
+        bossEntry = Math.max(0, bossEntry - dt);
+        dim.alpha = 0.72 * (bossEntry / FEEL.bossEntryLife);
+      } else if (dim.alpha !== 0) {
+        dim.alpha = 0;
+      }
       world.x = app.screen.width / 2 + effects.shake.x * world.scale.x;
       world.y = app.screen.height / 2 + effects.shake.y * world.scale.y;
 
