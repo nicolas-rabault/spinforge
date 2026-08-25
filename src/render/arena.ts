@@ -138,7 +138,12 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
 
       for (const [id, view] of views) {
         if (live.has(id)) continue;
-        // La toupie n'est plus dans la simulation : elle finit son agonie sur place.
+        // La toupie n'est plus dans la simulation, qu'elle ait été tuée (bot mort)
+        // ou simplement remplacée sans mourir (les survivants d'une salle sont
+        // écrasés par startSalle quand le joueur meurt et retente) : kill() est
+        // idempotente, donc l'appeler sans condition force toute vue orpheline à
+        // agoniser puis à finir par isFinished(), au lieu de rester figée à jamais.
+        view.kill();
         view.sync(view.container.x, view.container.y, 0, 0, dt);
         if (!view.isFinished()) continue;
         view.destroy();
