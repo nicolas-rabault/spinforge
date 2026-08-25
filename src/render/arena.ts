@@ -96,6 +96,11 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
           spinTint(camp, ratio),
         );
       }
+      for (const death of events.deaths) {
+        const view = views.get(death.id);
+        view?.kill();
+        effects.wave(death.x, death.y, 34, 0xffd9a0);
+      }
       // Au changement de salle, la simulation téléporte le joueur au point de
       // départ : interpoler ferait glisser la toupie à travers l'arène.
       if (before.salle !== after.salle) snapPositions = true;
@@ -128,6 +133,9 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
 
       for (const [id, view] of views) {
         if (live.has(id)) continue;
+        // La toupie n'est plus dans la simulation : elle finit son agonie sur place.
+        view.sync(view.container.x, view.container.y, 0, 0, dt);
+        if (!view.isFinished()) continue;
         view.destroy();
         views.delete(id);
       }

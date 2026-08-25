@@ -13,6 +13,9 @@ export interface TopView {
   /** `dt` en secondes ; `ratio` = spin/spinMax ; `speedRatio` = vitesse/vitesse max. */
   sync(x: number, y: number, ratio: number, speedRatio: number, dt: number): void;
   flash(power: number): void;
+  /** Démarre l'agonie : la toupie se couche, racle, s'immobilise. */
+  kill(): void;
+  isFinished(): boolean;
   destroy(): void;
 }
 
@@ -66,6 +69,7 @@ export function createTopView(tex: Textures, shape: Shape, camp: Camp, radius: n
   let angle = Math.random() * Math.PI * 2;
   let wear = 0;
   let flashLife = 0;
+  let dying = -1; // -1 = vivante ; sinon progression de l'agonie dans [0, 1]
 
   return {
     container,
@@ -73,7 +77,16 @@ export function createTopView(tex: Textures, shape: Shape, camp: Camp, radius: n
       container.x = x;
       container.y = y;
 
-      angle += spinOmega(ratio) * dt;
+      // Pendant l'agonie la toupie ralentit jusqu'à l'arrêt et se couche.
+      const dyingFade = dying < 0 ? 1 : Math.max(0, 1 - dying);
+      angle += spinOmega(ratio) * dyingFade * dt;
+      if (dying >= 0) {
+        dying = Math.min(1, dying + dt / FEEL.deathLife);
+        pivot.scale.set(1, 1 - 0.6 * dying);
+        pivot.rotation = angle;
+        container.alpha = 1 - dying * dying;
+        shadow.alpha = 1 - dying;
+      }
       pivot.rotation = angle;
 
       const tint = spinTint(camp, ratio);
@@ -125,6 +138,12 @@ export function createTopView(tex: Textures, shape: Shape, camp: Camp, radius: n
     },
     flash(power) {
       flashLife = Math.max(flashLife, Math.min(1, power));
+    },
+    kill() {
+      if (dying < 0) dying = 0;
+    },
+    isFinished() {
+      return dying >= 1;
     },
     destroy() {
       for (const g of ghosts) g.sprite.destroy();
