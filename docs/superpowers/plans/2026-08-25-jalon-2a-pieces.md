@@ -4101,6 +4101,7 @@ le pilotage.
 ```
 
 - supprimer, dans « Dette connue (héritée du jalon 1) », les trois puces désormais traitées : celle de `salle.ts` qui code en dur le nombre de bots, celle de `Stats.accel`, et celle du triple écrit du spin initial dans `createInitialState` ;
+- supprimer, dans « Dette connue (jalon 1.5) » § HUD, la puce « `ForgeScreen` n'a pas de `minHeight: 0` sur son conteneur flex » : la Task 3 la lui donne, avec le défilement, au moment même que cette puce annonçait — « à surveiller si la liste d'améliorations s'allonge au jalon 2 » ;
 - ajouter, sous « Dette connue (jalon 2a) », les points constatés pendant l'exécution du plan et arbitrés comme non bloquants, avec la raison de chaque report ;
 - consigner la valeur retenue pour `econ.bossGems` et les deux seuils de vitesse, avec la mesure qui les justifie.
 
