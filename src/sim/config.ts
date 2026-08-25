@@ -78,6 +78,12 @@ export const FRICTION = BALANCE.arena.friction;
 export const WALL_RESTITUTION = BALANCE.arena.wallRestitution;
 export const RESTITUTION = BALANCE.arena.restitution;
 export const DAMAGE_K = BALANCE.combat.damageK;
+/**
+ * Part des dégâts qui dépend de qui a foncé. À 0, la vitesse relative d'impact est
+ * partagée à parts égales et charger ne rapporte rien de plus qu'attendre le choc ;
+ * à 0,6, celui qui provoque tout le rapprochement inflige ×1,6 et encaisse ×0,4.
+ * Un choc frontal (les deux avancent autant) reste exactement ce qu'il était.
+ */
 export const CHARGE_BONUS = BALANCE.combat.chargeBonus;
 export const HEAL_BETWEEN_SALLES = BALANCE.combat.healBetweenSalles;
 export const SALLES_PER_CHAPTER = BALANCE.chapter.sallesPerChapter;

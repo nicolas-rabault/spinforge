@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BALANCE, BOTS_PER_SALLE, CHESTS, FUSION, SALLES_PER_CHAPTER } from './config';
+import { BALANCE, BOTS_PER_SALLE, CHESTS, FUSION, RARITY, SALLES_PER_CHAPTER, TALENTS } from './config';
 
 const SLOTS = ['lame', 'disque', 'pointe', 'noyau'];
 
@@ -50,5 +50,72 @@ describe('balance.json', () => {
   it('porte un numéro de version', () => {
     expect(Number.isInteger(BALANCE.version)).toBe(true);
     expect(BALANCE.version).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// La double assertion `BALANCE = raw as unknown as Balance` ne protège que ce
+// que ces tests vérifient explicitement. Les six tests ci-dessus ne touchent
+// ni RARITY ni TALENTS : sans ce bloc, une clé de talent renommée ou un champ
+// manquant compilerait et passerait tous les tests, pour ne se manifester
+// qu'en `NaN` silencieux quand la Task 5 branchera les talents au combat.
+describe('RARITY et TALENTS', () => {
+  it('RARITY porte un pas de progression et un rang légendaire valides', () => {
+    expect(Number.isFinite(RARITY.step)).toBe(true);
+    expect(RARITY.step).toBeGreaterThan(1);
+    expect(Number.isInteger(RARITY.legendRank)).toBe(true);
+    expect(RARITY.legendRank).toBeGreaterThanOrEqual(1);
+  });
+
+  it('les douze talents attendus sont présents, et aucun autre', () => {
+    const expected = [
+      'estoc', 'riposte', 'percee', 'ancrage', 'frolement', 'masse',
+      'glisse', 'relance', 'toupieFolle', 'reserve', 'secondSouffle', 'coeurGyre',
+    ].sort();
+    expect(Object.keys(TALENTS).sort()).toEqual(expected);
+  });
+
+  // Schéma attendu de chaque talent, dupliqué depuis l'interface `Balance.talents`.
+  // Une simple boucle `Object.entries(talent)` n'aurait parcouru que les champs
+  // *présents* : un champ retiré du JSON n'y serait jamais apparu, donc jamais
+  // vérifié. En comparant l'ensemble de clés au schéma attendu, un champ absent,
+  // renommé ou en trop fait échouer le test au lieu de disparaître silencieusement.
+  const TALENT_FIELDS: Record<string, string[]> = {
+    estoc: ['rank', 'speedThreshold', 'damageBonus'],
+    riposte: ['rank', 'reflect'],
+    percee: ['rank', 'defenseIgnore'],
+    ancrage: ['rank', 'impulseTaken'],
+    frolement: ['rank', 'speedThreshold'],
+    masse: ['rank', 'mass'],
+    glisse: ['rank', 'friction'],
+    relance: ['rank', 'ticks'],
+    toupieFolle: ['rank', 'maxSpeedAtZero'],
+    reserve: ['rank', 'heal'],
+    secondSouffle: ['rank', 'revive'],
+    coeurGyre: ['rank', 'decayMult'],
+  };
+
+  it('chaque talent a exactement les champs de son schéma, tous des nombres finis', () => {
+    for (const [name, fields] of Object.entries(TALENT_FIELDS)) {
+      const talent = TALENTS[name as keyof typeof TALENTS] as unknown as Record<string, unknown> | undefined;
+      // Garde explicite : un talent renommé donnerait `undefined` ici, et sans
+      // elle l'échec serait une TypeError peu lisible plutôt qu'un assert net.
+      expect(talent, name).toBeTruthy();
+      expect(Object.keys(talent!).sort(), name).toEqual([...fields].sort());
+      for (const field of fields) {
+        expect(Number.isFinite(talent![field]), `${name}.${field}`).toBe(true);
+      }
+      expect(Number.isInteger(talent!.rank), `${name}.rank`).toBe(true);
+      expect(talent!.rank, `${name}.rank`).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('les rangs des talents couvrent exactement les trois paliers, quatre par palier', () => {
+    const ranks = Object.values(TALENTS).map((t) => t.rank);
+    expect(new Set(ranks)).toEqual(new Set([4, 7, 11]));
+    const counts = ranks.reduce<Record<number, number>>((acc, r) => {
+      acc[r] = (acc[r] ?? 0) + 1;
+      return acc;
+    }, {});
+    expect(counts).toEqual({ 4: 4, 7: 4, 11: 4 });
   });
 });
