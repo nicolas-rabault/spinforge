@@ -1,5 +1,5 @@
 import { Container, Sprite } from 'pixi.js';
-import { spinTint, type Camp } from '../theme';
+import { PALETTE, spinTint, type Camp } from '../theme';
 import { FEEL, spinOmega } from './feel';
 import type { Shape, Textures } from './textures';
 
@@ -37,6 +37,25 @@ export function createTopView(
   const container = new Container();
   const trail = new Container();
   const size = radius * 2;
+  const isPlayer = camp === 'player';
+
+  // Anneau au sol + chevron au-dessus : les deux repères permanents qui disent
+  // « celle-ci est la tienne » sans rien lire. Réservés au joueur, sinon ils ne
+  // désignent plus personne.
+  const marker = isPlayer ? new Sprite(tex.wave) : null;
+  if (marker) {
+    marker.anchor.set(0.5);
+    marker.blendMode = 'add';
+    marker.width = marker.height = size * FEEL.markerRadiusMult;
+    marker.tint = PALETTE.player;
+    marker.scale.y *= 0.42; // vu de dessus : l'anneau est posé au sol, donc écrasé
+  }
+  const caret = isPlayer ? new Sprite(tex.caret) : null;
+  if (caret) {
+    caret.anchor.set(0.5, 1);
+    caret.width = caret.height = size * FEEL.caretSizeMult;
+    caret.tint = PALETTE.player;
+  }
 
   const halo = new Sprite(tex.halo);
   halo.anchor.set(0.5);
@@ -82,18 +101,30 @@ export function createTopView(
   pivot.addChild(body, rim, core);
   container.addChild(halo, shadow, trail, pivot, flashSprite);
   if (ring) container.addChildAt(ring, 1);
+  if (marker) container.addChildAt(marker, 0);
+  if (caret) container.addChild(caret);
 
   const ghosts: Ghost[] = [];
   let angle = Math.random() * Math.PI * 2;
   let wear = 0;
   let flashLife = 0;
   let dying = -1; // -1 = vivante ; sinon progression de l'agonie dans [0, 1]
+  let elapsed = 0; // horloge locale, pour la respiration des repères du joueur
 
   return {
     container,
     sync(x, y, ratio, speedRatio, dt) {
       container.x = x;
       container.y = y;
+      elapsed += dt;
+
+      if (marker && caret) {
+        const pulse = Math.sin(elapsed * Math.PI * 2 * FEEL.markerPulseHz);
+        const fade = dying < 0 ? 1 : Math.max(0, 1 - dying * 2);
+        marker.alpha = (FEEL.markerAlphaBase + FEEL.markerAlphaPulse * pulse) * fade;
+        caret.alpha = (0.85 + 0.15 * pulse) * fade;
+        caret.y = -radius * FEEL.caretGapMult + pulse * radius * FEEL.caretBobMult;
+      }
 
       // Pendant l'agonie la toupie ralentit jusqu'à l'arrêt et se couche.
       const dyingFade = dying < 0 ? 1 : Math.max(0, 1 - dying);

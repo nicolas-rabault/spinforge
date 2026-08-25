@@ -42,6 +42,23 @@ describe('resolveCollision', () => {
     expect(b.vel.x).toBeGreaterThan(0); // b est poussé
   });
 
+  it('celui qui fonce inflige plus et encaisse moins que l’immobile', () => {
+    // Mêmes stats des deux côtés : seul le pilotage sépare les deux issues.
+    const fonceur = top({ id: 'a', vel: { x: 100, y: 0 } });
+    const immobile = top({ id: 'b', pos: { x: 20, y: 0 } });
+    resolveCollision(fonceur, immobile);
+    expect(1000 - immobile.spin).toBeGreaterThan(1000 - fonceur.spin);
+  });
+
+  it('un choc frontal reste symétrique — le partage ne change que les assauts', () => {
+    const a = top({ id: 'a', vel: { x: 50, y: 0 } });
+    const b = top({ id: 'b', pos: { x: 20, y: 0 }, vel: { x: -50, y: 0 } });
+    resolveCollision(a, b);
+    expect(a.spin).toBeCloseTo(b.spin, 9);
+    // Les deux poids somment à 2 : le total infligé est celui d’avant le partage.
+    expect(1000 - a.spin).toBeCloseTo((100 * 10) / 20 * 0.35, 9);
+  });
+
   it('ignore des toupies qui s’éloignent déjà', () => {
     const a = top({ vel: { x: -50, y: 0 } });
     const b = top({ pos: { x: 20, y: 0 }, vel: { x: 50, y: 0 } });

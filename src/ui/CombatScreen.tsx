@@ -8,6 +8,7 @@ import type { SimState, Vec } from '../sim/types';
 import type { Audio } from '../audio/audio';
 
 const DEAD_ZONE_PX = 8;
+const ONBOARDED_KEY = 'spinforge.onboarded';
 
 export function CombatScreen({
   stateRef, running, onTick, audio,
@@ -23,6 +24,9 @@ export function CombatScreen({
   const arenaRef = useRef<Awaited<ReturnType<typeof createArena>> | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const [banner, setBanner] = useState<string | null>(null);
+  // Le premier lancement explique ce qu'aucun repère à l'écran ne peut dire seul :
+  // laquelle est la tienne, et que foncer vaut mieux qu'attendre le choc.
+  const [hint, setHint] = useState(() => localStorage.getItem(ONBOARDED_KEY) !== '1');
   // Sans ce garde-fou, le bandeau se rejouerait à chaque tick passé en salle 10.
   const bannerDoneRef = useRef(false);
 
@@ -39,6 +43,12 @@ export function CombatScreen({
     };
   }, []);
 
+  useEffect(() => {
+    // La boucle est en pause en Forge : plus personne n'appelle setSpin, et le
+    // rotor sonnerait indéfiniment à sa dernière fréquence.
+    if (!running) audio.setSpin(null);
+  }, [running, audio]);
+
   useGameLoop(
     stateRef,
     steerRef,
@@ -51,8 +61,10 @@ export function CombatScreen({
           // Les frôlements entre bots ne méritent pas un son ; les tiens, toujours.
           for (const hit of events.hits) if (hit.id === 'player' || hit.power > 0.25) audio.hit(hit.power);
           if (events.deaths.some((d) => d.isPlayer)) audio.death();
-          if (events.salleChanged) { audio.door(); audio.reforge(); }
-          audio.setSpin(state.player.spin / state.player.spinMax);
+          if (events.salleChanged) audio.door();
+          // Le rotor se tait à la mort : sans ce `null`, l'oscillateur tenait sa
+          // dernière fréquence par-dessus l'écran de défaite.
+          audio.setSpin(state.phase === 'dead' ? null : state.player.spin / state.player.spinMax);
         }
         if (state.salle !== SALLES_PER_CHAPTER) {
           bannerDoneRef.current = false;
@@ -82,7 +94,14 @@ export function CombatScreen({
     if (e.pointerId !== pointerRef.current || !originRef.current) return;
     const dx = e.clientX - originRef.current.x;
     const dy = e.clientY - originRef.current.y;
-    steerRef.current = Math.hypot(dx, dy) > DEAD_ZONE_PX ? { x: dx, y: dy } : null;
+    const steering = Math.hypot(dx, dy) > DEAD_ZONE_PX;
+    steerRef.current = steering ? { x: dx, y: dy } : null;
+    // La consigne est comprise dès qu'elle est exécutée : c'est le premier vrai
+    // glissement qui referme l'explication, pas un minuteur.
+    if (steering && hint) {
+      localStorage.setItem(ONBOARDED_KEY, '1');
+      setHint(false);
+    }
   };
   const onUp = (e: React.PointerEvent) => {
     if (e.pointerId !== pointerRef.current) return;
@@ -145,8 +164,31 @@ export function CombatScreen({
         </div>
       </div>
 
+      {/* Hors de l'arène, à dessein : posée en surimpression, l'explication masquait
+          les deux toupies qu'elle désigne. L'espace vertical libre autour du carré
+          suffit à l'accueillir sans rétrécir le terrain de jeu. */}
+      {hint ? (
+        <div
+          style={{
+            border: '1px solid var(--player)', borderRadius: 11, padding: '9px 12px',
+            background: 'rgba(128,232,255,.06)', textAlign: 'center', pointerEvents: 'none',
+          }}
+        >
+          <p style={{ margin: 0, font: '600 14px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.04em', color: 'var(--player)' }}>
+            ▾ TA TOUPIE EST CELLE DU CHEVRON
+          </p>
+          <p style={{ margin: '4px 0 0', fontSize: 12, lineHeight: 1.4 }}>
+            Glisse le doigt n'importe où pour la piloter.{' '}
+            <strong style={{ color: 'var(--ember)' }}>Fonce dans l'adversaire</strong> : qui charge casse
+            plus et encaisse moins.
+          </p>
+        </div>
+      ) : null}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-        <span style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '.07em' }}>SPIN</span>
+        {/* Le chevron et la teinte reprennent exactement ceux du repère porté par la
+            toupie du joueur : la barre nomme la toupie autant qu'elle mesure son spin. */}
+        <span style={{ fontSize: 11, color: 'var(--player)', letterSpacing: '.07em', whiteSpace: 'nowrap' }}>▾ TON SPIN</span>
         <div style={{ flex: '1 1 0', height: 9, borderRadius: 5, background: 'var(--bg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <div style={{ width: `${spinPct}%`, height: '100%', background: 'var(--player)' }} />
         </div>

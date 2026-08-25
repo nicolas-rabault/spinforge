@@ -17,6 +17,7 @@ Piliers non négociables :
 - La « vie » d'une toupie est sa **rotation** (spin). Elle décroît lentement avec le temps (endurance) et chute sous les chocs ; à 0 la toupie s'arrête.
 - **Pilotage** : glisser le doigt n'importe où = direction visée (joystick virtuel relatif au point de contact, zone morte 8 px) ; la toupie accélère dans cette direction ; relâcher = elle file sur sa lancée avec friction.
 - Dégâts d'un choc : proportionnels à la vitesse relative d'impact, modulés par `attaque de l'attaquant / (attaque + défense du défenseur)`. Les deux perdent du spin, le défenseur davantage si son ratio est défavorable.
+- **Partage de charge** : la vitesse relative d'impact est la somme exacte des deux vitesses de fermeture, et les dégâts se répartissent selon la part que chacun a lui-même provoquée. Un assaut pur inflige ×1,3 et encaisse ×0,7 (`CHARGE_BONUS`) ; un choc frontal, où les deux avancent autant, reste rigoureusement symétrique. **Sans cette règle le pilotage ne sert à rien** : mesuré à l'autopilote, un joueur qui ne touchait jamais l'écran validait le chapitre 1 aussi vite qu'un joueur qui charge. Voir `docs/ameliorations.md`.
 - **Types** (jalon 2+) : Attaque > Endurance > Défense > Attaque (+25 % de dégâts sur le type dominé), Équilibre neutre (+10 % partout). Certaines Lames tournent à gauche (chocs frontaux amplifiés contre rotation droite).
 
 ## Structure : chapitres & salles
@@ -46,7 +47,7 @@ Chaque pièce progresse sur deux axes infinis : **niveau** (crédits/fragments) 
 
 **Courbes** :
 - `coût(niveau) = 100 × 1,08^niveau`
-- `revenu(salle) = 120 × 1,13^(salle−1)` par salle vidée ; boss ×10. (Calibré au jalon 1.5 par mesure : un chapitre 1 se valide en ~21 runs, soit ~2 h.)
+- `revenu(salle) = 70 × 1,13^(salle−1)` par salle vidée ; boss ×10. (Calibré au jalon 1.5 par mesure : un chapitre 1 se valide en ~21 runs. La base est passée de 120 à 70 avec le partage de charge, qui a rendu le pilotage bien plus efficace — à 120 le chapitre tombait à 1,43 h. L'économie commande la durée, le combat commande la forme de la difficulté.)
 
 **Coffres** : Bronze (2 000 crédits, ×10 : 18 000 — pièces Commun→Rare) · Arène (300 gemmes, ×10 : 2 680, 1 gratuit/4 h — Bon→Excellent, Excellent garanti au 10ᵉ) · Mythique (1 500 gemmes, ×10 : 13 500 — Excellent→Légende, Légende garantie au 30ᵉ). Arène et Mythique mêlent pièces génériques et **doublons signature** des toupies débloquées (seule source de fusion des Lames/Noyaux).
 

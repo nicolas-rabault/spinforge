@@ -28,6 +28,7 @@ export interface Textures {
   spark: Texture;
   wave: Texture;
   shadow: Texture;
+  caret: Texture;
 }
 
 function canvas(size: number): { el: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
@@ -122,6 +123,21 @@ function waveTexture(): Texture {
   return Texture.from(el);
 }
 
+/** Chevron « c'est toi », pointe en bas, dessiné dans le tiers haut du carré. */
+function caretTexture(): Texture {
+  const size = 64;
+  const { el, ctx } = canvas(size);
+  ctx.beginPath();
+  ctx.moveTo(size * 0.5, size * 0.92);
+  ctx.lineTo(size * 0.06, size * 0.1);
+  ctx.lineTo(size * 0.5, size * 0.34);
+  ctx.lineTo(size * 0.94, size * 0.1);
+  ctx.closePath();
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  return Texture.from(el);
+}
+
 function shadowTexture(): Texture {
   const size = 128;
   const { el, ctx } = canvas(size);
@@ -150,13 +166,14 @@ export function createTextures(): Textures {
     spark: radialTexture(32, [[0, 1], [0.4, 0.9], [1, 0]]),
     wave: waveTexture(),
     shadow: shadowTexture(),
+    caret: caretTexture(),
   };
 }
 
 export function destroyTextures(t: Textures): void {
   const all = [
     ...t.body.player, ...t.body.bot, ...t.rim.player, ...t.rim.bot,
-    t.core, t.halo, t.spark, t.wave, t.shadow,
+    t.core, t.halo, t.spark, t.wave, t.shadow, t.caret,
   ];
   for (const tex of all) tex.destroy(true);
 }

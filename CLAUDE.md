@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Spec de référence** : `docs/game-design.md` (chiffres exacts, règles, catalogue). Le canvas visuel vit dans `design/` (fichiers `.dc.html` — ne les modifier que via le skill `/design`).
 - **Roadmap** : `docs/roadmap.md` (4 jalons). Plans d'implémentation : `docs/superpowers/plans/`.
+- **Retours de jeu** : `docs/ameliorations.md` — remarques de test et suites données. Y consigner toute nouvelle remarque joueur.
 
 ## Commandes
 

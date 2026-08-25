@@ -57,6 +57,12 @@ Traité au jalon 1.5, sauf la dette de simulation ci-dessous, explicitement rés
 jalon 2. Aucun de ces points n'était bloquant ; tous avaient été constatés et arbitrés
 pendant la revue du jalon 1.
 
+**Équilibrage du chapitre 1 — tranché au jalon 1.5, recalibré le 2026-08-25.**
+`ECON.rewardBase` est passé de 120 à 70 en contrepartie du partage de charge ajouté au
+combat : le pilotage étant devenu réellement payant, le chapitre 1 tombait à 1,43 h. Même
+protocole de mesure, ~21 runs retrouvés. Détail et tableaux : `docs/ameliorations.md`.
+Le paragraphe ci-dessous décrit la calibration d'origine.
+
 **Équilibrage du chapitre 1 — tranché au jalon 1.5.** Mesuré à l'autopilote (« fonce sur le bot le plus
 proche » + achats gloutons, 5 seeds, médianes) : le chapitre 1 demandait ~124 runs, soit ~12 h. Réglage
 retenu « MUR ~2 h » : seule l'économie bouge (`ECON.rewardBase` 20 → 120, `rewardGrowth` 1,12 → 1,13,
@@ -130,10 +136,9 @@ spec), d'autres des perfectionnements de game feel reportés faute d'enjeu au ja
   corrigé ici faute d'arbitrage sur la marge d'anti-aliasing qui l'a motivé.
 
 **Son**
-- Le bourdon (oscillateur indexé sur le spin) se fige à sa dernière fréquence quand on
-  passe sur l'onglet Forge : la boucle de jeu est en pause, `audio.setSpin()` n'est plus
-  appelé, mais l'oscillateur continue de sonner à cette fréquence. À couper ou geler
-  explicitement au changement d'onglet.
+- ~~Le bourdon se fige à sa dernière fréquence quand on passe sur l'onglet Forge.~~
+  **Corrigé** avec la passe son du 2026-08-25 : le rotor se tait à la bascule d'onglet
+  et à la mort du joueur (`docs/ameliorations.md`).
 - L'initialisation paresseuse de l'audio dans `App.tsx`
   (`if (audioRef.current === null) audioRef.current = createAudio()`) serait fragile sous
   `React.StrictMode` (double montage en développement créerait deux `AudioContext`).

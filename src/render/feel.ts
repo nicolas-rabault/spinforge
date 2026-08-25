@@ -43,6 +43,17 @@ export const FEEL = {
   // agonie
   deathLife: 0.9,
 
+  // marque du joueur : le repère qui répond à « laquelle est la mienne ? ».
+  // Sa teinte ne suit JAMAIS le spin — un repère qui s'éteint avec la toupie
+  // disparaît exactement quand on le cherche.
+  markerRadiusMult: 2.15,
+  markerAlphaBase: 0.3,
+  markerAlphaPulse: 0.16,
+  markerPulseHz: 1.15,
+  caretSizeMult: 0.62,
+  caretGapMult: 1.45,
+  caretBobMult: 0.16,
+
   // boss
   bossHaloMult: 2.7,
   bossRingSpeed: -0.42,
