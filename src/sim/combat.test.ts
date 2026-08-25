@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { decaySpin, resolveCollision } from './combat';
 import { TICK_S } from './config';
+import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
 
 function top(over: Partial<Top> = {}): Top {
@@ -9,6 +10,7 @@ function top(over: Partial<Top> = {}): Top {
     pos: { x: 0, y: 0 }, vel: { x: 0, y: 0 },
     radius: 12, spin: 1000, spinMax: 1000, spinDecay: 10,
     attack: 10, defense: 10, maxSpeed: 240, accel: 900,
+    talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
     ...over,
   };
 }

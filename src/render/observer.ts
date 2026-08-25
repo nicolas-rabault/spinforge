@@ -89,6 +89,6 @@ export function observe(before: Snapshot, after: Snapshot): RenderEvents {
     deaths,
     salleChanged: before.salle !== after.salle,
     bossEntered: before.salle !== SALLES_PER_CHAPTER && after.salle === SALLES_PER_CHAPTER,
-    chapterValidated: !before.chapterValidated && after.chapterValidated,
+    chapterValidated: before.salle === SALLES_PER_CHAPTER && after.salle === 1,
   };
 }

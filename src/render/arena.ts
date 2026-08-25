@@ -1,7 +1,7 @@
 import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
 import { PALETTE, spinTint } from '../theme';
-import type { SimState } from '../sim/types';
+import type { RunState } from '../sim/types';
 import { createTextures, destroyTextures, floorTexture, FLOOR_EDGE, FLOOR_OVERSCAN, type Shape } from './textures';
 import { FEEL } from './feel';
 import { createTopView, type TopView } from './topView';
@@ -17,11 +17,11 @@ const MARGIN = 1.1;
 const FLOOR_VISUAL_RADIUS = ARENA_RADIUS * FLOOR_OVERSCAN * FLOOR_EDGE;
 
 export interface Arena {
-  beforeTick(state: SimState): void;
-  afterTick(state: SimState): void;
+  beforeTick(state: RunState): void;
+  afterTick(state: RunState): void;
   /** Les événements du dernier tick, consommés une seule fois (sonorisation). */
   consumeEvents(): RenderEvents | null;
-  draw(state: SimState, alpha: number): void;
+  draw(state: RunState, alpha: number): void;
   destroy(): void;
 }
 

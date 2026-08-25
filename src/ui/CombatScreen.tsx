@@ -4,16 +4,17 @@ import { useGameLoop } from './useGameLoop';
 import { chapterOf } from '../content/chapters';
 import { SALLES_PER_CHAPTER } from '../sim/config';
 import { resetRun } from '../sim/sim';
-import type { SimState, Vec } from '../sim/types';
+import type { MetaState, RunState, RunReward, Vec } from '../sim/types';
 import type { Audio } from '../audio/audio';
 
 const DEAD_ZONE_PX = 8;
 const ONBOARDED_KEY = 'spinforge.onboarded';
 
 export function CombatScreen({
-  stateRef, running, onTick, audio,
+  runRef, metaRef, running, onTick, audio,
 }: {
-  stateRef: { current: SimState };
+  runRef: { current: RunState };
+  metaRef: { current: MetaState };
   running: boolean;
   onTick: () => void;
   audio: Audio;
@@ -50,12 +51,13 @@ export function CombatScreen({
   }, [running, audio]);
 
   useGameLoop(
-    stateRef,
+    runRef,
+    metaRef,
     steerRef,
     {
-      beforeTick: (state) => arenaRef.current?.beforeTick(state),
-      afterTick: (state) => {
-        arenaRef.current?.afterTick(state);
+      beforeTick: (run) => arenaRef.current?.beforeTick(run),
+      afterTick: (run) => {
+        arenaRef.current?.afterTick(run);
         const events = arenaRef.current?.consumeEvents();
         if (events) {
           // Les frôlements entre bots ne méritent pas un son ; les tiens, toujours.
@@ -64,18 +66,19 @@ export function CombatScreen({
           if (events.salleChanged) audio.door();
           // Le rotor se tait à la mort : sans ce `null`, l'oscillateur tenait sa
           // dernière fréquence par-dessus l'écran de défaite.
-          audio.setSpin(state.phase === 'dead' ? null : state.player.spin / state.player.spinMax);
+          audio.setSpin(run.phase === 'dead' ? null : run.player.spin / run.player.spinMax);
         }
-        if (state.salle !== SALLES_PER_CHAPTER) {
+        if (run.salle !== SALLES_PER_CHAPTER) {
           bannerDoneRef.current = false;
         } else if (!bannerDoneRef.current) {
           bannerDoneRef.current = true;
-          setBanner(chapterOf(state.chapter).boss);
+          setBanner(chapterOf(run.chapter).boss);
           window.setTimeout(() => setBanner(null), 2100);
         }
         onTick();
       },
-      draw: (state, alpha) => arenaRef.current?.draw(state, alpha),
+      draw: (run, alpha) => arenaRef.current?.draw(run, alpha),
+      onReward: (_reward: RunReward) => { onTick(); },
     },
     running,
   );
@@ -110,7 +113,7 @@ export function CombatScreen({
     steerRef.current = null;
   };
 
-  const s = stateRef.current;
+  const s = runRef.current;
   const chapter = chapterOf(s.chapter);
   const spinPct = Math.max(0, Math.min(100, (s.player.spin / s.player.spinMax) * 100));
 
@@ -196,7 +199,7 @@ export function CombatScreen({
 
       {s.phase === 'dead' ? (
         <button
-          onClick={() => { resetRun(stateRef.current); onTick(); }}
+          onClick={() => { resetRun(runRef.current, metaRef.current); onTick(); }}
           style={{
             minHeight: 48, borderRadius: 11, cursor: 'pointer', border: '1px solid var(--ember)',
             background: 'var(--ember)', color: 'var(--ink)', font: '600 15px Oswald, ui-sans-serif, sans-serif',

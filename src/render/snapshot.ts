@@ -1,4 +1,4 @@
-import type { Phase, SimState } from '../sim/types';
+import type { Phase, RunState } from '../sim/types';
 
 /** Ce que le rendu retient d'une toupie entre deux ticks. */
 export interface TopSnapshot {
@@ -13,11 +13,10 @@ export interface TopSnapshot {
 export interface Snapshot {
   salle: number;
   phase: Phase;
-  chapterValidated: boolean;
   tops: TopSnapshot[];
 }
 
-function snap(top: SimState['player']): TopSnapshot {
+function snap(top: RunState['player']): TopSnapshot {
   return {
     id: top.id,
     x: top.pos.x,
@@ -28,12 +27,11 @@ function snap(top: SimState['player']): TopSnapshot {
   };
 }
 
-export function takeSnapshot(state: SimState): Snapshot {
+export function takeSnapshot(run: RunState): Snapshot {
   return {
-    salle: state.salle,
-    phase: state.phase,
-    chapterValidated: state.chapterValidated,
-    tops: [snap(state.player), ...state.bots.map(snap)],
+    salle: run.salle,
+    phase: run.phase,
+    tops: [snap(run.player), ...run.bots.map(snap)],
   };
 }
 

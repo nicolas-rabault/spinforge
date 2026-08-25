@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { createInitialState } from '../sim/sim';
+import { createRun } from '../sim/sim';
+import { createInitialMeta } from '../sim/meta';
 import { createAudio } from '../audio/audio';
 import { formatCredits } from './format';
 import { CombatScreen } from './CombatScreen';
@@ -7,8 +8,9 @@ import { ForgeScreen } from './ForgeScreen';
 import { TabBar, type Tab } from './TabBar';
 
 export function App() {
-  const [initialState] = useState(() => createInitialState(Date.now() >>> 0));
-  const stateRef = useRef(initialState);
+  const [initialMeta] = useState(() => createInitialMeta(Date.now() >>> 0));
+  const metaRef = useRef(initialMeta);
+  const runRef = useRef(createRun(initialMeta, Date.now() >>> 0));
   const [tab, setTab] = useState<Tab>('combat');
   const [, setFrame] = useState(0);
   const redraw = () => setFrame((f) => f + 1);
@@ -35,7 +37,18 @@ export function App() {
         >
           Crédits{' '}
           <span style={{ color: 'var(--ember)', fontFamily: 'Oswald, ui-sans-serif, sans-serif', fontVariantNumeric: 'tabular-nums' }}>
-            {formatCredits(stateRef.current.credits)}
+            {formatCredits(metaRef.current.credits)}
+          </span>
+        </span>
+        <span
+          style={{
+            border: '1px solid var(--line)', background: 'var(--panel)', borderRadius: 9,
+            padding: '5px 11px', fontSize: 12.5,
+          }}
+        >
+          Gemmes{' '}
+          <span style={{ color: 'var(--player)', fontFamily: 'Oswald, ui-sans-serif, sans-serif', fontVariantNumeric: 'tabular-nums' }}>
+            {Math.floor(metaRef.current.gems)}
           </span>
         </span>
         <button
@@ -58,9 +71,9 @@ export function App() {
           PixiJS à chaque changement d'onglet coûterait un rechargement complet
           des textures. On le masque, la boucle se met en pause. */}
       <div style={{ display: tab === 'combat' ? 'flex' : 'none', flexDirection: 'column', flex: '1 1 0', minHeight: 0 }}>
-        <CombatScreen stateRef={stateRef} running={tab === 'combat'} onTick={redraw} audio={audioRef.current} />
+        <CombatScreen runRef={runRef} metaRef={metaRef} running={tab === 'combat'} onTick={redraw} audio={audioRef.current} />
       </div>
-      {tab === 'forge' ? <ForgeScreen stateRef={stateRef} onChanged={redraw} /> : null}
+      {tab === 'forge' ? <ForgeScreen metaRef={metaRef} runRef={runRef} onChanged={redraw} /> : null}
 
       <TabBar tab={tab} onChange={setTab} />
     </div>

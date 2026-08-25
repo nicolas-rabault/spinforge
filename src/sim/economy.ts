@@ -1,42 +1,40 @@
 import { ECON, PIECE_EFFECT, PLAYER_BASE } from './config';
-import type { PieceLevels, SimState, Stats } from './types';
+import { rarityMult, type PieceInstance, type Slot } from './piece';
+import type { MetaState, RunReward, Stats } from './types';
 
 export function upgradeCost(level: number): number {
   return ECON.upgradeBase * Math.pow(ECON.upgradeGrowth, level);
 }
 
-export function salleReward(salle: number, boss: boolean): number {
+export function salleReward(salle: number, boss: boolean): RunReward {
   const base = ECON.rewardBase * Math.pow(ECON.rewardGrowth, salle - 1);
-  return boss ? base * ECON.bossRewardMult : base;
+  return boss
+    ? { credits: base * ECON.bossRewardMult, gems: ECON.bossGems }
+    : { credits: base, gems: 0 };
 }
 
-export function playerStats(pieces: PieceLevels): Stats {
+/** Les deux axes d'une pièce se multiplient : le niveau est linéaire, le rang
+ *  est géométrique. Dès le niveau 3 un rang vaut plus qu'un niveau. */
+function factor(piece: PieceInstance, perLevel: number): number {
+  return (1 + perLevel * piece.level) * rarityMult(piece.rank);
+}
+
+export function playerStats(meta: MetaState): Stats {
+  const { lame, disque, pointe, noyau } = meta.equipped;
   return {
-    attack: PLAYER_BASE.attack * (1 + PIECE_EFFECT.lameAttack * pieces.lame),
-    defense: PLAYER_BASE.defense * (1 + PIECE_EFFECT.disqueDefense * pieces.disque),
-    maxSpeed: PLAYER_BASE.maxSpeed * (1 + PIECE_EFFECT.pointeSpeed * pieces.pointe),
-    accel: PLAYER_BASE.accel,
-    spinMax: PLAYER_BASE.spinMax * (1 + PIECE_EFFECT.noyauSpin * pieces.noyau),
-    spinDecay: PLAYER_BASE.spinDecay / (1 + PIECE_EFFECT.pointeDecay * pieces.pointe),
+    attack: PLAYER_BASE.attack * factor(lame, PIECE_EFFECT.lameAttack),
+    defense: PLAYER_BASE.defense * factor(disque, PIECE_EFFECT.disqueDefense),
+    maxSpeed: PLAYER_BASE.maxSpeed * factor(pointe, PIECE_EFFECT.pointeSpeed),
+    spinMax: PLAYER_BASE.spinMax * factor(noyau, PIECE_EFFECT.noyauSpin),
+    spinDecay: PLAYER_BASE.spinDecay / factor(pointe, PIECE_EFFECT.pointeDecay),
   };
 }
 
-export function syncPlayerStats(state: SimState): void {
-  const stats = playerStats(state.pieces);
-  state.player.attack = stats.attack;
-  state.player.defense = stats.defense;
-  state.player.maxSpeed = stats.maxSpeed;
-  state.player.accel = stats.accel;
-  state.player.spinMax = stats.spinMax;
-  state.player.spinDecay = stats.spinDecay;
-  state.player.spin = Math.min(state.player.spin, stats.spinMax);
-}
-
-export function tryUpgrade(state: SimState, piece: keyof PieceLevels): boolean {
-  const cost = upgradeCost(state.pieces[piece]);
-  if (state.credits < cost) return false;
-  state.credits -= cost;
-  state.pieces[piece]++;
-  syncPlayerStats(state);
+export function tryUpgrade(meta: MetaState, slot: Slot): boolean {
+  const piece = meta.equipped[slot];
+  const cost = upgradeCost(piece.level);
+  if (meta.credits < cost) return false;
+  meta.credits -= cost;
+  piece.level++;
   return true;
 }

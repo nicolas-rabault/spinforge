@@ -1,5 +1,6 @@
 import { ARENA_RADIUS, BOSS, BOTS_PER_SALLE, BOT_BASE, BOT_SCALING, BOT_SPAWN_RING, SALLES_PER_CHAPTER } from './config';
 import { nextRandom } from './rng';
+import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
 
 export function botCountFor(salle: number): number {
@@ -26,6 +27,8 @@ export function makeBot(salle: number, index: number, angle: number): Top {
     defense: BOT_BASE.defense,
     maxSpeed: BOT_BASE.maxSpeed,
     accel: BOT_BASE.accel,
+    talents: NEUTRAL_TALENTS,
+    decayPauseTicks: 0,
   };
 }
 

@@ -13,7 +13,7 @@ function topSnap(over: Partial<TopSnapshot> = {}): TopSnapshot {
 }
 
 function snapshot(tops: TopSnapshot[], over: Partial<Snapshot> = {}): Snapshot {
-  return { salle: 1, phase: 'fighting', chapterValidated: false, tops, ...over };
+  return { salle: 1, phase: 'fighting', tops, ...over };
 }
 
 /** Le spin qu'une toupie aurait après un tick sans aucun choc. */
@@ -91,11 +91,13 @@ describe('observe — progression', () => {
     expect(r.bossEntered).toBe(true);
   });
 
-  it('signale la validation du chapitre une seule fois', () => {
+  it('signale la validation du chapitre au retour de la salle 10 vers la salle 1', () => {
     const p = topSnap();
-    const validated = snapshot([p], { chapterValidated: true });
-    expect(observe(snapshot([p]), validated).chapterValidated).toBe(true);
-    expect(observe(validated, validated).chapterValidated).toBe(false);
+    const boss = snapshot([p], { salle: SALLES_PER_CHAPTER });
+    const restart = snapshot([p], { salle: 1 });
+    expect(observe(boss, restart).chapterValidated).toBe(true);
+    // Une seule fois : l'événement tient à la transition, pas à un drapeau qui resterait levé.
+    expect(observe(restart, restart).chapterValidated).toBe(false);
   });
 
   it('ne signale rien quand rien ne bouge', () => {
