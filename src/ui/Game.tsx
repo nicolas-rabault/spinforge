@@ -30,10 +30,16 @@ export function Game() {
     };
   }, []);
 
-  useGameLoop(stateRef, steerRef, () => {
-    arenaRef.current?.draw(stateRef.current);
-    setFrame((f) => f + 1);
-  });
+  useGameLoop(
+    stateRef,
+    steerRef,
+    {
+      beforeTick: () => {},
+      afterTick: () => setFrame((f) => f + 1),
+      draw: (state, _alpha) => arenaRef.current?.draw(state),
+    },
+    true,
+  );
 
   const onDown = (e: React.PointerEvent) => {
     if (pointerRef.current !== null) return; // un seul doigt pilote à la fois
