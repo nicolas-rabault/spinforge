@@ -155,6 +155,25 @@ spec), d'autres des perfectionnements de game feel reportés faute d'enjeu au ja
   Techniquement nécessaire — le CSS s'applique avant tout JavaScript — mais le fichier ne
   porte aucun commentaire qui le rattache au thème pour la prochaine lecture.
 
+**Performance — arbitré : on s'en contente pour ce jalon.**
+Mesure de fin de jalon (sonde de temps par image, throttling processeur ×4 pour émuler un
+mobile milieu de gamme) : **médiane 58,8 images/s**, mais **p90 à 25,5 ms** — environ une
+image sur dix est doublée. Le critère d'acceptation n° 4, « 60 fps sur mobile milieu de
+gamme », est donc tenu à la médiane et manqué dans la queue de distribution. Reporté
+sciemment : le jalon 2 ajoute surtout des écrans React (coffres, inventaire, fusion) et
+non de la charge d'arène, donc la mesure ne devrait pas se dégrader d'ici là. Deux suspects
+sont déjà nommés plus haut dans cette section — la texture du sol régénérée à chaque pixel
+de redimensionnement, et la porte retracée en `Graphics` à chaque image. À reprendre au
+jalon 3, quand le farm AUTO fera tourner l'arène en continu et rendra la queue visible.
+
+**Équilibrage**
+- La taille des toupies à l'écran (~28 px de diamètre, soit `PLAYER_BASE.radius` /
+  `BOT_BASE.radius` = 12 dans `config.ts`) a été jugée en fin de jalon et **délibérément
+  laissée telle quelle**. Ce rayon est une constante d'équilibrage, pas un réglage de
+  rendu : le modifier changerait la fréquence des chocs et invaliderait la calibration du
+  « MUR ~2 h » du chapitre 1 (autopilote, 5 seeds), qu'il faudrait alors refaire
+  entièrement. À rouvrir seulement si une remesure est de toute façon au programme.
+
 **Tests**
 - `lerp`, `takeSnapshot`, `snapshotById` (`src/render/snapshot.ts`) et `spinOmega`
   (`src/render/feel.ts`) n'ont pas de test dédié : fonctions pures triviales, non exigées
