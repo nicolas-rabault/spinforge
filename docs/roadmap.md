@@ -8,7 +8,7 @@ Pilotage au doigt (glisser-diriger), simulation de combat déterministe à tick 
 
 **Critères d'acceptation** : deux runs même seed + mêmes inputs ⇒ états identiques (testé) ; on pilote la toupie au doigt dans le navigateur ; un chapitre complet (10 salles, boss en 10ᵉ) se joue, se perd (retour salle 1, crédits conservés) et se valide ; les 4 améliorations coûtent `100 × 1,08^niveau` et changent réellement les stats ; `npm run test` et `npm run build` verts.
 
-## Jalon 1.5 — L'habillage
+## Jalon 1.5 — L'habillage ✦ plan : `docs/superpowers/plans/2026-08-25-jalon-1-5-habillage.md`
 
 Le jalon 1 a livré la boucle, pas le jeu : deux cercles plats sur un disque filaire. Or la
 « vie » d'une toupie **est** sa rotation, et rien ne tourne à l'écran. Ce jalon donne au jeu
@@ -65,17 +65,6 @@ demeure de loin la salle la plus meurtrière (8 morts contre 3 pour la suivante)
 indépendants : l'économie commande la durée, `BOSS.spinMult` commande la forme de la difficulté.
 Détail : `docs/superpowers/specs/2026-08-24-jalon-1-5-habillage-design.md` § 6.
 
-**Rendu**
-- Les toupies dépassent visiblement de l'anneau dessiné sur ~4,3 % des frames (médiane 2,1
-  unités, max 10,6 ≈ 12 px, séries jusqu'à 0,8 s) : `resolveCollision` corrige la position
-  après `moveAndBounce`, donc rien ne re-clampe avant le tick suivant. Correction : un
-  `clampToArena(top)` dans `physics.ts` appelé après les boucles de collision. **Seule
-  modification de `src/sim/` autorisée au jalon 1.5.**
-- Le canvas est rogné en dessous de 360 px de large (à 320 px on perd 20 px de chaque côté et
-  le HUD affiche « édits 0 ») : `SIZE = 360` en dur dans `render/arena.ts`, `width: 360` dans
-  `ui/Hud.tsx`, et aucun scroll possible (`touchAction: none`).
-- `360` est dupliqué entre `render/arena.ts` et `ui/Hud.tsx` sans rien qui garantisse l'accord.
-
 **Simulation** (ne pas toucher avant le jalon 2)
 - `salle.ts` code en dur le nombre de bots par palier (`1 + floor((salle-1)/3)`, plafond `3`) :
   seul manquement restant à la règle « tout l'équilibrage dans `config.ts` ». À reprendre avec
@@ -88,10 +77,3 @@ Détail : `docs/superpowers/specs/2026-08-24-jalon-1-5-habillage-design.md` § 6
   meilleur chapitre *jamais* validé » l'exige. À couvrir par un test au jalon 3.
 - `formatCredits` affiche `1000,00 M` au-delà d'un milliard. Inatteignable au jalon 1 ; à
   traiter avec la migration `break_infinity.js` prévue dans la spec.
-
-**Interface**
-- Les handlers pointer sont sur le conteneur externe : glisser sur le HUD pilote aussi la
-  toupie. Conforme à la spec (« glisser n'importe où »), à revoir si le HUD s'étoffe.
-- `useGameLoop` capture la première closure `onFrame` (deps `[]`). Sûr aujourd'hui car tout
-  ce qu'elle touche est une ref ; piège si elle capture un jour une valeur changeante.
-- Un commentaire `eslint-disable` subsiste alors qu'aucun ESLint n'est configuré.
