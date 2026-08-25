@@ -1,4 +1,4 @@
-import { Application, Container, Sprite, Texture } from 'pixi.js';
+import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
 import { PALETTE, spinTint } from '../theme';
 import type { SimState } from '../sim/types';
@@ -11,6 +11,9 @@ import { createEffects, type Effects } from './effects';
 
 /** Marge entre le bord de l'anneau et le bord du canvas. */
 const MARGIN = 1.1;
+/** Rayon visuel du disque du sol, même facteur de bord que floorTexture() (textures.ts) :
+ * un cercle, pas le carré de la texture qui le contient. */
+const FLOOR_VISUAL_RADIUS = ARENA_RADIUS * 1.06 * 0.94;
 
 export interface Arena {
   beforeTick(state: SimState): void;
@@ -43,11 +46,10 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   floor.width = floor.height = ARENA_RADIUS * 2 * 1.06;
   floorLayer.addChild(floor);
 
-  const dim = new Sprite(Texture.WHITE);
-  dim.anchor.set(0.5);
-  dim.tint = 0x04050a;
+  // Un cercle, pas un carré : le voile doit épouser le disque du sol, pas
+  // déborder dans les coins du canvas où la page est visible derrière.
+  const dim = new Graphics().circle(0, 0, FLOOR_VISUAL_RADIUS).fill(0x04050a);
   dim.alpha = 0;
-  dim.width = dim.height = ARENA_RADIUS * 2 * 1.06;
   floorLayer.addChild(dim);
 
   const views = new Map<string, TopView>();
