@@ -39,12 +39,12 @@ function drawOne(meta: MetaState, kind: ChestKind): PieceInstance {
 
   const r2 = nextRandom(meta.rngState);
   meta.rngState = r2.state;
-  const slot = def.slots[Math.min(def.slots.length - 1, Math.floor(r2.value * def.slots.length))] as Slot;
+  const slot = def.slots[Math.floor(r2.value * def.slots.length)] as Slot;
 
   const r3 = nextRandom(meta.rngState);
   meta.rngState = r3.state;
   const models = modelsForSlot(slot);
-  const model = models[Math.min(models.length - 1, Math.floor(r3.value * models.length))];
+  const model = models[Math.floor(r3.value * models.length)];
 
   if (hasPity) {
     meta.pity[kind] = rank >= def.pityRank ? 0 : meta.pity[kind] + 1;

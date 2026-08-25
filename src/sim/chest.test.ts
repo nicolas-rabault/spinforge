@@ -5,12 +5,21 @@ import { CHESTS } from './config';
 import { modelById } from '../content/pieces';
 import type { MetaState } from './types';
 
-function rich(): MetaState {
-  const meta = createInitialMeta(12345);
+function richWithSeed(seed: number): MetaState {
+  const meta = createInitialMeta(seed);
   meta.credits = 10_000_000;
   meta.gems = 10_000_000;
   return meta;
 }
+
+function rich(): MetaState {
+  return richWithSeed(12345);
+}
+
+// Nombre de graines balayées par les tests de pity : assez pour rendre
+// négligeable la probabilité qu'elles coïncident toutes par hasard avec le
+// rang garanti (voir la revue de la Task 7 — un seed unique ne prouvait rien).
+const PITY_SEEDS = Array.from({ length: 30 }, (_, i) => i + 1);
 
 describe('prix', () => {
   it('applique la remise du ×10', () => {
@@ -69,27 +78,48 @@ describe('contenu', () => {
 });
 
 describe('pity', () => {
-  it('Arène garantit un Excellent au dixième tirage sans Excellent', () => {
-    const meta = rich();
-    // On force le compteur au seuil moins un : le prochain tirage doit être forcé.
-    meta.pity.arene = CHESTS.arene.pityThreshold - 1;
-    const piece = openChest(meta, 'arene', 1)![0];
-    expect(piece.rank).toBe(CHESTS.arene.pityRank);
-    expect(meta.pity.arene).toBe(0);
+  it('Arène garantit un Excellent au dixième tirage sans Excellent, pour toute graine', () => {
+    // Un seed unique ne suffit pas : pour certaines graines, le tirage naturel
+    // tombe par coïncidence sur le rang garanti, et le test passerait même sans
+    // forçage. Balayer un éventail de graines rend cette coïncidence négligeable.
+    for (const seed of PITY_SEEDS) {
+      const meta = richWithSeed(seed);
+      // On force le compteur au seuil moins un : le prochain tirage doit être forcé.
+      meta.pity.arene = CHESTS.arene.pityThreshold - 1;
+      const piece = openChest(meta, 'arene', 1)![0];
+      expect(piece.rank).toBe(CHESTS.arene.pityRank);
+      expect(meta.pity.arene).toBe(0);
+    }
   });
 
-  it('un ×10 ne peut pas repartir sans Excellent', () => {
-    const meta = rich();
-    meta.pity.arene = 0;
-    const pulls = openChest(meta, 'arene', 10)!;
-    expect(pulls.some((p) => p.rank >= CHESTS.arene.pityRank)).toBe(true);
+  it('un ×10 garantit le rang au dixième tirage si les neuf premiers n’y sont pas naturellement arrivés, pour toute graine', () => {
+    // Traduction directe du mécanisme, pas de la coïncidence « au moins un des
+    // dix » (vraie ~40 % du temps même sans pity) : si, en partant d'un
+    // compteur à zéro, aucun des neuf premiers tirages n'a atteint le rang
+    // garanti, alors le dixième doit l'être — forcément forcé.
+    let exercised = false;
+    for (const seed of PITY_SEEDS) {
+      const meta = richWithSeed(seed);
+      meta.pity.arene = 0;
+      const pulls = openChest(meta, 'arene', 10)!;
+      const reachedInFirstNine = pulls.slice(0, 9).some((p) => p.rank >= CHESTS.arene.pityRank);
+      if (!reachedInFirstNine) {
+        exercised = true;
+        expect(pulls[9].rank).toBe(CHESTS.arene.pityRank);
+      }
+    }
+    // Garde-fou : si aucune graine ne produit ce scénario, l'assertion
+    // ci-dessus n'a jamais été exécutée et ne prouve rien.
+    expect(exercised).toBe(true);
   });
 
-  it('Mythique garantit une Légende au trentième', () => {
-    const meta = rich();
-    meta.pity.mythique = CHESTS.mythique.pityThreshold - 1;
-    expect(openChest(meta, 'mythique', 1)![0].rank).toBe(CHESTS.mythique.pityRank);
-    expect(meta.pity.mythique).toBe(0);
+  it('Mythique garantit une Légende au trentième, pour toute graine', () => {
+    for (const seed of PITY_SEEDS) {
+      const meta = richWithSeed(seed);
+      meta.pity.mythique = CHESTS.mythique.pityThreshold - 1;
+      expect(openChest(meta, 'mythique', 1)![0].rank).toBe(CHESTS.mythique.pityRank);
+      expect(meta.pity.mythique).toBe(0);
+    }
   });
 
   it('le compteur retombe à zéro dès qu’un tirage naturel atteint le rang garanti', () => {

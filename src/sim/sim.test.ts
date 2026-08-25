@@ -53,7 +53,7 @@ describe('déterminisme', () => {
   });
 
   it('ouvrir des coffres entre deux salles ne change pas l’issue du run', () => {
-    const play = (openChests: boolean) => {
+    const playWithChests = (openChests: boolean) => {
       const meta = createInitialMeta(42);
       meta.credits = 10_000_000;
       const run = createRun(meta, 42);
@@ -69,7 +69,7 @@ describe('déterminisme', () => {
       return JSON.stringify(run);
     };
     // C'est tout l'intérêt d'avoir séparé les deux flux de RNG.
-    expect(play(true)).toBe(play(false));
+    expect(playWithChests(true)).toBe(playWithChests(false));
   });
 });
 
