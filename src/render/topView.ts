@@ -101,7 +101,6 @@ export function createTopView(
       if (dying >= 0) {
         dying = Math.min(1, dying + dt / FEEL.deathLife);
         pivot.scale.set(1, 1 - 0.6 * dying);
-        pivot.rotation = angle;
         container.alpha = 1 - dying * dying;
         shadow.alpha = 1 - dying;
       }

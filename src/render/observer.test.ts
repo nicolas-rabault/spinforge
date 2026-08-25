@@ -6,14 +6,14 @@ import type { Snapshot, TopSnapshot } from './snapshot';
 
 function topSnap(over: Partial<TopSnapshot> = {}): TopSnapshot {
   return {
-    id: 'player', x: 0, y: 0, vx: 0, vy: 0,
-    spin: 1000, spinMax: 1000, spinDecay: 20, radius: 12, isPlayer: true,
+    id: 'player', x: 0, y: 0,
+    spin: 1000, spinDecay: 20, isPlayer: true,
     ...over,
   };
 }
 
 function snapshot(tops: TopSnapshot[], over: Partial<Snapshot> = {}): Snapshot {
-  return { tick: 1, salle: 1, phase: 'fighting', chapterValidated: false, tops, ...over };
+  return { salle: 1, phase: 'fighting', chapterValidated: false, tops, ...over };
 }
 
 /** Le spin qu'une toupie aurait après un tick sans aucun choc. */

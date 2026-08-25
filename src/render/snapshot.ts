@@ -5,17 +5,12 @@ export interface TopSnapshot {
   id: string;
   x: number;
   y: number;
-  vx: number;
-  vy: number;
   spin: number;
-  spinMax: number;
   spinDecay: number;
-  radius: number;
   isPlayer: boolean;
 }
 
 export interface Snapshot {
-  tick: number;
   salle: number;
   phase: Phase;
   chapterValidated: boolean;
@@ -27,19 +22,14 @@ function snap(top: SimState['player']): TopSnapshot {
     id: top.id,
     x: top.pos.x,
     y: top.pos.y,
-    vx: top.vel.x,
-    vy: top.vel.y,
     spin: top.spin,
-    spinMax: top.spinMax,
     spinDecay: top.spinDecay,
-    radius: top.radius,
     isPlayer: top.isPlayer,
   };
 }
 
 export function takeSnapshot(state: SimState): Snapshot {
   return {
-    tick: state.tick,
     salle: state.salle,
     phase: state.phase,
     chapterValidated: state.chapterValidated,
