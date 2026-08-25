@@ -5,6 +5,9 @@ import type { SimState } from '../sim/types';
 import { createTextures, destroyTextures, floorTexture, type Shape } from './textures';
 import { createTopView, type TopView } from './topView';
 import { lerp, snapshotById, takeSnapshot, type Snapshot } from './snapshot';
+import { observe } from './observer';
+import { createEffects, type Effects } from './effects';
+import { spinTint } from '../theme';
 
 /** Marge entre le bord de l'anneau et le bord du canvas. */
 const MARGIN = 1.1;
@@ -31,7 +34,8 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   const world = new Container();
   const floorLayer = new Container();
   const topLayer = new Container();
-  world.addChild(floorLayer, topLayer);
+  const effects: Effects = createEffects(tex);
+  world.addChild(floorLayer, topLayer, effects.container);
   app.stage.addChild(world);
 
   const floor = new Sprite(Texture.EMPTY);
@@ -48,8 +52,6 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   function layout(): void {
     const size = Math.min(app.screen.width, app.screen.height);
     world.scale.set(size / (2 * ARENA_RADIUS * MARGIN));
-    world.x = app.screen.width / 2;
-    world.y = app.screen.height / 2;
     const wanted = Math.max(256, Math.round(size * Math.min(window.devicePixelRatio || 1, 2)));
     if (wanted !== floorPx) {
       floorPx = wanted;
@@ -76,15 +78,37 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       before = takeSnapshot(state);
     },
     afterTick(state) {
+      if (!before) return;
+      const after = takeSnapshot(state);
+      const events = observe(before, after);
+      for (const hit of events.hits) {
+        const view = views.get(hit.id);
+        view?.flash(hit.power);
+        const top = [state.player, ...state.bots].find((t) => t.id === hit.id);
+        const radius = top?.radius ?? 12;
+        const ratio = top ? Math.max(0, Math.min(1, top.spin / top.spinMax)) : 0;
+        const camp = hit.id === 'player' ? 'player' : after.salle === SALLES_PER_CHAPTER ? 'boss' : 'bot';
+        effects.hit(
+          hit.x + hit.nx * radius,
+          hit.y + hit.ny * radius,
+          hit.nx,
+          hit.ny,
+          hit.power,
+          spinTint(camp, ratio),
+        );
+      }
       // Au changement de salle, la simulation téléporte le joueur au point de
       // départ : interpoler ferait glisser la toupie à travers l'arène.
-      if (before && before.salle !== state.salle) snapPositions = true;
+      if (before.salle !== after.salle) snapPositions = true;
     },
     draw(state, alpha) {
       const now = performance.now();
       const dt = Math.min((now - lastDraw) / 1000, 0.05);
       lastDraw = now;
       layout();
+      effects.update(dt);
+      world.x = app.screen.width / 2 + effects.shake.x * world.scale.x;
+      world.y = app.screen.height / 2 + effects.shake.y * world.scale.y;
 
       const prev = before ? snapshotById(before) : null;
       const live = new Set<string>();
@@ -113,6 +137,7 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       for (const view of views.values()) view.destroy();
       views.clear();
       if (floor.texture !== Texture.EMPTY) floor.texture.destroy(true);
+      effects.destroy();
       destroyTextures(tex);
       app.destroy(true, { children: true });
     },

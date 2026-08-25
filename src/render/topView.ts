@@ -12,6 +12,7 @@ export interface TopView {
   container: Container;
   /** `dt` en secondes ; `ratio` = spin/spinMax ; `speedRatio` = vitesse/vitesse max. */
   sync(x: number, y: number, ratio: number, speedRatio: number, dt: number): void;
+  flash(power: number): void;
   destroy(): void;
 }
 
@@ -50,13 +51,21 @@ export function createTopView(tex: Textures, shape: Shape, camp: Camp, radius: n
   core.blendMode = 'add';
   core.width = core.height = size * 0.62;
 
+  const flashSprite = new Sprite(tex.core);
+  flashSprite.anchor.set(0.5);
+  flashSprite.blendMode = 'add';
+  flashSprite.width = flashSprite.height = size * 1.3;
+  flashSprite.tint = 0xfff6e4;
+  flashSprite.alpha = 0;
+
   const pivot = new Container();
   pivot.addChild(body, rim, core);
-  container.addChild(halo, shadow, trail, pivot);
+  container.addChild(halo, shadow, trail, pivot, flashSprite);
 
   const ghosts: Ghost[] = [];
   let angle = Math.random() * Math.PI * 2;
   let wear = 0;
+  let flashLife = 0;
 
   return {
     container,
@@ -108,6 +117,14 @@ export function createTopView(tex: Textures, shape: Shape, camp: Camp, radius: n
       // Le conteneur suit la toupie ; les fantômes doivent rester où ils sont nés.
       trail.x = -x;
       trail.y = -y;
+
+      if (flashLife > 0) {
+        flashLife = Math.max(0, flashLife - dt / FEEL.flashLife);
+        flashSprite.alpha = 0.34 * flashLife * flashLife;
+      }
+    },
+    flash(power) {
+      flashLife = Math.max(flashLife, Math.min(1, power));
     },
     destroy() {
       for (const g of ghosts) g.sprite.destroy();
