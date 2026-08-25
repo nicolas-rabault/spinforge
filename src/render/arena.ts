@@ -121,6 +121,11 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       for (const top of tops) {
         live.add(top.id);
         const view = viewFor(top.id, top.isPlayer, top.radius, state.salle);
+        // Une toupie présente dans l'état (typiquement le joueur après un Retenter)
+        // ne doit jamais rester figée dans sa pose d'agonie : on la ressuscite.
+        // Les vues orphelines (bots retirés de state.bots) ne passent pas par cette
+        // boucle, donc leur agonie va bien à son terme dans la boucle de nettoyage.
+        view.revive();
         const p = prev?.get(top.id);
         const useLerp = p && !snapPositions;
         const x = useLerp ? lerp(p.x, top.pos.x, alpha) : top.pos.x;

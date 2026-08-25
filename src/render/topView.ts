@@ -16,6 +16,8 @@ export interface TopView {
   /** Démarre l'agonie : la toupie se couche, racle, s'immobilise. */
   kill(): void;
   isFinished(): boolean;
+  /** Ramène une vue en pleine agonie à l'état vivant (ex. après un Retenter). Sans effet si la vue n'agonise pas. */
+  revive(): void;
   destroy(): void;
 }
 
@@ -144,6 +146,14 @@ export function createTopView(tex: Textures, shape: Shape, camp: Camp, radius: n
     },
     isFinished() {
       return dying >= 1;
+    },
+    revive() {
+      if (dying < 0) return;
+      dying = -1;
+      // Restaure tout ce que la branche d'agonie de sync() avait modifié.
+      pivot.scale.set(1, 1);
+      container.alpha = 1;
+      shadow.alpha = 1;
     },
     destroy() {
       for (const g of ghosts) g.sprite.destroy();
