@@ -4,9 +4,9 @@ import { decaySpin, resolveCollision } from './combat';
 import { applySteering, clampToArena, moveAndBounce } from './physics';
 import { nextRandom } from './rng';
 import { spawnSalle } from './salle';
-import { buildLayout, zoneModsAt } from './terrain';
+import { buildLayout, takeShard, updateShard, zoneModsAt } from './terrain';
 import { resolveTalents } from './talents';
-import type { Input, MetaState, RunReward, RunState, Top } from './types';
+import type { Input, MetaState, RunReward, RunState, Top, Vec } from './types';
 
 function makePlayer(meta: MetaState): Top {
   const stats = playerStats(meta);
@@ -90,11 +90,22 @@ export function syncRunStats(run: RunState, meta: MetaState): void {
 }
 
 function refreshBotAims(run: RunState): void {
+  const shard = run.arena.shard;
   for (const bot of run.bots) {
     const r = nextRandom(run.rngState);
     run.rngState = r.state;
     const jitter = (r.value - 0.5) * BOT_AI.aimJitter;
-    const angle = Math.atan2(run.player.pos.y - bot.pos.y, run.player.pos.x - bot.pos.x) + jitter;
+    // Le bot détourne vers l'éclat quand il en est plus près que du joueur. Deux
+    // effets, tous deux voulus : la course devient réelle, et un bot parti le
+    // chercher laisse au joueur une fenêtre — qu'il peut lui refuser en le
+    // percutant. Le tirage reste à un par bot : le flux ne bouge pas.
+    let target: Vec = run.player.pos;
+    if (shard) {
+      const toShard = Math.hypot(shard.x - bot.pos.x, shard.y - bot.pos.y);
+      const toPlayer = Math.hypot(run.player.pos.x - bot.pos.x, run.player.pos.y - bot.pos.y);
+      if (toShard < toPlayer) target = shard;
+    }
+    const angle = Math.atan2(target.y - bot.pos.y, target.x - bot.pos.x) + jitter;
     bot.aim = { x: Math.cos(angle), y: Math.sin(angle) };
   }
 }
@@ -131,6 +142,8 @@ export function tick(run: RunState, input: Input): RunReward | null {
   }
   clampToArena(run.player);
   for (const bot of run.bots) clampToArena(bot);
+  run.rngState = updateShard(run.arena, run.rngState);
+  takeShard(run.arena, [run.player, ...run.bots]);
   decaySpin(run.player, playerZone);
   // `run.bots` n'est filtré qu'après : les index restent alignés sur `botZones`.
   run.bots.forEach((bot, i) => decaySpin(bot, botZones[i]));

@@ -1,6 +1,6 @@
 import { ARENA, ARENA_RADIUS, BREACH, LAYOUTS, PLAYER_SPAWN, SHARD, ZONES, type ZoneKind } from './config';
 import { nextRandom } from './rng';
-import type { Vec } from './types';
+import type { Top, Vec } from './types';
 
 /** Disque posé au sol. Une toupie y est soumise dès que son **centre** y entre :
  *  c'est ce que le joueur voit sous sa toupie, donc la seule règle qu'il puisse
@@ -179,4 +179,50 @@ export function inBreach(layout: ArenaLayout, angle: number): boolean {
     if (Math.abs(wrapped) <= breach.halfWidth) return true;
   }
   return false;
+}
+
+/**
+ * Fait vivre l'éclat : compte à rebours, apparition, expiration. Retourne le
+ * nouvel état du flux — **inchangé** tant qu'aucun éclat n'apparaît, pour que
+ * la consommation de tirages reste facile à suivre.
+ */
+export function updateShard(layout: ArenaLayout, rngState: number): number {
+  if (layout.shard) {
+    layout.shard.ttl--;
+    if (layout.shard.ttl <= 0) {
+      layout.shard = null;
+      layout.shardTimer = SHARD.everyTicks;
+    }
+    return rngState;
+  }
+  layout.shardTimer--;
+  if (layout.shardTimer > 0) return rngState;
+  const ra = nextRandom(rngState);
+  const rr = nextRandom(ra.state);
+  const angle = ra.value * TWO_PI;
+  const dist = ARENA_RADIUS * (SHARD.minRadius + rr.value * (SHARD.maxRadius - SHARD.minRadius));
+  layout.shard = { x: Math.cos(angle) * dist, y: Math.sin(angle) * dist, ttl: SHARD.lifeTicks };
+  return rr.state;
+}
+
+/**
+ * Le premier arrivé prend l'éclat. Retourne l'id du preneur, ou `null`.
+ * L'ordre du tableau tranche les litiges — le joueur en tête : le cas exact
+ * (deux toupies au contact le même tick) est trop rare pour mériter mieux.
+ */
+export function takeShard(layout: ArenaLayout, tops: Top[]): string | null {
+  const shard = layout.shard;
+  if (!shard) return null;
+  for (const top of tops) {
+    // Une toupie déjà à zéro ne ramasse rien : `takeShard` tourne AVANT le filtre
+    // des morts et la branche de mort du joueur, donc sans cette garde un joueur
+    // éjecté au même tick esquiverait sa propre mort en effleurant l'éclat.
+    if (top.spin <= 0) continue;
+    if (Math.hypot(top.pos.x - shard.x, top.pos.y - shard.y) > SHARD.radius + top.radius) continue;
+    top.spin = Math.min(top.spinMax, top.spin + SHARD.spinGain * top.spinMax);
+    layout.shard = null;
+    layout.shardTimer = SHARD.everyTicks;
+    return top.id;
+  }
+  return null;
 }

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildLayout, inBreach, NEUTRAL_ZONE, zoneModsAt, type ArenaLayout, type Zone } from './terrain';
+import { buildLayout, inBreach, NEUTRAL_ZONE, takeShard, updateShard, zoneModsAt, type ArenaLayout, type Zone } from './terrain';
 import { ARENA, ARENA_RADIUS, BREACH, LAYOUTS, PLAYER_SPAWN, SHARD, ZONES } from './config';
+import { NEUTRAL_TALENTS } from './talents';
+import type { Top } from './types';
 
 function layout(over: Partial<ArenaLayout> = {}): ArenaLayout {
   return { zones: [], breaches: [], shard: null, shardTimer: 0, ...over };
@@ -202,5 +204,102 @@ describe('inBreach', () => {
 
   it('rend faux sans aucune brèche', () => {
     expect(inBreach({ zones: [], breaches: [], shard: null, shardTimer: 0 }, 0)).toBe(false);
+  });
+});
+
+function shardTop(over: Partial<Top> = {}): Top {
+  return {
+    id: 't', isPlayer: false, aim: null,
+    pos: { x: 0, y: 0 }, vel: { x: 0, y: 0 },
+    radius: 12, spin: 500, spinMax: 1000, spinDecay: 10,
+    attack: 10, defense: 10, maxSpeed: 240, accel: 900,
+    talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
+    ...over,
+  };
+}
+
+describe('updateShard', () => {
+  it('ne fait rien tant que le compte à rebours court', () => {
+    const l = layout({ shardTimer: 5 });
+    updateShard(l, 1);
+    expect(l.shard).toBeNull();
+    expect(l.shardTimer).toBe(4);
+  });
+
+  it('ne consomme aucun tirage tant qu’aucun éclat n’apparaît', () => {
+    const l = layout({ shardTimer: 5 });
+    expect(updateShard(l, 77)).toBe(77);
+  });
+
+  it('fait apparaître un éclat quand le compte tombe à zéro', () => {
+    const l = layout({ shardTimer: 1 });
+    const after = updateShard(l, 1234);
+    expect(l.shard).not.toBeNull();
+    expect(l.shard!.ttl).toBe(SHARD.lifeTicks);
+    expect(after).not.toBe(1234);
+  });
+
+  it('place l’éclat dans la couronne prévue', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const l = layout({ shardTimer: 1 });
+      updateShard(l, seed);
+      const d = Math.hypot(l.shard!.x, l.shard!.y);
+      expect(d).toBeGreaterThanOrEqual(ARENA_RADIUS * SHARD.minRadius - 1e-9);
+      expect(d).toBeLessThanOrEqual(ARENA_RADIUS * SHARD.maxRadius + 1e-9);
+    }
+  });
+
+  it('efface un éclat expiré et rearme le compte à rebours', () => {
+    const l = layout({ shard: { x: 0, y: 0, ttl: 1 } });
+    updateShard(l, 1);
+    expect(l.shard).toBeNull();
+    expect(l.shardTimer).toBe(SHARD.everyTicks);
+  });
+});
+
+describe('takeShard', () => {
+  it('rend du spin au premier arrivé et efface l’éclat', () => {
+    const l = layout({ shard: { x: 0, y: 0, ttl: 10 } });
+    const t = shardTop({ id: 'a', spin: 500 });
+    expect(takeShard(l, [t])).toBe('a');
+    expect(t.spin).toBeCloseTo(500 + SHARD.spinGain * 1000, 5);
+    expect(l.shard).toBeNull();
+    expect(l.shardTimer).toBe(SHARD.everyTicks);
+  });
+
+  it('ne dépasse jamais le spin maximum', () => {
+    const l = layout({ shard: { x: 0, y: 0, ttl: 10 } });
+    const t = shardTop({ spin: 990 });
+    takeShard(l, [t]);
+    expect(t.spin).toBe(1000);
+  });
+
+  it('n’en donne qu’à un seul, dans l’ordre du tableau', () => {
+    const l = layout({ shard: { x: 0, y: 0, ttl: 10 } });
+    const a = shardTop({ id: 'a' });
+    const b = shardTop({ id: 'b' });
+    expect(takeShard(l, [a, b])).toBe('a');
+    expect(b.spin).toBe(500);
+  });
+
+  it('ignore une toupie hors de portée', () => {
+    const l = layout({ shard: { x: 0, y: 0, ttl: 10 } });
+    const t = shardTop({ pos: { x: SHARD.radius + 12 + 5, y: 0 } });
+    expect(takeShard(l, [t])).toBeNull();
+    expect(l.shard).not.toBeNull();
+  });
+
+  it('rend null sans éclat', () => {
+    expect(takeShard(layout(), [shardTop()])).toBeNull();
+  });
+
+  it('ne ressuscite pas une toupie déjà à zéro', () => {
+    // takeShard tourne avant le filtre des morts : sans cette garde, un joueur
+    // éjecté au même tick esquiverait sa mort en effleurant l'éclat.
+    const l = layout({ shard: { x: 0, y: 0, ttl: 10 } });
+    const dead = shardTop({ id: 'mort', spin: 0 });
+    const alive = shardTop({ id: 'vif' });
+    expect(takeShard(l, [dead, alive])).toBe('vif');
+    expect(dead.spin).toBe(0);
   });
 });

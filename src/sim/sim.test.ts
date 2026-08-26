@@ -256,3 +256,20 @@ describe('éjection', () => {
     expect(run.ejected).not.toContain('fantome');
   });
 });
+
+describe('éclat', () => {
+  it('un bot plus proche de l’éclat que du joueur va le chercher', () => {
+    const run = createRun(createInitialMeta(1), 1);
+    const bot = run.bots[0];
+    // Éclat à gauche, joueur à droite : le signe de aim.x tranche entre les deux.
+    bot.pos = { x: 0, y: 0 };
+    run.player.pos = { x: 140, y: 0 };
+    run.arena.shard = { x: -60, y: 0, ttl: 30 };
+    // Le retarget a lieu au tick dont le numéro vaut 1 modulo 10.
+    run.tick = 0;
+    tick(run, { steer: null });
+    // Il vise la gauche (l'éclat, à 60) et non la droite (le joueur, à 140). Le
+    // jitter d'IA ne dépasse jamais ±0,6 rad, donc le signe de aim.x est décidé.
+    expect(bot.aim!.x).toBeLessThan(0);
+  });
+});
