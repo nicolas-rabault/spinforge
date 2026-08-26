@@ -2753,9 +2753,31 @@ retour qui apprend la règle du bord sans une ligne de texte."
 
 ---
 
-## Task 14 : La calibration
+## Task 8b : Le réglage du combat — *ajoutée en cours d'exécution*
 
-La tâche qui fixe les chiffres. **Aucune valeur d'`econ` n'a bougé jusqu'ici** : c'est ici, et seulement ici, qu'on les règle — d'abord le combat, ensuite l'économie, jamais les deux à la fois.
+> Cette tâche ne figurait pas au plan d'origine. Après la Task 6, la calibration est passée
+> de 2,02 h à **« chapitre 1 jamais validé en 20 h »**, 874 morts salle 3. La relecture a
+> établi par exécution que `moveAndBounce` est fidèle — `out` est bien la composante normale
+> sortante et non la norme, une vitesse purement tangentielle de 900 px/s n'éjecte pas —
+> donc la létalité est un problème d'équilibrage, pas un défaut.
+>
+> Le plan mettait tout le réglage à la Task 14, huit tâches plus loin. Or la Task 8 est la
+> dernière à toucher au combat (masse et restitution), et les Tasks 9 à 13 — butin, écran
+> Coffres, rendu — comportent des vérifications à l'œil qui ne veulent rien dire sur un jeu
+> infranchissable. La moitié **combat** de la Task 14 avance donc ici ; la moitié
+> **économie** y reste. La discipline du plan — ne jamais régler le combat et l'économie
+> dans la même passe — est préservée, c'est même elle qui rend la scission possible.
+
+Contenu : Steps 1 à 5 et 7 de la Task 14 ci-dessous (extension du harnais avec la politique
+d'autopilote qui utilise le terrain, mesure, réglage du combat, garde-fou de passivité).
+Cible : le chapitre 1 redevient franchissable, la salle 10 reste la plus meurtrière, la
+passivité reste très en retrait. **Pas** les 15 minutes — c'est une cible économique.
+
+---
+
+## Task 14 : La calibration de l'économie
+
+La tâche qui fixe les chiffres d'`econ`. **Aucune valeur d'`econ` n'a bougé jusqu'ici** : c'est ici, et seulement ici, qu'on les règle. Le combat, lui, a été réglé à la Task 8b — jamais les deux à la fois.
 
 **Files:**
 - Modify: `scripts/calibrate.mjs`
