@@ -3,7 +3,7 @@ import { createRun, resetRun, syncRunStats, tick } from './sim';
 import { applyRunReward, createInitialMeta } from './meta';
 import { salleReward } from './economy';
 import { spawnSalle, botCountFor } from './salle';
-import { SALLES_PER_CHAPTER, TALENTS } from './config';
+import { ARENA_RADIUS, SALLES_PER_CHAPTER, TALENTS } from './config';
 import { openChest } from './chest';
 
 function play(seed: number, n: number, clearEvery: number | null): string {
@@ -54,8 +54,12 @@ describe('déterminisme', () => {
     expect(a).toBe(runTicksThroughSalles(42, 300));
     expect(a).not.toBe(runTicksThroughSalles(7, 300));
     // Garde-fou : si ce scénario cessait de franchir des salles, il ne testerait
-    // plus rien de plus que le test précédent.
-    expect(JSON.parse(a).meta.chapterValidated).toBe(true);
+    // plus rien de plus que le test précédent. On ne peut plus exiger la
+    // validation du chapitre elle-même : depuis Task 6, le bord à brèches (dès
+    // la salle 3) peut éjecter le joueur — une mort comme une autre — avant la
+    // salle 10, et ce déterministe scénario y meurt bel et bien à la salle 5.
+    // Des crédits engrangés suffisent à prouver que des salles ont été vidées.
+    expect(JSON.parse(a).meta.credits).toBeGreaterThan(0);
   });
 
   it('ouvrir des coffres entre deux salles ne change pas l’issue du run', () => {
@@ -224,5 +228,28 @@ describe('talent Réserve', () => {
     tick(run, { steer: null });
     // 0,35 du spin max au lieu de 0,20.
     expect(run.player.spin).toBeGreaterThan(100 + 0.3 * run.player.spinMax);
+  });
+});
+
+describe('éjection', () => {
+  it('une éjection met le spin à zéro et se signale au rendu', () => {
+    const run = createRun(createInitialMeta(1), 1);
+    run.arena.breaches = [{ angle: 0, halfWidth: 0.6 }];
+    const bot = run.bots[0];
+    bot.pos = { x: ARENA_RADIUS - bot.radius - 1, y: 0 };
+    bot.vel = { x: 600, y: 0 };
+    bot.aim = { x: 1, y: 0 };
+    tick(run, { steer: null });
+    expect(run.ejected).toContain(bot.id);
+    // Le bot éjecté est retiré par le filtre habituel : une éjection est une mort
+    // comme une autre pour la simulation.
+    expect(run.bots.some((b) => b.id === bot.id)).toBe(false);
+  });
+
+  it('vide la liste des éjectés à chaque tick', () => {
+    const run = createRun(createInitialMeta(1), 1);
+    run.ejected = ['fantome'];
+    tick(run, { steer: null });
+    expect(run.ejected).not.toContain('fantome');
   });
 });

@@ -65,6 +65,9 @@ export interface RunState {
   arena: ArenaLayout;
   phase: Phase;
   secondSouffleUsed: boolean;
+  /** Ids éjectés pendant le dernier tick. Vidé en début de tick, lu par le rendu
+   *  seul — c'est ce qui distingue une éjection d'une mort par épuisement. */
+  ejected: string[];
 }
 
 /** Ce qui survit au run et à la fermeture de l'app. Seul état sauvegardé. */

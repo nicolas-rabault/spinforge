@@ -1,5 +1,5 @@
 import { ARENA, ARENA_RADIUS, TICK_S, WALL_RESTITUTION } from './config';
-import type { ZoneMods } from './terrain';
+import { inBreach, type ArenaLayout, type ZoneMods } from './terrain';
 import type { Top, Vec } from './types';
 
 /** Vitesse maximale effective. Toupie folle la relève à mesure que le spin
@@ -48,22 +48,35 @@ export function applySteering(top: Top, steer: Vec | null, zone: ZoneMods): void
   }
 }
 
-export function moveAndBounce(top: Top): void {
+/**
+ * Avance la toupie d'un tick et la garde dans l'anneau. Retourne `true` si elle
+ * vient d'être **éjectée** — franchissement du bord, dans un secteur de brèche,
+ * à une vitesse sortante suffisante. L'appelant met alors son spin à zéro : pour
+ * la simulation, une éjection est une mort comme une autre.
+ */
+export function moveAndBounce(top: Top, layout: ArenaLayout): boolean {
   top.pos.x += top.vel.x * TICK_S;
   top.pos.y += top.vel.y * TICK_S;
   const d = Math.hypot(top.pos.x, top.pos.y);
   const limit = ARENA_RADIUS - top.radius;
-  if (d > limit && d > 0) {
-    const nx = top.pos.x / d;
-    const ny = top.pos.y / d;
-    top.pos.x = nx * limit;
-    top.pos.y = ny * limit;
-    const dot = top.vel.x * nx + top.vel.y * ny;
-    if (dot > 0) {
-      top.vel.x -= (1 + WALL_RESTITUTION) * dot * nx;
-      top.vel.y -= (1 + WALL_RESTITUTION) * dot * ny;
-    }
+  if (d <= limit || d === 0) return false;
+  const nx = top.pos.x / d;
+  const ny = top.pos.y / d;
+  const out = top.vel.x * nx + top.vel.y * ny;
+  top.pos.x = nx * limit;
+  top.pos.y = ny * limit;
+  if (out >= ARENA.breach.ejectSpeed && inBreach(layout, Math.atan2(ny, nx))) {
+    // Arrêtée net : le sursis de Second souffle ressusciterait sinon le joueur au
+    // bord, toujours sortant, pour le faire éjecter au tick suivant.
+    top.vel.x = 0;
+    top.vel.y = 0;
+    return true;
   }
+  if (out > 0) {
+    top.vel.x -= (1 + WALL_RESTITUTION) * out * nx;
+    top.vel.y -= (1 + WALL_RESTITUTION) * out * ny;
+  }
+  return false;
 }
 
 /**

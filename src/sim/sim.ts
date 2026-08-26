@@ -55,6 +55,7 @@ export function createRun(meta: MetaState, seed: number): RunState {
     arena: { zones: [], breaches: [], shard: null, shardTimer: 0 },
     phase: 'fighting',
     secondSouffleUsed: false,
+    ejected: [],
   };
   startSalle(run);
   return run;
@@ -64,6 +65,7 @@ export function resetRun(run: RunState, meta: MetaState): void {
   run.salle = 1;
   run.phase = 'fighting';
   run.secondSouffleUsed = false;
+  run.ejected = [];
   run.player = makePlayer(meta);
   startSalle(run);
 }
@@ -97,11 +99,19 @@ function refreshBotAims(run: RunState): void {
   }
 }
 
+/** Avance une toupie et encaisse l'éjection s'il y a lieu. */
+function moveTop(run: RunState, top: Top): void {
+  if (!moveAndBounce(top, run.arena)) return;
+  top.spin = 0;
+  run.ejected.push(top.id);
+}
+
 /** Retourne la récompense de la salle qui vient d'être vidée, `null` sinon.
  *  N'applique rien : le méta est hors de portée de la simulation de combat. */
 export function tick(run: RunState, input: Input): RunReward | null {
   run.tick++;
   if (run.phase !== 'fighting') return null;
+  run.ejected = [];
   if (run.tick % BOT_AI.retargetEveryTicks === 1) refreshBotAims(run);
   // Le terrain est lu UNE fois par toupie et par tick, avant le pilotage, et la
   // même valeur sert au pilotage et à la décroissance : une toupie qui traverse
@@ -111,8 +121,8 @@ export function tick(run: RunState, input: Input): RunReward | null {
   const botZones = run.bots.map((bot) => zoneModsAt(run.arena, bot.pos));
   applySteering(run.player, input.steer, playerZone);
   run.bots.forEach((bot, i) => applySteering(bot, bot.aim, botZones[i]));
-  moveAndBounce(run.player);
-  for (const bot of run.bots) moveAndBounce(bot);
+  moveTop(run, run.player);
+  for (const bot of run.bots) moveTop(run, bot);
   for (const bot of run.bots) resolveCollision(run.player, bot);
   for (let i = 0; i < run.bots.length; i++) {
     for (let j = i + 1; j < run.bots.length; j++) {

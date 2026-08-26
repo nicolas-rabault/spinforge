@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { applySteering, clampToArena, moveAndBounce } from './physics';
 import { ARENA, ARENA_RADIUS, FRICTION, TICK_S, ZONES } from './config';
-import { NEUTRAL_ZONE, type ZoneMods } from './terrain';
+import { NEUTRAL_ZONE, type ArenaLayout, type ZoneMods } from './terrain';
 import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
+
+function layout(breaches: ArenaLayout['breaches'] = []): ArenaLayout {
+  return { zones: [], breaches, shard: null, shardTimer: 0 };
+}
 
 function top(over: Partial<Top> = {}): Top {
   return {
@@ -112,15 +116,58 @@ describe('applySteering — zones', () => {
 describe("moveAndBounce", () => {
   it("avance de vel × TICK_S", () => {
     const t = top({ vel: { x: 50, y: -30 } });
-    moveAndBounce(t);
+    moveAndBounce(t, layout());
     expect(t.pos.x).toBeCloseTo(5, 5);
     expect(t.pos.y).toBeCloseTo(-3, 5);
   });
 
   it("rebondit sur le bord et reste dans l’arène", () => {
     const t = top({ pos: { x: ARENA_RADIUS, y: 0 }, vel: { x: 100, y: 0 } });
-    moveAndBounce(t);
+    moveAndBounce(t, layout());
     expect(t.pos.x).toBeCloseTo(ARENA_RADIUS - t.radius, 5);
+    expect(t.vel.x).toBeLessThan(0);
+  });
+});
+
+describe('moveAndBounce — brèches', () => {
+  // Une brèche centrée sur l'axe +x : une toupie qui sort par la droite y passe.
+  const breached = () => layout([{ angle: 0, halfWidth: 0.4 }]);
+  const atRim = () => ({ x: ARENA_RADIUS - 12 - 1, y: 0 });
+
+  it('éjecte au-dessus du seuil, dans la brèche', () => {
+    const t = top({ pos: atRim(), vel: { x: ARENA.breach.ejectSpeed + 50, y: 0 } });
+    expect(moveAndBounce(t, breached())).toBe(true);
+  });
+
+  it('n’éjecte pas hors brèche, à la même vitesse', () => {
+    // Même toupie, même vitesse, brèche à l'opposé : le mur tient.
+    const t = top({ pos: atRim(), vel: { x: ARENA.breach.ejectSpeed + 50, y: 0 } });
+    expect(moveAndBounce(t, layout([{ angle: Math.PI, halfWidth: 0.4 }]))).toBe(false);
+  });
+
+  it('n’éjecte pas sous le seuil, même dans la brèche', () => {
+    const t = top({ pos: atRim(), vel: { x: ARENA.breach.ejectSpeed - 20, y: 0 } });
+    expect(moveAndBounce(t, breached())).toBe(false);
+  });
+
+  it('n’éjecte jamais sur une arène sans brèche', () => {
+    const t = top({ pos: atRim(), vel: { x: 900, y: 0 } });
+    expect(moveAndBounce(t, layout())).toBe(false);
+  });
+
+  it('arrête net la toupie éjectée, au bord', () => {
+    // Sinon le sursis de Second souffle la ressusciterait au bord, toujours
+    // sortante, pour la faire éjecter au tick suivant.
+    const t = top({ pos: atRim(), vel: { x: 400, y: 0 } });
+    moveAndBounce(t, breached());
+    expect(t.vel.x).toBe(0);
+    expect(t.vel.y).toBe(0);
+    expect(Math.hypot(t.pos.x, t.pos.y)).toBeCloseTo(ARENA_RADIUS - 12, 5);
+  });
+
+  it('rebondit normalement quand il n’y a pas éjection', () => {
+    const t = top({ pos: atRim(), vel: { x: 100, y: 0 } });
+    moveAndBounce(t, layout([{ angle: Math.PI, halfWidth: 0.4 }]));
     expect(t.vel.x).toBeLessThan(0);
   });
 });
