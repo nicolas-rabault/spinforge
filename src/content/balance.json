@@ -18,7 +18,7 @@
   "econ": {
     "upgradeBase": 100, "upgradeGrowth": 1.08,
     "rewardBase": 70, "rewardGrowth": 1.13, "bossRewardMult": 10,
-    "bossGems": 40
+    "bossGems": 60
   },
   "pieceEffect": {
     "lameAttack": 0.1, "disqueDefense": 0.1,
@@ -26,11 +26,11 @@
   },
   "rarity": { "step": 1.08, "legendRank": 11 },
   "talents": {
-    "estoc": { "rank": 4, "speedThreshold": 150, "damageBonus": 0.3 },
+    "estoc": { "rank": 4, "speedThreshold": 413, "damageBonus": 0.3 },
     "riposte": { "rank": 7, "reflect": 0.15 },
     "percee": { "rank": 11, "defenseIgnore": 0.25 },
     "ancrage": { "rank": 4, "impulseTaken": 0.7 },
-    "frolement": { "rank": 7, "speedThreshold": 40 },
+    "frolement": { "rank": 7, "speedThreshold": 113 },
     "masse": { "rank": 11, "mass": 2 },
     "glisse": { "rank": 4, "friction": 0.96 },
     "relance": { "rank": 7, "ticks": 20 },
