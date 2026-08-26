@@ -6,7 +6,7 @@ import { spawnSalle, botCountFor } from './salle';
 import { ARENA_RADIUS, SALLES_PER_CHAPTER, TALENTS } from './config';
 import { openChest } from './chest';
 
-function play(seed: number, n: number, clearEvery: number | null): string {
+function play(seed: number, n: number, clearEvery: number | null, clearBreaches = false): string {
   const meta = createInitialMeta(seed);
   const run = createRun(meta, seed);
   for (let i = 0; i < n; i++) {
@@ -14,6 +14,12 @@ function play(seed: number, n: number, clearEvery: number | null): string {
     const salleBefore = run.salle;
     const reward = tick(run, { steer: i % 20 < 10 ? { x: 1, y: 0.5 } : null });
     if (reward) applyRunReward(meta, reward, salleBefore);
+    // `run.arena` n'est reconstruit que dans `startSalle`, appelé depuis `tick` :
+    // le nettoyer ici après coup suffit à retirer le bord létal de ce scénario.
+    // Ce scénario sert à couvrir le déterminisme des transitions de salle et la
+    // validation du chapitre, pas le bord — sans ce nettoyage la toupie finirait
+    // éjectée en cours de route et le scénario ne couvrirait plus la salle 10.
+    if (clearBreaches) run.arena.breaches = [];
   }
   return JSON.stringify({ run, meta });
 }
@@ -21,7 +27,7 @@ function play(seed: number, n: number, clearEvery: number | null): string {
 const runTicks = (seed: number, n: number) => play(seed, n, null);
 // Force la salle à se vider régulièrement : sans ça, 300 ticks se jouent
 // entièrement dans la salle 1 et le déterminisme n'est testé que sur la physique.
-const runTicksThroughSalles = (seed: number, n: number) => play(seed, n, 25);
+const runTicksThroughSalles = (seed: number, n: number) => play(seed, n, 25, true);
 
 describe('createRun', () => {
   it('démarre chapitre 1, salle 1, phase fighting, avec les bots de la salle 1', () => {
@@ -54,12 +60,9 @@ describe('déterminisme', () => {
     expect(a).toBe(runTicksThroughSalles(42, 300));
     expect(a).not.toBe(runTicksThroughSalles(7, 300));
     // Garde-fou : si ce scénario cessait de franchir des salles, il ne testerait
-    // plus rien de plus que le test précédent. On ne peut plus exiger la
-    // validation du chapitre elle-même : depuis Task 6, le bord à brèches (dès
-    // la salle 3) peut éjecter le joueur — une mort comme une autre — avant la
-    // salle 10, et ce déterministe scénario y meurt bel et bien à la salle 5.
-    // Des crédits engrangés suffisent à prouver que des salles ont été vidées.
-    expect(JSON.parse(a).meta.credits).toBeGreaterThan(0);
+    // plus rien de plus que le test précédent — d'où l'exigence de la validation
+    // du chapitre entier (les dix salles), pas seulement d'une salle vidée.
+    expect(JSON.parse(a).meta.chapterValidated).toBe(true);
   });
 
   it('ouvrir des coffres entre deux salles ne change pas l’issue du run', () => {
