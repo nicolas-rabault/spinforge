@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decayPerTick, decaySpin, resolveCollision } from './combat';
-import { TALENTS, TICK_S } from './config';
+import { CHARGE_BONUS, TALENTS, TICK_S } from './config';
 import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
 import type { TopType } from '../content/toupies';
@@ -301,7 +301,7 @@ describe('triangle des forces dans le combat', () => {
     const frontalNeutre = headOn('attaque', 'attaque');
     // Le rapport de type est le même quel que soit le mode d'engagement…
     expect(chargeDominante / chargeNeutre).toBeCloseTo(1.25, 2);
-    // …et la prime de charge existe toujours par-dessus.
-    expect(chargeNeutre).toBeGreaterThan(frontalNeutre * 0.9);
+    // …et la prime de charge existe toujours par-dessus, à son rapport exact.
+    expect(chargeNeutre / frontalNeutre).toBeCloseTo(1 + CHARGE_BONUS, 5);
   });
 });
