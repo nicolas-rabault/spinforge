@@ -40,11 +40,11 @@ describe('catalogue', () => {
     expect(new Set(MODELS.map((m) => m.id)).size).toBe(MODELS.length);
   });
 
-  it("donne six Disques et six Pointes génériques, une Lame et un Noyau signature", () => {
+  it("donne six Disques et six Pointes génériques, quatre Lames et quatre Noyaux signature", () => {
     expect(modelsForSlot('disque')).toHaveLength(6);
     expect(modelsForSlot('pointe')).toHaveLength(6);
-    expect(modelsForSlot('lame')).toHaveLength(1);
-    expect(modelsForSlot('noyau')).toHaveLength(1);
+    expect(modelsForSlot('lame')).toHaveLength(4);
+    expect(modelsForSlot('noyau')).toHaveLength(4);
   });
 
   it("refuse un identifiant inconnu plutôt que de rendre undefined", () => {

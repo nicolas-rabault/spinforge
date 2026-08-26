@@ -1,7 +1,6 @@
 /** Catalogue des modèles de pièces. Univers original — voir la règle IP de CLAUDE.md.
- *  Au jalon 2a une seule toupie est débloquée (Brasier Solaire), donc un seul
- *  modèle de Lame et un seul de Noyau. Les trois autres Fondateurs arrivent au 2b
- *  et n'auront qu'à ajouter des lignes ici. */
+ *  Les quatre Fondateurs sont au catalogue, chacun avec sa Lame et son Noyau
+ *  signature. La Saison 1 viendra s'ajouter de la même façon : des lignes en plus. */
 export type Slot = 'lame' | 'disque' | 'pointe' | 'noyau';
 
 export interface PieceModel {
@@ -12,7 +11,13 @@ export interface PieceModel {
 
 export const MODELS: PieceModel[] = [
   { id: 'lame.couronne-solaire', slot: 'lame', label: 'Couronne Solaire' },
+  { id: 'lame.croc-de-tempete', slot: 'lame', label: 'Croc de Tempête' },
+  { id: 'lame.ecaille-abyssale', slot: 'lame', label: 'Écaille Abyssale' },
+  { id: 'lame.griffe-orageuse', slot: 'lame', label: 'Griffe Orageuse' },
   { id: 'noyau.fournaise', slot: 'noyau', label: 'Fournaise' },
+  { id: 'noyau.oeil-du-cyclone', slot: 'noyau', label: 'Œil du Cyclone' },
+  { id: 'noyau.caparacon', slot: 'noyau', label: 'Caparaçon' },
+  { id: 'noyau.arc-electrique', slot: 'noyau', label: 'Arc Électrique' },
   { id: 'disque.lourd', slot: 'disque', label: 'Lourd' },
   { id: 'disque.gravite', slot: 'disque', label: 'Gravité' },
   { id: 'disque.eventail', slot: 'disque', label: 'Éventail' },
