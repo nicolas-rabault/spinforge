@@ -5,10 +5,12 @@ import { applySteering, clampToArena, moveAndBounce } from './physics';
 import { nextRandom } from './rng';
 import { spawnSalle } from './salle';
 import { resolveTalents } from './talents';
+import { activeToupie } from './meta';
 import type { Input, MetaState, RunReward, RunState, Top } from './types';
 
 function makePlayer(meta: MetaState): Top {
   const stats = playerStats(meta);
+  const talents = resolveTalents(meta);
   return {
     id: 'player',
     isPlayer: true,
@@ -23,13 +25,15 @@ function makePlayer(meta: MetaState): Top {
     defense: stats.defense,
     maxSpeed: stats.maxSpeed,
     accel: PLAYER_BASE.accel,
-    talents: resolveTalents(meta),
+    talents,
     decayPauseTicks: 0,
+    type: activeToupie(meta).type,
+    mass: stats.mass * talents.mass,
   };
 }
 
 function startSalle(run: RunState): void {
-  const spawned = spawnSalle(run.salle, run.rngState);
+  const spawned = spawnSalle(run.chapter, run.salle, run.rngState);
   run.bots = spawned.bots;
   run.rngState = spawned.rngState;
   run.player.pos = { x: PLAYER_SPAWN.x, y: PLAYER_SPAWN.y };
@@ -70,13 +74,17 @@ export function resetRun(run: RunState, meta: MetaState): void {
  */
 export function syncRunStats(run: RunState, meta: MetaState): void {
   const stats = playerStats(meta);
+  const talents = resolveTalents(meta);
   run.player.attack = stats.attack;
   run.player.defense = stats.defense;
   run.player.maxSpeed = stats.maxSpeed;
   run.player.spinMax = stats.spinMax;
   run.player.spinDecay = stats.spinDecay;
   run.player.spin = Math.min(run.player.spin, stats.spinMax);
-  run.player.talents = resolveTalents(meta);
+  run.player.talents = talents;
+  run.player.type = activeToupie(meta).type;
+  run.player.accel = stats.accel;
+  run.player.mass = stats.mass * talents.mass;
 }
 
 function refreshBotAims(run: RunState): void {

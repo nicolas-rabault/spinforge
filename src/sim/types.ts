@@ -1,4 +1,4 @@
-import type { ToupieId } from '../content/toupies';
+import type { ToupieId, TopType } from '../content/toupies';
 import type { PieceInstance, PieceStack, Slot } from './piece';
 import type { TalentMods } from './talents';
 
@@ -25,6 +25,13 @@ export interface Top {
   talents: TalentMods;
   /** Ticks restants de suspension de la décroissance (talent Relance). */
   decayPauseTicks: number;
+  /** Type du triangle des forces. Vient du châssis pour le joueur, de la table
+   *  de chapitre pour les bots. */
+  type: TopType;
+  /** Masse résolue pour le calcul d'impulsion : châssis × modèle de Disque ×
+   *  talent Masse. Vit sur la toupie et non dans `talents`, parce que trois
+   *  systèmes y contribuent — `talents.mass` n'est plus que l'un d'eux. */
+  mass: number;
 }
 
 export interface Stats {
@@ -33,6 +40,10 @@ export interface Stats {
   maxSpeed: number;
   spinMax: number;
   spinDecay: number;
+  accel: number;
+  /** Masse issue des seuls profils. Le talent Masse s'y multiplie au montage
+   *  de la toupie, pas ici. */
+  mass: number;
 }
 
 export type Phase = 'fighting' | 'dead';

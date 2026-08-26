@@ -11,6 +11,7 @@ function top(over: Partial<Top> = {}): Top {
     radius: 12, spin: 1000, spinMax: 1000, spinDecay: 10,
     attack: 10, defense: 10, maxSpeed: 240, accel: 900,
     talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
+    type: 'attaque', mass: 1,
     ...over,
   };
 }
@@ -89,6 +90,7 @@ function movingTop(overrides: Partial<Top> = {}): Top {
     radius: 12, spin: 1000, spinMax: 1000, spinDecay: 10,
     attack: 30, defense: 10, maxSpeed: 200, accel: 500,
     talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
+    type: 'attaque', mass: 1,
     ...overrides,
   };
 }

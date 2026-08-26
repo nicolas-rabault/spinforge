@@ -11,6 +11,7 @@ function top(over: Partial<Top> = {}): Top {
     radius: 12, spin: 1000, spinMax: 1000, spinDecay: 10,
     attack: 10, defense: 10, maxSpeed: 240, accel: 900,
     talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
+    type: 'attaque', mass: 1,
     ...over,
   };
 }
@@ -190,16 +191,30 @@ describe('talent Ancrage', () => {
   });
 });
 
-describe('talent Masse', () => {
+describe('masse', () => {
   it('fait reculer l’autre davantage et soi-même moins', () => {
+    // La masse résolue vit désormais sur la toupie (Top.mass), plus dans les
+    // talents : trois systèmes (châssis, Disque, talent Masse) y contribuent
+    // en amont — voir « lit la masse sur la toupie, pas sur ses talents ».
     const [a0, b0] = headOn({}, {});
     resolveCollision(a0, b0);
 
-    const [a1, b1] = headOn({ talents: { ...NEUTRAL_TALENTS, mass: 2 } }, {});
+    const [a1, b1] = headOn({ mass: 2 }, {});
     resolveCollision(a1, b1);
     expect(Math.abs(a1.vel.x)).toBeLessThan(Math.abs(a0.vel.x));
     expect(Math.abs(b1.vel.x)).toBeGreaterThan(Math.abs(b0.vel.x));
   });
+});
+
+it('lit la masse sur la toupie, pas sur ses talents', () => {
+  const a = top({ pos: { x: -10, y: 0 }, vel: { x: 100, y: 0 } });
+  const b = top({ pos: { x: 10, y: 0 }, vel: { x: 0, y: 0 } });
+  a.mass = 4;
+  const before = b.vel.x;
+  resolveCollision(a, b);
+  // Une toupie quatre fois plus lourde pousse : la légère repart plus vite
+  // que dans un choc à masses égales.
+  expect(b.vel.x).toBeGreaterThan(before + 100);
 });
 
 describe('talent Relance', () => {

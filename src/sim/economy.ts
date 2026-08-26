@@ -27,6 +27,9 @@ export function playerStats(meta: MetaState): Stats {
     maxSpeed: PLAYER_BASE.maxSpeed * factor(pointe, PIECE_EFFECT.pointeSpeed),
     spinMax: PLAYER_BASE.spinMax * factor(noyau, PIECE_EFFECT.noyauSpin),
     spinDecay: PLAYER_BASE.spinDecay / factor(pointe, PIECE_EFFECT.pointeDecay),
+    // Valeurs neutres : la Task 6 y branchera les profils de châssis.
+    accel: PLAYER_BASE.accel,
+    mass: 1,
   };
 }
 

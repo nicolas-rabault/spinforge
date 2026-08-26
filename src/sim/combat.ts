@@ -65,8 +65,8 @@ export function resolveCollision(a: Top, b: Top): void {
 
   // Impulsion pondérée par les masses. À masses égales (1 et 1), j vaut
   // -(1+e)·vrel/2 et chacun en reçoit la moitié — exactement le calcul du jalon 1.
-  const ma = a.talents.mass;
-  const mb = b.talents.mass;
+  const ma = a.mass;
+  const mb = b.mass;
   const j = (-(1 + RESTITUTION) * vrel) / (1 / ma + 1 / mb);
   a.vel.x -= (j / ma) * nx * a.talents.impulseTaken;
   a.vel.y -= (j / ma) * ny * a.talents.impulseTaken;

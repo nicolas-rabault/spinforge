@@ -51,6 +51,13 @@ describe('balance.json', () => {
     expect(Number.isInteger(BALANCE.version)).toBe(true);
     expect(BALANCE.version).toBeGreaterThanOrEqual(1);
   });
+
+  it('a une table de types de bots complète pour le chapitre 1', () => {
+    const table = BALANCE.botTypes['1'];
+    expect(table).toHaveLength(BALANCE.chapter.sallesPerChapter);
+    const valid = ['attaque', 'endurance', 'defense', 'equilibre'];
+    for (const t of table) expect(valid).toContain(t);
+  });
 });
 
 // La double assertion `BALANCE = raw as unknown as Balance` ne protège que ce

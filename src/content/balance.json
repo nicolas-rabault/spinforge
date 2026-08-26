@@ -5,6 +5,9 @@
   "combat": { "damageK": 0.35, "chargeBonus": 0.3, "healBetweenSalles": 0.2 },
   "types": { "dominantBonus": 0.25, "equilibreBonus": 0.1 },
   "chapter": { "sallesPerChapter": 10, "botsPerSalle": [1, 1, 1, 2, 2, 2, 3, 3, 3, 1] },
+  "botTypes": {
+    "1": ["endurance", "endurance", "endurance", "defense", "defense", "defense", "attaque", "attaque", "attaque", "attaque"]
+  },
   "player": {
     "spawn": { "x": 0, "y": 80 },
     "base": { "accel": 900, "maxSpeed": 240, "radius": 12, "spinMax": 3000, "spinDecay": 20, "attack": 30, "defense": 10 }

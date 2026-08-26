@@ -1,13 +1,22 @@
-import { ARENA_RADIUS, BOSS, BOTS_PER_SALLE, BOT_BASE, BOT_SCALING, BOT_SPAWN_RING, SALLES_PER_CHAPTER } from './config';
+import { ARENA_RADIUS, BOSS, BOTS_PER_SALLE, BOT_BASE, BOT_SCALING, BOT_SPAWN_RING, BOT_TYPES, SALLES_PER_CHAPTER } from './config';
 import { nextRandom } from './rng';
 import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
+import type { TopType } from '../content/toupies';
 
 export function botCountFor(salle: number): number {
   return BOTS_PER_SALLE[Math.min(Math.max(1, salle), BOTS_PER_SALLE.length) - 1];
 }
 
-export function makeBot(salle: number, index: number, angle: number): Top {
+/** Type des bots d'une salle. La table est indexée par chapitre ; un chapitre
+ *  sans entrée retombe sur celle du chapitre 1, ce qui laisse les chapitres 2
+ *  à 8 arriver un par un sans casser la simulation entre-temps. */
+export function botTypeFor(chapter: number, salle: number): TopType {
+  const table = BOT_TYPES[String(chapter)] ?? BOT_TYPES['1'];
+  return table[Math.min(Math.max(1, salle), table.length) - 1];
+}
+
+export function makeBot(chapter: number, salle: number, index: number, angle: number): Top {
   const boss = salle === SALLES_PER_CHAPTER;
   const spinScale = 1 + BOT_SCALING.spinPerSalle * (salle - 1);
   const attackScale = 1 + BOT_SCALING.attackPerSalle * (salle - 1);
@@ -29,10 +38,12 @@ export function makeBot(salle: number, index: number, angle: number): Top {
     accel: BOT_BASE.accel,
     talents: NEUTRAL_TALENTS,
     decayPauseTicks: 0,
+    type: botTypeFor(chapter, salle),
+    mass: 1,
   };
 }
 
-export function spawnSalle(salle: number, rngState: number): { bots: Top[]; rngState: number } {
+export function spawnSalle(chapter: number, salle: number, rngState: number): { bots: Top[]; rngState: number } {
   const bots: Top[] = [];
   let rng = rngState;
   for (let i = 0; i < botCountFor(salle); i++) {
@@ -40,7 +51,7 @@ export function spawnSalle(salle: number, rngState: number): { bots: Top[]; rngS
     rng = r.state;
     // angle ∈ [π, 2π] → sin ≤ 0 → moitié haute (y négatif) ; le joueur spawn en (0, 80)
     const angle = Math.PI + r.value * Math.PI;
-    bots.push(makeBot(salle, i, angle));
+    bots.push(makeBot(chapter, salle, i, angle));
   }
   return { bots, rngState: rng };
 }

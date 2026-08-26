@@ -1,4 +1,5 @@
 import raw from '../content/balance.json';
+import type { TopType } from '../content/toupies';
 
 /** Emplacement d'une pièce. Répété ici plutôt qu'importé de `piece.ts` : ce
  *  fichier est la racine des dépendances de la simulation, il n'importe rien d'elle. */
@@ -31,6 +32,9 @@ export interface Balance {
   combat: { damageK: number; chargeBonus: number; healBetweenSalles: number };
   types: { dominantBonus: number; equilibreBonus: number };
   chapter: { sallesPerChapter: number; botsPerSalle: number[] };
+  /** Type des bots, par chapitre puis par salle. Un chapitre absent retombe
+   *  sur le chapitre 1 — les chapitres 2 à 8 arrivent aux jalons 3 et 4. */
+  botTypes: Record<string, TopType[]>;
   player: {
     spawn: { x: number; y: number };
     base: { accel: number; maxSpeed: number; radius: number; spinMax: number; spinDecay: number; attack: number; defense: number };
@@ -91,6 +95,7 @@ export const HEAL_BETWEEN_SALLES = BALANCE.combat.healBetweenSalles;
 export const TYPES = BALANCE.types;
 export const SALLES_PER_CHAPTER = BALANCE.chapter.sallesPerChapter;
 export const BOTS_PER_SALLE = BALANCE.chapter.botsPerSalle;
+export const BOT_TYPES = BALANCE.botTypes;
 export const PLAYER_SPAWN = BALANCE.player.spawn;
 export const PLAYER_BASE = BALANCE.player.base;
 export const BOT_BASE = BALANCE.bot.base;
