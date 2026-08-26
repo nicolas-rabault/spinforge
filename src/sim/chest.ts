@@ -1,6 +1,7 @@
 import { CHESTS } from './config';
 import { nextRandom } from './rng';
-import { modelsForSlot, type Slot } from '../content/pieces';
+import { modelsForSlot, type PieceModel, type Slot } from '../content/pieces';
+import { TOUPIES } from '../content/toupies';
 import type { PieceInstance } from './piece';
 import type { ChestKind, MetaState } from './types';
 
@@ -12,6 +13,20 @@ export function chestPrice(kind: ChestKind, count: 1 | 10): { currency: 'credits
 export function canOpen(meta: MetaState, kind: ChestKind, count: 1 | 10): boolean {
   const { currency, amount } = chestPrice(kind, count);
   return (currency === 'credits' ? meta.credits : meta.gems) >= amount;
+}
+
+/** Les modèles qu'un coffre peut rendre pour cet emplacement. Les Lames et les
+ *  Noyaux sont **signature** : leurs doublons ne tombent que pour les toupies
+ *  débloquées — c'est la seule source de fusion des pièces signature, et elle
+ *  ne doit pas récompenser une toupie qu'on ne possède pas. Les Disques et les
+ *  Pointes sont génériques : le vivier complet, toujours. */
+function poolFor(meta: MetaState, slot: Slot): PieceModel[] {
+  const all = modelsForSlot(slot);
+  if (slot !== 'lame' && slot !== 'noyau') return all;
+  const allowed = new Set(
+    TOUPIES.filter((t) => meta.toupies.unlocked.includes(t.id)).map((t) => t.signature[slot]),
+  );
+  return all.filter((m) => allowed.has(m.id));
 }
 
 /** Un tirage consomme **exactement trois** valeurs du flux méta — rang,
@@ -43,7 +58,7 @@ function drawOne(meta: MetaState, kind: ChestKind): PieceInstance {
 
   const r3 = nextRandom(meta.rngState);
   meta.rngState = r3.state;
-  const models = modelsForSlot(slot);
+  const models = poolFor(meta, slot);
   const model = models[Math.floor(r3.value * models.length)];
 
   if (hasPity) {

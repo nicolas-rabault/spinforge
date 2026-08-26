@@ -3,6 +3,7 @@ import { canOpen, chestPrice, openChest } from './chest';
 import { createInitialMeta } from './meta';
 import { CHESTS } from './config';
 import { modelById } from '../content/pieces';
+import { nextRandom } from './rng';
 import type { MetaState } from './types';
 
 function richWithSeed(seed: number): MetaState {
@@ -175,3 +176,57 @@ describe('déterminisme', () => {
 function nextState(state: number): number {
   return (state + 0x6d2b79f5) | 0;
 }
+
+describe('doublons signature', () => {
+  const SIGNATURE_SLOTS = new Set(['lame', 'noyau']);
+
+  it('ne tire que les pièces signature des toupies débloquées', () => {
+    const meta = createInitialMeta(1);
+    meta.gems = 1_000_000;
+    for (let i = 0; i < 200; i++) {
+      for (const piece of openChest(meta, 'arene', 10)!) {
+        if (!SIGNATURE_SLOTS.has(modelById(piece.model).slot)) continue;
+        expect(['lame.couronne-solaire', 'noyau.fournaise']).toContain(piece.model);
+      }
+    }
+  });
+
+  it('ouvre le vivier dès qu’une toupie est débloquée', () => {
+    const meta = createInitialMeta(1);
+    meta.toupies = { unlocked: ['brasier-solaire', 'typhon-primal'], active: 'brasier-solaire' };
+    meta.gems = 1_000_000;
+    const seen = new Set<string>();
+    for (let i = 0; i < 200; i++) {
+      for (const piece of openChest(meta, 'arene', 10)!) seen.add(piece.model);
+    }
+    expect(seen).toContain('lame.croc-de-tempete');
+    expect(seen).toContain('noyau.oeil-du-cyclone');
+    // …et toujours rien des deux toupies non débloquées.
+    expect(seen).not.toContain('lame.ecaille-abyssale');
+    expect(seen).not.toContain('noyau.caparacon');
+  });
+
+  it('consomme toujours exactement trois valeurs de RNG par tirage', () => {
+    const meta = createInitialMeta(1);
+    meta.toupies = { unlocked: ['brasier-solaire', 'typhon-primal', 'tigre-foudre'], active: 'brasier-solaire' };
+    meta.gems = 1_000_000;
+    const before = meta.rngState;
+    openChest(meta, 'arene', 1);
+    let expected = before;
+    for (let i = 0; i < 3; i++) expected = nextRandom(expected).state;
+    expect(meta.rngState).toBe(expected);
+  });
+
+  it('laisse les Disques et Pointes hors du filtrage — ils sont génériques', () => {
+    const meta = createInitialMeta(1);
+    // 200 × 10 tirages Bronze à 18 000 crédits le lot dépassent 1_000_000 :
+    // le budget du brief était insuffisant et `openChest` finissait par
+    // rendre `null`. Porté à 10_000_000, comme `rich()` plus haut.
+    meta.credits = 10_000_000;
+    const seen = new Set<string>();
+    for (let i = 0; i < 200; i++) {
+      for (const piece of openChest(meta, 'bronze', 10)!) seen.add(piece.model);
+    }
+    expect(seen.size).toBeGreaterThan(6);
+  });
+});
