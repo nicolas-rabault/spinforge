@@ -49,6 +49,23 @@ describe('zoneModsAt', () => {
     expect(zoneModsAt(l, { x: 0, y: 0 }).spinDrain).toBeCloseTo(ZONES.pointes.spinDrain * 2, 10);
   });
 
+  it('compose speedMult de deux accélérateurs : produit, pas maximum', () => {
+    // Deux accélérateurs superposés : le produit rend a², le maximum rendrait a.
+    // C'est ce qui sépare les deux règles de composition.
+    const l = layout({ zones: [zone('accelerateur', 0, 0), zone('accelerateur', 0, 0)] });
+    const mods = zoneModsAt(l, { x: 0, y: 0 });
+    expect(mods.speedMult).toBeCloseTo(ZONES.accelerateur.speedMult ** 2, 10);
+    expect(mods.accelMult).toBeCloseTo(ZONES.accelerateur.accelMult ** 2, 10);
+  });
+
+  it('compose friction de deux glisse : maximum, pas somme', () => {
+    // Deux glisse superposées : le maximum rend a, la somme rendrait 2a.
+    // C'est ce qui sépare les deux règles de composition.
+    const l = layout({ zones: [zone('glisse', 0, 0), zone('glisse', 0, 0)] });
+    const mods = zoneModsAt(l, { x: 0, y: 0 });
+    expect(mods.friction).toBeCloseTo(ZONES.glisse.friction, 10);
+  });
+
   it('ne laisse jamais muter les valeurs neutres', () => {
     // NEUTRAL_ZONE est rendu par référence dans le cas courant : une mutation
     // accidentelle contaminerait toutes les toupies de toutes les salles.
