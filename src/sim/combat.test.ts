@@ -204,17 +204,17 @@ describe('masse', () => {
     expect(Math.abs(a1.vel.x)).toBeLessThan(Math.abs(a0.vel.x));
     expect(Math.abs(b1.vel.x)).toBeGreaterThan(Math.abs(b0.vel.x));
   });
-});
 
-it('lit la masse sur la toupie, pas sur ses talents', () => {
-  const a = top({ pos: { x: -10, y: 0 }, vel: { x: 100, y: 0 } });
-  const b = top({ pos: { x: 10, y: 0 }, vel: { x: 0, y: 0 } });
-  a.mass = 4;
-  const before = b.vel.x;
-  resolveCollision(a, b);
-  // Une toupie quatre fois plus lourde pousse : la légère repart plus vite
-  // que dans un choc à masses égales.
-  expect(b.vel.x).toBeGreaterThan(before + 100);
+  it('lit la masse sur la toupie, pas sur ses talents', () => {
+    const a = top({ pos: { x: -10, y: 0 }, vel: { x: 100, y: 0 } });
+    const b = top({ pos: { x: 10, y: 0 }, vel: { x: 0, y: 0 } });
+    a.mass = 4;
+    const before = b.vel.x;
+    resolveCollision(a, b);
+    // Une toupie quatre fois plus lourde pousse : la légère repart plus vite
+    // que dans un choc à masses égales.
+    expect(b.vel.x).toBeGreaterThan(before + 100);
+  });
 });
 
 describe('talent Relance', () => {

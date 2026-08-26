@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createRun, resetRun, syncRunStats, tick } from './sim';
-import { applyRunReward, createInitialMeta } from './meta';
+import { applyRunReward, createInitialMeta, setActiveToupie } from './meta';
 import { salleReward } from './economy';
 import { spawnSalle, botCountFor } from './salle';
-import { SALLES_PER_CHAPTER, TALENTS } from './config';
+import { PLAYER_BASE, SALLES_PER_CHAPTER, TALENTS } from './config';
 import { openChest } from './chest';
 
 function play(seed: number, n: number, clearEvery: number | null): string {
@@ -170,6 +170,42 @@ describe('talents du joueur', () => {
     meta.equipped.disque.rank = 4; // Excellent — débloque Ancrage
     syncRunStats(run, meta);
     expect(run.player.talents.impulseTaken).toBe(TALENTS.ancrage.impulseTaken);
+  });
+});
+
+describe('type et masse du joueur', () => {
+  it('makePlayer prend le type de la toupie active, pas un type en dur', () => {
+    const meta = createInitialMeta(1);
+    // Le starter est 'brasier-solaire' (équilibre) : on débloque et active une
+    // autre toupie, d'un autre type, pour ne pas retomber par hasard dessus.
+    meta.toupies.unlocked.push('tigre-foudre');
+    setActiveToupie(meta, 'tigre-foudre');
+    const run = createRun(meta, 1);
+    expect(run.player.type).toBe('endurance');
+  });
+
+  it('makePlayer multiplie la masse du profil par celle du talent Masse', () => {
+    const sansTalent = createRun(createInitialMeta(1), 1);
+    expect(sansTalent.player.mass).toBe(1);
+
+    const meta = createInitialMeta(1);
+    meta.equipped.disque.rank = TALENTS.masse.rank; // débloque le talent Masse
+    const avecTalent = createRun(meta, 1);
+    expect(avecTalent.player.mass).toBe(TALENTS.masse.mass);
+  });
+
+  it('syncRunStats recopie type, accel et masse quand la toupie active change', () => {
+    const meta = createInitialMeta(1);
+    const run = createRun(meta, 1);
+
+    meta.toupies.unlocked.push('carapace-abyssale');
+    setActiveToupie(meta, 'carapace-abyssale');
+    meta.equipped.disque.rank = TALENTS.masse.rank;
+    syncRunStats(run, meta);
+
+    expect(run.player.type).toBe('defense');
+    expect(run.player.accel).toBe(PLAYER_BASE.accel);
+    expect(run.player.mass).toBe(TALENTS.masse.mass);
   });
 });
 
