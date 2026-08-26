@@ -29,6 +29,7 @@ export interface Balance {
   tickSeconds: number;
   arena: { radius: number; friction: number; wallRestitution: number; restitution: number };
   combat: { damageK: number; chargeBonus: number; healBetweenSalles: number };
+  types: { dominantBonus: number; equilibreBonus: number };
   chapter: { sallesPerChapter: number; botsPerSalle: number[] };
   player: {
     spawn: { x: number; y: number };
@@ -86,6 +87,7 @@ export const DAMAGE_K = BALANCE.combat.damageK;
  */
 export const CHARGE_BONUS = BALANCE.combat.chargeBonus;
 export const HEAL_BETWEEN_SALLES = BALANCE.combat.healBetweenSalles;
+export const TYPES = BALANCE.types;
 export const SALLES_PER_CHAPTER = BALANCE.chapter.sallesPerChapter;
 export const BOTS_PER_SALLE = BALANCE.chapter.botsPerSalle;
 export const PLAYER_SPAWN = BALANCE.player.spawn;
