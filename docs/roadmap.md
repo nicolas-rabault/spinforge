@@ -184,10 +184,10 @@ jalon 3, quand le farm AUTO fera tourner l'arène en continu et rendra la queue 
   entièrement. À rouvrir seulement si une remesure est de toute façon au programme.
 
 **Tests**
-- `lerp`, `takeSnapshot`, `snapshotById` (`src/render/snapshot.ts`) et `spinOmega`
-  (`src/render/feel.ts`) n'ont pas de test dédié : fonctions pures triviales, non exigées
-  par le plan du jalon 1.5, qui a concentré l'effort de test sur `observe()` — le cœur du
-  game feel.
+- `spinOmega` (`src/render/feel.ts`) n'a pas de test dédié : fonction pure triviale, non
+  exigée par le plan du jalon 1.5, qui a concentré l'effort de test sur `observe()` — le
+  cœur du game feel. (`lerp`, `takeSnapshot` et `snapshotById`, listées ici à l'origine,
+  sont depuis couvertes par `src/render/snapshot.test.ts`, créé au jalon 2a.)
 
 ## Dette connue (jalon 2a)
 
@@ -216,11 +216,22 @@ la majorité des vrais coups. Refaite sur la bonne grandeur avant d'être retenu
   d'étiquettes plutôt que de `RARITY.legendRank`. Les deux valent 11 aujourd'hui ; à relier
   si le rang plafond devient un jour réglable.
 - `NEUTRAL_TALENTS` (`talents.ts`) n'est immuable qu'à l'exécution (`Object.freeze`), pas au
-  typage. `Top.talents` gagnerait à être `Readonly<TalentMods>`.
+  typage. `Top.talents` gagnerait à être `Readonly<TalentMods>`. Non fait : `salle.ts:30`
+  assigne littéralement `talents: NEUTRAL_TALENTS` (par référence, pas par copie) à chaque
+  bot pour éviter une allocation par bot, donc l'objet est réellement partagé — mais aucun
+  code n'écrit aujourd'hui dans un champ individuel de `top.talents` (la seule affectation
+  existante, `sim.ts:79`, remplace l'objet entier via `resolveTalents`), donc le typage
+  strict serait sûr à poser mais purement mécanique, sans bug actif à corriger.
 - La dé-pénétration de collision (`combat.ts`) partage le chevauchement à parts égales sans
-  tenir compte des masses, alors que l'impulsion, elle, en tient compte.
+  tenir compte des masses, alors que l'impulsion, elle, en tient compte. Non corrigé : cette
+  correction ne pèse que sur la position immédiate (ni les dégâts, ni la vitesse, qui restent
+  exacts), et `resolveCollision` est rappelée tant que les deux toupies se chevauchent — le
+  résidu se résorbe donc de lui-même sur les ticks suivants au lieu de s'accumuler. Seul
+  Masse (rang 11, ×2) déséquilibre les masses en jeu aujourd'hui : effet borné.
 - `resolveTalents` duplique la liste des emplacements au lieu de la dériver de
-  `TALENTS_BY_SLOT`.
+  `TALENTS_BY_SLOT`. Non corrigé : `Object.keys(TALENTS_BY_SLOT)` renvoie `string[]` en
+  TypeScript, pas `Slot[]` — la dériver exigerait le même `as Slot[]` que la liste littérale
+  actuelle, pour un gain de sûreté de typage nul.
 - Le test « Estoc ne fait rien sous le seuil » passerait même si le talent était retiré :
   garde de neutralité utile, mais ne compte pas dans la couverture réelle d'Estoc.
 - Garde-fou d'équilibrage non documenté ailleurs qu'ici : la séparation après un choc exige
@@ -229,6 +240,10 @@ la majorité des vrais coups. Refaite sur la bonne grandeur avant d'être retenu
   les toupies resteraient en rapprochement après l'impulsion et subiraient des dégâts à
   chaque tick.
 - `applyReward` (`meta.ts`) est exporté sans appelant de production hors `applyRunReward`.
+  Non retiré : `meta.test.ts` s'en sert pour tester l'arithmétique crédits/gemmes isolément
+  de l'effet de bord de validation de chapitre que porte `applyRunReward` ; le désexporter
+  forcerait ce test à passer par `applyRunReward` et à fabriquer un `salleJustCleared`
+  arbitraire pour une assertion qui ne concerne pas la validation.
 
 **Sauvegarde**
 - Si l'écriture de la clé de secours (`spinforge.save.backup`) échoue faute de quota, le
