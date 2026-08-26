@@ -25,7 +25,6 @@ export function InventoryPanel({
 
   const stacks = meta.inventory
     .filter((s) => filter === 'tous' || modelById(s.model).slot === filter)
-    .slice()
     // Rang décroissant puis modèle : les meilleures trouvailles en tête.
     .sort((a, b) => b.rank - a.rank || a.model.localeCompare(b.model));
 
@@ -81,7 +80,7 @@ export function InventoryPanel({
             </div>
             <div style={{ display: 'flex', gap: 7 }}>
               <button
-                onClick={() => { equipFromStack(metaRef.current, stack.model, stack.rank); onChanged(); }}
+                onClick={() => { if (equipFromStack(metaRef.current, stack.model, stack.rank)) onChanged(); }}
                 style={{
                   flex: '1 1 0', minHeight: 40, borderRadius: 9, cursor: 'pointer',
                   border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--text)',
@@ -103,7 +102,7 @@ export function InventoryPanel({
               >
                 <span>Fusionner</span>
                 <span style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  {recipe.identical} identiques{recipe.sacrifice > 0 ? ' + 1 sacrifice' : ''}
+                  {recipe.identical} identiques{recipe.sacrifice > 0 ? ` + ${recipe.sacrifice} sacrifice${recipe.sacrifice > 1 ? 's' : ''}` : ''}
                 </span>
               </button>
             </div>
