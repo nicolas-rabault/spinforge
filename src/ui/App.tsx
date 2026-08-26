@@ -5,6 +5,7 @@ import { createAudio } from '../audio/audio';
 import { formatCredits } from './format';
 import { CombatScreen } from './CombatScreen';
 import { ForgeScreen } from './ForgeScreen';
+import { ChestScreen } from './ChestScreen';
 import { TabBar, type Tab } from './TabBar';
 
 export function App() {
@@ -64,7 +65,7 @@ export function App() {
         >
           Gemmes{' '}
           <span style={{ color: 'var(--player)', fontFamily: 'Oswald, ui-sans-serif, sans-serif', fontVariantNumeric: 'tabular-nums' }}>
-            {Math.floor(metaRef.current.gems)}
+            {formatCredits(metaRef.current.gems)}
           </span>
         </span>
         <button
@@ -96,6 +97,7 @@ export function App() {
         <CombatScreen runRef={runRef} metaRef={metaRef} running={tab === 'combat'} onTick={redraw} onMetaChanged={metaChanged} audio={audioRef.current} />
       </div>
       {tab === 'forge' ? <ForgeScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
+      {tab === 'coffres' ? <ChestScreen metaRef={metaRef} onChanged={metaChanged} /> : null}
 
       <TabBar tab={tab} onChange={setTab} />
     </div>

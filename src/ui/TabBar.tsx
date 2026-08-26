@@ -1,11 +1,12 @@
-export type Tab = 'combat' | 'forge';
+export type Tab = 'combat' | 'forge' | 'coffres';
 
-const LOCKED = ['Coffres', 'Toupies'];
+const LABELS: Record<Tab, string> = { combat: 'Combat', forge: 'Forge', coffres: 'Coffres' };
+const LOCKED = ['Toupies'];
 
 export function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
   return (
     <nav style={{ display: 'flex', gap: 7 }}>
-      {(['combat', 'forge'] as const).map((t) => (
+      {(['combat', 'forge', 'coffres'] as const).map((t) => (
         <button
           key={t}
           onClick={() => onChange(t)}
@@ -18,7 +19,7 @@ export function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void
             fontWeight: tab === t ? 600 : 500,
           }}
         >
-          {t === 'combat' ? 'Combat' : 'Forge'}
+          {LABELS[t]}
         </button>
       ))}
       {LOCKED.map((label) => (
