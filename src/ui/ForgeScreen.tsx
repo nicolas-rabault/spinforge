@@ -3,6 +3,7 @@ import { playerStats, tryUpgrade, upgradeCost } from '../sim/economy';
 import { syncRunStats } from '../sim/sim';
 import { rankLabel, type Slot } from '../sim/piece';
 import { modelById } from '../content/pieces';
+import { InventoryPanel } from './InventoryPanel';
 import type { MetaState, RunState, Stats } from '../sim/types';
 
 interface SlotRow {
@@ -77,6 +78,11 @@ export function ForgeScreen({
           </button>
         );
       })}
+
+      <InventoryPanel
+        metaRef={metaRef}
+        onChanged={() => { syncRunStats(runRef.current, metaRef.current); onChanged(); }}
+      />
     </div>
   );
 }
