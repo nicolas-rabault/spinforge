@@ -73,16 +73,21 @@ export function resolveCollision(a: Top, b: Top): void {
   b.vel.x += (j / mb) * nx * b.talents.impulseTaken;
   b.vel.y += (j / mb) * ny * b.talents.impulseTaken;
 
-  // Dégâts bruts avant Frôlement. Riposte renvoie une part de ce que son
-  // porteur vient d'encaisser : ce renvoi doit donc, lui aussi, passer par le
-  // seuil de Frôlement de qui le reçoit — sans quoi Frôlement protègerait du
-  // coup direct mais pas de sa réplique.
-  const toB = damage(a, b, impact, share);
-  const toA = damage(b, a, impact, 1 - share);
-  const dmgB = toB + toA * a.talents.riposte;
-  const dmgA = toA + toB * b.talents.riposte;
-  // Frôlement protège son porteur seul : chaque camp teste son propre seuil,
-  // sur le total qu'il encaisserait (coup direct et réplique confondus).
+  // Dégâts bruts du coup direct, puis Frôlement appliqué immédiatement : Riposte
+  // ne peut renvoyer que ce que son porteur a RÉELLEMENT encaissé — jamais les
+  // dégâts que son propre Frôlement vient d'annuler. `takenA`/`takenB` sont donc
+  // déjà nets du Frôlement de leur camp avant d'entrer dans le calcul de riposte.
+  const rawToB = damage(a, b, impact, share);
+  const rawToA = damage(b, a, impact, 1 - share);
+  const takenB = impact < b.talents.frolementThreshold ? 0 : rawToB;
+  const takenA = impact < a.talents.frolementThreshold ? 0 : rawToA;
+  // Riposte renvoie une part de ce que son porteur a réellement subi. Ce renvoi
+  // doit lui aussi passer par le seuil de Frôlement de qui le reçoit — sans quoi
+  // Frôlement protègerait du coup direct mais pas de sa réplique.
+  const dmgB = takenB + takenA * a.talents.riposte;
+  const dmgA = takenA + takenB * b.talents.riposte;
+  // Frôlement protège son porteur seul : chaque camp teste à nouveau son propre
+  // seuil, sur le total qu'il encaisserait (coup direct et réplique confondues).
   b.spin -= impact < b.talents.frolementThreshold ? 0 : dmgB;
   a.spin -= impact < a.talents.frolementThreshold ? 0 : dmgA;
 

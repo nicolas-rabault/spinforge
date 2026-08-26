@@ -159,6 +159,23 @@ describe('talent Frôlement', () => {
     resolveCollision(a, b);
     expect(b.spin).toBe(1000);
   });
+
+  it('ne renvoie pas, via Riposte, des dégâts que son propre Frôlement vient d’annuler', () => {
+    // a porte Frôlement (protégé sous le seuil) ET Riposte : le coup de b sur a
+    // est annulé par le Frôlement de a, donc rien à renvoyer vers b — atteignable
+    // avec un Disque et une Lame de rang Épique.
+    const [a0, b0] = headOn({}, {});
+    resolveCollision(a0, b0);
+    const plainToB = 1000 - b0.spin; // dégâts que a inflige à b, sans aucun talent
+
+    const [a, b] = headOn(
+      { talents: { ...NEUTRAL_TALENTS, frolementThreshold: Infinity, riposte: 0.5 } },
+      {},
+    );
+    resolveCollision(a, b);
+    expect(a.spin).toBe(1000); // a est protégé par son propre Frôlement
+    expect(1000 - b.spin).toBeCloseTo(plainToB, 6); // ... et ne riposte que sur ce qu'il a réellement pris : rien
+  });
 });
 
 describe('talent Ancrage', () => {
