@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyReward, applyRunReward, createInitialMeta } from './meta';
+import { addPiece, applyReward, applyRunReward, createInitialMeta, equipFromStack, stackOf, takePiece } from './meta';
 import { SALLES_PER_CHAPTER } from './config';
 
 describe('createInitialMeta', () => {
@@ -48,5 +48,44 @@ describe('applyRunReward', () => {
     applyRunReward(meta, { credits: 1, gems: 40 }, SALLES_PER_CHAPTER);
     expect(meta.chapterValidated).toBe(true);
     expect(meta.gems).toBe(40);
+  });
+});
+
+describe('inventaire', () => {
+  it('empile les pièces de même modèle et même rang', () => {
+    const meta = createInitialMeta(1);
+    addPiece(meta, { model: 'disque.lourd', rank: 1, level: 0 });
+    addPiece(meta, { model: 'disque.lourd', rank: 1, level: 4 });
+    expect(meta.inventory).toHaveLength(1);
+    expect(stackOf(meta, 'disque.lourd', 1)).toEqual({ model: 'disque.lourd', rank: 1, count: 2, bestLevel: 4 });
+  });
+
+  it('sépare les piles quand le rang diffère', () => {
+    const meta = createInitialMeta(1);
+    addPiece(meta, { model: 'disque.lourd', rank: 1, level: 0 });
+    addPiece(meta, { model: 'disque.lourd', rank: 2, level: 0 });
+    expect(meta.inventory).toHaveLength(2);
+  });
+
+  it('retire la pile quand elle se vide', () => {
+    const meta = createInitialMeta(1);
+    addPiece(meta, { model: 'disque.lourd', rank: 1, level: 0 });
+    expect(takePiece(meta, 'disque.lourd', 1)).toBe(0);
+    expect(meta.inventory).toHaveLength(0);
+    expect(takePiece(meta, 'disque.lourd', 1)).toBeNull();
+  });
+
+  it('équiper renvoie la pièce remplacée dans l’inventaire', () => {
+    const meta = createInitialMeta(1);
+    const previous = { ...meta.equipped.disque };
+    addPiece(meta, { model: 'disque.colosse', rank: 3, level: 2 });
+    expect(equipFromStack(meta, 'disque.colosse', 3)).toBe(true);
+    expect(meta.equipped.disque).toEqual({ model: 'disque.colosse', rank: 3, level: 2 });
+    expect(stackOf(meta, previous.model, previous.rank)!.count).toBe(1);
+  });
+
+  it('refuse d’équiper une pièce absente', () => {
+    const meta = createInitialMeta(1);
+    expect(equipFromStack(meta, 'disque.colosse', 9)).toBe(false);
   });
 });
