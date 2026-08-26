@@ -1,13 +1,45 @@
-// Captures de vérification du jalon 1.5 : trois niveaux de spin RÉELS (haut, moyen,
+// Captures de vérification. Jalon 1.5 : trois niveaux de spin RÉELS (haut, moyen,
 // bas), atteints en pilotant effectivement le joueur en cercle continu — pas en le
 // laissant dériver puis s'arrêter — et captés au moment où la barre SPIN du HUD
-// franchit chaque seuil. Nécessite un `npm run dev` déjà lancé.
+// franchit chaque seuil. Jalon 2a : écran Coffres, une révélation ×10 surprise en
+// cours, l'inventaire chargé, la Forge avec un talent actif — une sauvegarde de
+// départ est injectée dans localStorage avant le premier chargement pour disposer
+// de crédits, de gemmes et d'un inventaire sans avoir à les gagner en jeu.
+// Nécessite un `npm run dev` déjà lancé.
 // Usage : node scripts/shots.mjs
 import { chromium } from 'playwright';
 import { mkdir } from 'node:fs/promises';
 
 const URL = 'http://localhost:5173/spinforge/';
 const OUT = '.shots';
+const SAVE_KEY = 'spinforge.save';
+// Sauvegarde de départ : de quoi ouvrir un coffre de chaque monnaie, un inventaire
+// déjà varié (plusieurs rangs, une pile fusionnable), et une Lame Légende équipée —
+// ses trois talents (Estoc, Riposte, Percée) sont donc actifs en même temps.
+const SEED_SAVE = {
+  v: 2,
+  meta: {
+    rngState: 987654321,
+    credits: 50000,
+    gems: 20000,
+    equipped: {
+      lame: { model: 'lame.couronne-solaire', rank: 11, level: 2 },
+      disque: { model: 'disque.lourd', rank: 1, level: 0 },
+      pointe: { model: 'pointe.plate', rank: 1, level: 0 },
+      noyau: { model: 'noyau.fournaise', rank: 1, level: 0 },
+    },
+    inventory: [
+      { model: 'disque.lourd', rank: 1, levels: [0, 0, 0] },
+      { model: 'disque.gravite', rank: 2, levels: [0, 0] },
+      { model: 'pointe.aiguille', rank: 3, levels: [1] },
+      { model: 'pointe.orbitale', rank: 1, levels: [0, 0] },
+      { model: 'noyau.fournaise', rank: 4, levels: [0] },
+      { model: 'lame.couronne-solaire', rank: 7, levels: [2] },
+    ],
+    pity: { bronze: 0, arene: 3, mythique: 12 },
+    chapterValidated: false,
+  },
+};
 // Seuils décroissants : le premier se déclenche presque tout de suite (spin plein au
 // démarrage), les deux suivants exigent d'encaisser des chocs pour de vrai.
 const THRESHOLDS = [
@@ -24,6 +56,12 @@ await mkdir(OUT, { recursive: true });
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 page.on('pageerror', (e) => console.error('[pageerror]', e.message));
+// `addInitScript` s'exécute avant tout script de la page, donc avant que `loadMeta()`
+// ne lise `localStorage` au montage de `App` — l'injection précède toujours la lecture.
+await page.addInitScript(
+  ({ key, value }) => localStorage.setItem(key, value),
+  { key: SAVE_KEY, value: JSON.stringify(SEED_SAVE) },
+);
 await page.goto(URL, { waitUntil: 'networkidle' });
 
 /**
@@ -33,7 +71,7 @@ await page.goto(URL, { waitUntil: 'networkidle' });
  */
 async function readSpinPct() {
   return page.evaluate(() => {
-    const label = [...document.querySelectorAll('span')].find((el) => el.textContent === 'SPIN');
+    const label = [...document.querySelectorAll('span')].find((el) => el.textContent === '▾ TON SPIN');
     const fill = label?.nextElementSibling?.firstElementChild;
     const width = fill instanceof HTMLElement ? fill.style.width : '';
     return width ? parseFloat(width) : null;
@@ -84,4 +122,45 @@ if (nextThreshold < THRESHOLDS.length) {
 }
 
 await page.mouse.up();
+
+// --- Jalon 2a : écran Coffres, révélation ×10 en cours, inventaire chargé, Forge
+// avec un talent actif. La sauvegarde injectée en tête de fichier fournit les
+// crédits, les gemmes et l'inventaire de départ.
+
+await page.getByRole('button', { name: 'Coffres' }).click();
+await page.waitForTimeout(150);
+await page.screenshot({ path: `${OUT}/coffres-ecran.png` });
+console.log(`${OUT}/coffres-ecran.png`);
+
+// Capturée en plein milieu de la révélation : la pile de tirages n'est qu'à moitié
+// peuplée, elle doit se lire comme une succession qui continue, pas comme un bloc figé.
+const bronzeSection = page.locator('section', { hasText: 'Coffre Bronze' });
+await bronzeSection.getByRole('button', { name: /Ouvrir ×10/ }).click();
+await page.waitForTimeout(350);
+await page.screenshot({ path: `${OUT}/coffres-reveal-x10.png` });
+console.log(`${OUT}/coffres-reveal-x10.png`);
+
+// Laisse la révélation se terminer avant de continuer — cliquer sur « Continuer »
+// pendant l'animation n'est pas un parcours qu'un joueur ferait.
+await page.getByRole('button', { name: 'Continuer' }).waitFor();
+await page.waitForTimeout(1000);
+await page.getByRole('button', { name: 'Continuer' }).click();
+
+await page.getByRole('button', { name: 'Forge' }).click();
+await page.waitForTimeout(150);
+// Haut de l'écran Forge : la Lame Légende équipée porte ses trois talents actifs
+// (Estoc, Riposte, Percée) — lisible à son étiquette de rang couleur boss.
+await page.screenshot({ path: `${OUT}/forge-talent-actif.png` });
+console.log(`${OUT}/forge-talent-actif.png`);
+
+// Fait défiler jusqu'à l'inventaire, sous les quatre emplacements équipés — la
+// sauvegarde injectée y place plusieurs piles, dont une déjà fusionnable.
+await page.evaluate(() => {
+  const h2 = [...document.querySelectorAll('h2')].find((el) => el.textContent === 'Ta toupie');
+  if (h2?.parentElement) h2.parentElement.scrollTop = h2.parentElement.scrollHeight;
+});
+await page.waitForTimeout(100);
+await page.screenshot({ path: `${OUT}/forge-inventaire-charge.png` });
+console.log(`${OUT}/forge-inventaire-charge.png`);
+
 await browser.close();

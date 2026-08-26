@@ -31,11 +31,22 @@ plus rien ne dépasse du décor ; 60 fps sur mobile milieu de gamme ; l'écran d
 correspond au wireframe `design/Combat.dc.html` ; **`src/sim/` reste inchangé** hors la
 correction de débordement listée en dette — le rendu est spectateur.
 
-## Jalon 2 — Le gacha
+## Jalon 2a — Les pièces ✦ plan : `docs/superpowers/plans/2026-08-25-jalon-2a-pieces.md`
 
-Coffres (Bronze/Arène/Mythique, pity 10/30), inventaire, fusion (règles complètes des 4 paliers), échelle de rareté à 11 rangs + Légende+N, talents de rang, les 4 toupies Fondateurs (châssis + Lame/Noyau signature), types et triangle des forces, équilibrage déplacé en JSON statique.
+Équilibrage en JSON statique versionné, sauvegarde du méta, pièces à modèle et rang,
+inventaire en piles, douze talents aux paliers nommés, trois coffres avec pity 10/30,
+fusion sur les quatre paliers.
 
-**Critères** : ouvrir des coffres, fusionner jusqu'à changer de rang, équiper des pièces qui changent le gameplay ; pity vérifiés par test.
+**Critères** : ouvrir des coffres, fusionner jusqu'à changer de rang, équiper des pièces qui
+changent le gameplay ; pity vérifiés par test ; un rechargement conserve tout.
+
+## Jalon 2b — Les toupies
+
+Les quatre Fondateurs (châssis + Lame/Noyau signature), types et triangle des forces,
+comportements distincts des modèles génériques, doublons signature des toupies débloquées.
+
+**Critères** : le triangle des forces change l'issue d'un combat ; changer de toupie change
+le pilotage.
 
 ## Jalon 3 — L'idle
 
@@ -53,9 +64,10 @@ Refonte + arbre d'atouts (référence de farm conservée), Génération Rafale (
 
 ## Dette connue (héritée du jalon 1)
 
-Traité au jalon 1.5, sauf la dette de simulation ci-dessous, explicitement réservée au
-jalon 2. Aucun de ces points n'était bloquant ; tous avaient été constatés et arbitrés
-pendant la revue du jalon 1.
+Traité au jalon 1.5, sauf la dette de simulation ci-dessous, dont une partie était
+explicitement réservée au jalon 2a — désormais traitée et retirée ci-dessous. Aucun de ces
+points n'était bloquant ; tous avaient été constatés et arbitrés pendant la revue du
+jalon 1.
 
 **Équilibrage du chapitre 1 — tranché au jalon 1.5, recalibré le 2026-08-25.**
 `ECON.rewardBase` est passé de 120 à 70 en contrepartie du partage de charge ajouté au
@@ -72,12 +84,7 @@ demeure de loin la salle la plus meurtrière (8 morts contre 3 pour la suivante)
 indépendants : l'économie commande la durée, `BOSS.spinMult` commande la forme de la difficulté.
 Détail : `docs/superpowers/specs/2026-08-24-jalon-1-5-habillage-design.md` § 6.
 
-**Simulation** (ne pas toucher avant le jalon 2)
-- `salle.ts` code en dur le nombre de bots par palier (`1 + floor((salle-1)/3)`, plafond `3`) :
-  seul manquement restant à la règle « tout l'équilibrage dans `config.ts` ». À reprendre avec
-  le passage de l'équilibrage en JSON statique, déjà prévu au jalon 2.
-- `Stats.accel` est un passe-plat : aucune pièce ne le modifie.
-- `createInitialState` écrit trois fois la même valeur de spin initial.
+**Simulation**
 - Les bots restent inertes 3 à 4 ticks après un spawn (`aim === null` jusqu'au prochain
   retarget). Non corrigé : borné, et cela joue en faveur du joueur.
 - `chapterValidated` n'est jamais remis à zéro. **Voulu** — le pilier « l'AUTO rejoue le
@@ -152,9 +159,6 @@ spec), d'autres des perfectionnements de game feel reportés faute d'enjeu au ja
 - `TabBar` n'expose ni `role="tablist"`/`role="tab"` ni `aria-selected` sur l'onglet actif
   — un lecteur d'écran ne distingue l'onglet courant que par la couleur. À traiter avec
   une vraie passe d'accessibilité plutôt qu'au fil de l'eau.
-- `ForgeScreen` n'a pas de `minHeight: 0` sur son conteneur flex, contrairement à
-  `CombatScreen`. Sans effet tant que son contenu tient à l'écran ; à surveiller si la
-  liste d'améliorations s'allonge au jalon 2.
 - `index.html` code `#0b0e13` en dur pour le fond de page, en doublon de `PALETTE.bg`,
   pour éviter un flash blanc avant que le script (et donc `theme.ts`) ne s'exécute.
   Techniquement nécessaire — le CSS s'applique avant tout JavaScript — mais le fichier ne
@@ -165,7 +169,7 @@ Mesure de fin de jalon (sonde de temps par image, throttling processeur ×4 pour
 mobile milieu de gamme) : **médiane 58,8 images/s**, mais **p90 à 25,5 ms** — environ une
 image sur dix est doublée. Le critère d'acceptation n° 4, « 60 fps sur mobile milieu de
 gamme », est donc tenu à la médiane et manqué dans la queue de distribution. Reporté
-sciemment : le jalon 2 ajoute surtout des écrans React (coffres, inventaire, fusion) et
+sciemment : le jalon 2a ajoute surtout des écrans React (coffres, inventaire, fusion) et
 non de la charge d'arène, donc la mesure ne devrait pas se dégrader d'ici là. Deux suspects
 sont déjà nommés plus haut dans cette section — la texture du sol régénérée à chaque pixel
 de redimensionnement, et la porte retracée en `Graphics` à chaque image. À reprendre au
@@ -184,3 +188,65 @@ jalon 3, quand le farm AUTO fera tourner l'arène en continu et rendra la queue 
   (`src/render/feel.ts`) n'ont pas de test dédié : fonctions pures triviales, non exigées
   par le plan du jalon 1.5, qui a concentré l'effort de test sur `observe()` — le cœur du
   game feel.
+
+## Dette connue (jalon 2a)
+
+Constatée et arbitrée pendant l'exécution du plan du jalon 2a. Aucun de ces points n'est
+bloquant ; chacun porte sa propre raison de report.
+
+**Équilibrage — mesuré au harnais `npm run calibrate` (5 graines), consigné le 2026-08-25.**
+Validation du chapitre 1 : **23 runs, 2,08 h** — garde-fou de non-régression face aux 21
+runs documentés avant le jalon (le projet a lui-même mesuré ces 21 runs tantôt à 2 h 08,
+tantôt à 1,76 h selon les passes ; l'écart vient de la variance de méthode, pas d'une
+dérive introduite ici). `econ.bossGems` passe de 40 à **60** : cible « premier coffre
+d'Arène dans l'heure suivant la validation du chapitre 1 » atteinte sur les cinq graines
+(0,82 à 0,87 h après validation ; `npm run calibrate` l'affiche en cumulé depuis le départ,
+2,92 h, soit bien 2,08 + ~0,84 h). `talents.estoc.speedThreshold` passe de 150 à **298**
+(p90 des vitesses d'impact réelles) et `talents.frolement.speedThreshold` de 40 à **18**
+(p10 des mêmes), mesurés sur n = 54 333 collisions impliquant le joueur via une sonde
+temporaire dans `resolveCollision`, retirée après mesure. La première mesure, prise sur la
+norme de la vitesse relative à chaque tick plutôt que sur sa composante normale au contact,
+donnait un p10 de 112,5 — au-dessus de la médiane réelle de 91,4 : Frôlement aurait annulé
+la majorité des vrais coups. Refaite sur la bonne grandeur avant d'être retenue.
+
+**Simulation**
+- Pas de test pour un sacrifice de fusion de multiplicité ≥ 2 : la table `FUSION` réelle
+  n'en contient pas, et en fabriquer un aurait exigé d'inventer une recette hors table.
+- `rankLabel` (`piece.ts`) dérive la frontière « Légende » de la longueur de sa table
+  d'étiquettes plutôt que de `RARITY.legendRank`. Les deux valent 11 aujourd'hui ; à relier
+  si le rang plafond devient un jour réglable.
+- `NEUTRAL_TALENTS` (`talents.ts`) n'est immuable qu'à l'exécution (`Object.freeze`), pas au
+  typage. `Top.talents` gagnerait à être `Readonly<TalentMods>`.
+- La dé-pénétration de collision (`combat.ts`) partage le chevauchement à parts égales sans
+  tenir compte des masses, alors que l'impulsion, elle, en tient compte.
+- `resolveTalents` duplique la liste des emplacements au lieu de la dériver de
+  `TALENTS_BY_SLOT`.
+- Le test « Estoc ne fait rien sous le seuil » passerait même si le talent était retiré :
+  garde de neutralité utile, mais ne compte pas dans la couverture réelle d'Estoc.
+- Garde-fou d'équilibrage non documenté ailleurs qu'ici : la séparation après un choc exige
+  `(1 + restitution) × impulseTaken` moyen `> 1`, soit un plancher de 0,556 à restitution
+  0,8. `ancrage.impulseTaken` vaut 0,7 et passe, même porté des deux côtés. Sous ce seuil,
+  les toupies resteraient en rapprochement après l'impulsion et subiraient des dégâts à
+  chaque tick.
+- `applyReward` (`meta.ts`) est exporté sans appelant de production hors `applyRunReward`.
+
+**Sauvegarde**
+- Si l'écriture de la clé de secours (`spinforge.save.backup`) échoue faute de quota, le
+  blob fautif ne reste que sous la clé principale jusqu'à la première écriture réussie.
+  Enchaînement non garanti ; risque réel faible.
+
+**Interface**
+- `ChestScreen` duplique en dur le seuil `rank >= 7` de `rankColor` au lieu d'en dépendre :
+  dérive silencieuse si la palette de rareté bouge.
+- La liste de révélation des tirages (`ChestScreen`) n'a pas de région `aria-live`. Niveau
+  constant avec le reste du dépôt (voir `TabBar` en dette 1.5) — à traiter avec une vraie
+  passe d'accessibilité, pas au fil de l'eau.
+- `RenderEvents.chapterValidated` est produit et consommé par personne — dette antérieure
+  au jalon 2a, toujours vraie.
+- `arena.ts` nomme ses paramètres `state` là où le reste du code dit `run`.
+
+**Tests**
+- `movingTop()` duplique presque `top()` dans `physics.test.ts`.
+- `meta.test.ts` intitule « a son propre flux de RNG » un test qui ne vérifie que la
+  normalisation de la graine ; la séparation des flux est garantie structurellement, par la
+  signature de `tick`.
