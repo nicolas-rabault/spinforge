@@ -32,6 +32,12 @@ describe('createRun', () => {
     expect(run.bots).toHaveLength(botCountFor(1));
     expect(run.player.spin).toBe(run.player.spinMax);
   });
+
+  it('chaque salle reçoit son gabarit d’arène', () => {
+    const run = createRun(createInitialMeta(1), 1);
+    expect(run.arena.zones.length).toBeGreaterThan(0);
+    expect(run.arena.shard).toBeNull();
+  });
 });
 
 describe('déterminisme', () => {

@@ -1,4 +1,5 @@
 import type { PieceInstance, PieceStack, Slot } from './piece';
+import type { ArenaLayout } from './terrain';
 import type { TalentMods } from './talents';
 
 export interface Vec {
@@ -58,6 +59,10 @@ export interface RunState {
   salle: number;
   player: Top;
   bots: Top[];
+  /** Le terrain de la salle en cours. Reconstruit à chaque entrée de salle
+   *  depuis `rngState` — donc jamais sauvegardé, et couvert par le test de
+   *  déterminisme sans qu'il ait à le connaître. */
+  arena: ArenaLayout;
   phase: Phase;
   secondSouffleUsed: boolean;
 }

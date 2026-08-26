@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { decayPerTick, decaySpin, resolveCollision } from './combat';
+import { decayPerTick, decaySpin, drainPerTick, resolveCollision } from './combat';
 import { TALENTS, TICK_S } from './config';
+import { NEUTRAL_ZONE, type ZoneMods } from './terrain';
 import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
 
@@ -18,7 +19,7 @@ function top(over: Partial<Top> = {}): Top {
 describe('decaySpin', () => {
   it('décroît de spinDecay × TICK_S', () => {
     const t = top({ spinDecay: 20 });
-    decaySpin(t);
+    decaySpin(t, NEUTRAL_ZONE);
     expect(t.spin).toBeCloseTo(1000 - 20 * TICK_S, 5);
   });
 });
@@ -30,6 +31,47 @@ describe('decayPerTick', () => {
     // tick à venir : lui aussi doit voir la pause.
     const t = top({ decayPauseTicks: 3 });
     expect(decayPerTick(t)).toBe(0);
+  });
+});
+
+describe('decaySpin — zones', () => {
+  it('ajoute la perte de zone à la décroissance naturelle', () => {
+    const zone: ZoneMods = { ...NEUTRAL_ZONE, spinDrain: 50 };
+    const t = top({ spinDecay: 20 });
+    decaySpin(t, zone);
+    expect(t.spin).toBeCloseTo(1000 - (20 + 50) * TICK_S, 5);
+  });
+
+  it('Relance suspend la décroissance naturelle, pas les pointes', () => {
+    // Les pointes sont des dégâts, pas de l'endurance : aucun talent d'endurance
+    // ne doit en protéger.
+    const zone: ZoneMods = { ...NEUTRAL_ZONE, spinDrain: 50 };
+    const t = top({ spinDecay: 20, decayPauseTicks: 3 });
+    decaySpin(t, zone);
+    expect(t.spin).toBeCloseTo(1000 - 50 * TICK_S, 5);
+  });
+
+  it('ne reprend la décroissance qu’au tick qui suit la fin de la pause', () => {
+    // La valeur doit être lue AVANT le décrément : lue après, le dernier tick de
+    // pause reprendrait la décroissance un tick trop tôt.
+    const t = top({ spinDecay: 20, decayPauseTicks: 1 });
+    decaySpin(t, NEUTRAL_ZONE);
+    expect(t.spin).toBe(1000);
+    expect(t.decayPauseTicks).toBe(0);
+    decaySpin(t, NEUTRAL_ZONE);
+    expect(t.spin).toBeCloseTo(1000 - 20 * TICK_S, 5);
+  });
+});
+
+describe('drainPerTick', () => {
+  it('somme décroissance naturelle et perte de zone', () => {
+    const zone: ZoneMods = { ...NEUTRAL_ZONE, spinDrain: 50 };
+    expect(drainPerTick(top({ spinDecay: 20 }), zone)).toBeCloseTo(70, 10);
+  });
+
+  it('ne compte que la zone pendant une suspension', () => {
+    const zone: ZoneMods = { ...NEUTRAL_ZONE, spinDrain: 50 };
+    expect(drainPerTick(top({ spinDecay: 20, decayPauseTicks: 3 }), zone)).toBeCloseTo(50, 10);
   });
 });
 
@@ -214,18 +256,18 @@ describe('talent Relance', () => {
 describe('décroissance modulée', () => {
   it('Cœur Gyre ralentit la perte naturelle', () => {
     const t = top({ talents: { ...NEUTRAL_TALENTS, spinDecayMult: 0.5 } });
-    decaySpin(t);
+    decaySpin(t, NEUTRAL_ZONE);
     expect(1000 - t.spin).toBeCloseTo(10 * 0.5 * 0.1, 10);
   });
 
   it('Relance suspend la perte et consomme un tick', () => {
     const t = top({ decayPauseTicks: 2 });
-    decaySpin(t);
+    decaySpin(t, NEUTRAL_ZONE);
     expect(t.spin).toBe(1000);
     expect(t.decayPauseTicks).toBe(1);
-    decaySpin(t);
+    decaySpin(t, NEUTRAL_ZONE);
     expect(t.decayPauseTicks).toBe(0);
-    decaySpin(t);
+    decaySpin(t, NEUTRAL_ZONE);
     expect(t.spin).toBeLessThan(1000);
   });
 });

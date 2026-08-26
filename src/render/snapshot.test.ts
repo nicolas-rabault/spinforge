@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { lerp, snapshotById, takeSnapshot } from './snapshot';
 import { createInitialMeta } from '../sim/meta';
 import { createRun } from '../sim/sim';
+import { decayPerTick } from '../sim/combat';
+import { ZONES } from '../sim/config';
 
 describe('takeSnapshot', () => {
   it('reprend salle, phase, identité, position, spin et le drapeau joueur', () => {
@@ -69,6 +71,19 @@ describe('takeSnapshot', () => {
     // l'ancien champ spinDecay aurait exposée, et qu'observe() aurait
     // retranchée à tort.
     expect(snap.tops[0].decayPerTick).not.toBeCloseTo(run.player.spinDecay, 5);
+  });
+
+  it('la décroissance annoncée inclut la perte de zone', () => {
+    // observer.ts déduit la puissance d'un choc du spin perdu MOINS cette valeur :
+    // sans la perte de zone, une toupie posée sur des pointes produirait des
+    // étincelles et une secousse en continu, sans qu'aucun contact ait eu lieu.
+    const run = createRun(createInitialMeta(1), 1);
+    run.arena.zones = [
+      { kind: 'pointes', x: run.player.pos.x, y: run.player.pos.y, radius: ZONES.pointes.radius },
+    ];
+    const snap = takeSnapshot(run);
+    const player = snap.tops.find((t) => t.isPlayer)!;
+    expect(player.decayPerTick).toBeCloseTo(decayPerTick(run.player) + ZONES.pointes.spinDrain, 10);
   });
 });
 

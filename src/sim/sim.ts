@@ -4,7 +4,7 @@ import { decaySpin, resolveCollision } from './combat';
 import { applySteering, clampToArena, moveAndBounce } from './physics';
 import { nextRandom } from './rng';
 import { spawnSalle } from './salle';
-import { NEUTRAL_ZONE } from './terrain';
+import { buildLayout, zoneModsAt } from './terrain';
 import { resolveTalents } from './talents';
 import type { Input, MetaState, RunReward, RunState, Top } from './types';
 
@@ -32,7 +32,11 @@ function makePlayer(meta: MetaState): Top {
 function startSalle(run: RunState): void {
   const spawned = spawnSalle(run.salle, run.rngState);
   run.bots = spawned.bots;
-  run.rngState = spawned.rngState;
+  // Bots d'abord, terrain ensuite : l'ordre de consommation du flux fait partie
+  // du contrat de déterminisme.
+  const built = buildLayout(run.salle, spawned.rngState);
+  run.arena = built.layout;
+  run.rngState = built.rngState;
   run.player.pos = { x: PLAYER_SPAWN.x, y: PLAYER_SPAWN.y };
   run.player.vel = { x: 0, y: 0 };
   run.player.decayPauseTicks = 0;
@@ -46,6 +50,9 @@ export function createRun(meta: MetaState, seed: number): RunState {
     salle: 1,
     player: makePlayer(meta),
     bots: [],
+    // Remplacé par startSalle juste après ; l'initialiser vide évite un état
+    // partiellement construit que le typage refuserait.
+    arena: { zones: [], breaches: [], shard: null, shardTimer: 0 },
     phase: 'fighting',
     secondSouffleUsed: false,
   };
@@ -96,10 +103,14 @@ export function tick(run: RunState, input: Input): RunReward | null {
   run.tick++;
   if (run.phase !== 'fighting') return null;
   if (run.tick % BOT_AI.retargetEveryTicks === 1) refreshBotAims(run);
-  // NEUTRAL_ZONE en attendant que les zones soient branchées : la valeur neutre
-  // traverse le calcul sans rien changer.
-  applySteering(run.player, input.steer, NEUTRAL_ZONE);
-  for (const bot of run.bots) applySteering(bot, bot.aim, NEUTRAL_ZONE);
+  // Le terrain est lu UNE fois par toupie et par tick, avant le pilotage, et la
+  // même valeur sert au pilotage et à la décroissance : une toupie qui traverse
+  // une zone pendant un tick est traitée selon sa position de départ. Cohérent,
+  // borné, et sans deux lectures divergentes dans le même tick.
+  const playerZone = zoneModsAt(run.arena, run.player.pos);
+  const botZones = run.bots.map((bot) => zoneModsAt(run.arena, bot.pos));
+  applySteering(run.player, input.steer, playerZone);
+  run.bots.forEach((bot, i) => applySteering(bot, bot.aim, botZones[i]));
   moveAndBounce(run.player);
   for (const bot of run.bots) moveAndBounce(bot);
   for (const bot of run.bots) resolveCollision(run.player, bot);
@@ -110,8 +121,9 @@ export function tick(run: RunState, input: Input): RunReward | null {
   }
   clampToArena(run.player);
   for (const bot of run.bots) clampToArena(bot);
-  decaySpin(run.player);
-  for (const bot of run.bots) decaySpin(bot);
+  decaySpin(run.player, playerZone);
+  // `run.bots` n'est filtré qu'après : les index restent alignés sur `botZones`.
+  run.bots.forEach((bot, i) => decaySpin(bot, botZones[i]));
   run.bots = run.bots.filter((b) => b.spin > 0);
   if (run.player.spin <= 0) {
     // Second souffle : un sursis par run, sinon la mort.
