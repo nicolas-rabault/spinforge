@@ -828,8 +828,17 @@ describe('applySteering — amortissement de surcharge', () => {
   it('amortit d’un facteur constant tant qu’on est au-dessus du plafond', () => {
     const t = top({ vel: { x: 500, y: 0 } });
     applySteering(t, null, NEUTRAL_ZONE);
-    // La friction du relâchement s'applique d'abord, l'amortissement ensuite.
-    expect(t.vel.x).toBeCloseTo(500 * FRICTION * ARENA.overspeedDamping, 5);
+    // Le plafond du tick vaut 500 × 0,9 = 450 ; la friction seule donnerait 470,
+    // c'est donc le plafond qui tranche.
+    expect(t.vel.x).toBeCloseTo(500 * ARENA.overspeedDamping, 5);
+  });
+
+  it('le pilotage seul ne franchit jamais le plafond', () => {
+    // Le garde-fou du plafond lu AVANT le pilotage. Amorti après coup, tenir son
+    // doigt ferait converger le joueur vers 810 px/s au lieu de 240.
+    const t = top();
+    for (let i = 0; i < 60; i++) applySteering(t, { x: 1, y: 0 }, NEUTRAL_ZONE);
+    expect(Math.hypot(t.vel.x, t.vel.y)).toBeCloseTo(240, 5);
   });
 
   it('ne descend jamais sous le plafond par amortissement', () => {
@@ -895,6 +904,18 @@ Remplacer `applySteering` :
 
 ```ts
 export function applySteering(top: Top, steer: Vec | null, zone: ZoneMods): void {
+  const max = effectiveMaxSpeed(top) * zone.speedMult;
+  // Plafond de CE tick, lu AVANT que le pilotage n'ait rien ajouté : l'ordinaire,
+  // ou la surcharge déjà présente — donc héritée d'un choc — amortie. Seul un choc
+  // peut lever le plafond ; le doigt du joueur, jamais.
+  //
+  // Amortir après coup toute vitesse supérieure au plafond laisserait au contraire
+  // le pilotage lui-même dépasser : chaque tick ajoute accel × TICK_S et n'en
+  // retire que 10 %. Point fixe v = 0,9 × (v + 90) = 810 px/s — trois fois et
+  // demie la vitesse de Pointe du joueur, rien qu'en tenant son doigt, et la
+  // Pointe cesserait d'être une stat.
+  const ceiling = Math.max(max, Math.hypot(top.vel.x, top.vel.y) * ARENA.overspeedDamping);
+
   if (steer) {
     const len = Math.hypot(steer.x, steer.y) || 1;
     const accel = top.accel * zone.accelMult;
@@ -907,16 +928,13 @@ export function applySteering(top: Top, steer: Vec | null, zone: ZoneMods): void
     top.vel.x *= friction;
     top.vel.y *= friction;
   }
-  const max = effectiveMaxSpeed(top) * zone.speedMult;
+
   const speed = Math.hypot(top.vel.x, top.vel.y);
-  if (speed > max) {
-    // Au-delà du plafond, cette vitesse vient d'un choc, pas du doigt du joueur :
-    // on la laisse se résorber au lieu de la trancher. Tronquer ici annulait le
-    // recul d'une collision AVANT que `moveAndBounce` ne l'ait parcouru d'un seul
-    // pixel — la répulsion n'existait tout simplement pas. Le plafond continue de
-    // borner le pilotage, il ne borne plus les coups reçus.
-    const target = Math.max(max, speed * ARENA.overspeedDamping);
-    const k = target / speed;
+  if (speed > ceiling) {
+    // Tronquer au plafond ORDINAIRE annulait le recul d'une collision avant que
+    // `moveAndBounce` ne l'ait parcouru d'un seul pixel — la répulsion n'existait
+    // tout simplement pas.
+    const k = ceiling / speed;
     top.vel.x *= k;
     top.vel.y *= k;
   }
@@ -1530,6 +1548,16 @@ describe('takeShard', () => {
   it('rend null sans éclat', () => {
     expect(takeShard(layout(), [shardTop()])).toBeNull();
   });
+
+  it('ne ressuscite pas une toupie déjà à zéro', () => {
+    // takeShard tourne avant le filtre des morts : sans cette garde, un joueur
+    // éjecté au même tick esquiverait sa mort en effleurant l'éclat.
+    const l = layout({ shard: { x: 0, y: 0, ttl: 10 } });
+    const dead = shardTop({ id: 'mort', spin: 0 });
+    const alive = shardTop({ id: 'vif' });
+    expect(takeShard(l, [dead, alive])).toBe('vif');
+    expect(dead.spin).toBe(0);
+  });
 });
 ```
 
@@ -1595,6 +1623,10 @@ export function takeShard(layout: ArenaLayout, tops: Top[]): string | null {
   const shard = layout.shard;
   if (!shard) return null;
   for (const top of tops) {
+    // Une toupie déjà à zéro ne ramasse rien : `takeShard` tourne AVANT le filtre
+    // des morts et la branche de mort du joueur, donc sans cette garde un joueur
+    // éjecté au même tick esquiverait sa propre mort en effleurant l'éclat.
+    if (top.spin <= 0) continue;
     if (Math.hypot(top.pos.x - shard.x, top.pos.y - shard.y) > SHARD.radius + top.radius) continue;
     top.spin = Math.min(top.spinMax, top.spin + SHARD.spinGain * top.spinMax);
     layout.shard = null;

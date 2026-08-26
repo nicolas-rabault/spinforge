@@ -90,14 +90,21 @@ on part.
 **Correctif.** Au-dessus du plafond, on n'est plus piloté, on est projeté : on amortit au
 lieu de tronquer.
 
+Le plafond du tick se calcule **avant** que le pilotage n'ait rien ajouté. C'est ce qui
+sépare les deux sources de vitesse : seule celle déjà présente en début de tick — donc
+issue d'un choc — peut lever le plafond, et le doigt du joueur ne le lève jamais.
+
 ```ts
 const max = effectiveMaxSpeed(top) * zone.speedMult;
+const inherited = Math.hypot(top.vel.x, top.vel.y);
+// Plafond de ce tick : l'ordinaire, ou la surcharge héritée d'un choc, amortie.
+const ceiling = Math.max(max, inherited * ARENA.overspeedDamping);
+
+// … pilotage ou friction …
+
 const speed = Math.hypot(top.vel.x, top.vel.y);
-if (speed > max) {
-  // Au-delà du plafond, cette vitesse vient d'un choc, pas du doigt du joueur.
-  // On la laisse se résorber d'elle-même sans jamais descendre sous le plafond.
-  const target = Math.max(max, speed * ARENA.overspeedDamping);
-  const k = target / speed;
+if (speed > ceiling) {
+  const k = ceiling / speed;
   top.vel.x *= k;
   top.vel.y *= k;
 }
@@ -106,8 +113,16 @@ if (speed > max) {
 À `overspeedDamping = 0,90` et 10 ticks/s, une projection à 500 px/s retombe au plafond de
 240 en ~7 ticks, soit 0,7 s. C'est la durée d'un « envoyé valser » lisible.
 
-Le plafond continue de borner le **pilotage** — un joueur ne dépasse jamais sa vitesse de
-Pointe par son seul doigt. Il ne borne plus les **coups reçus**.
+**Piège identifié — le plafond doit se lire avant le pilotage.** Amortir simplement toute
+vitesse supérieure au plafond (`if (speed > max) speed × 0,9`) laisserait le pilotage
+lui-même dépasser : chaque tick ajoute `accel × TICK_S` puis n'en retire que 10 %. Le point
+fixe est `v = 0,9 × (v + 90)`, soit **810 px/s** — le joueur roulerait à trois fois et demie
+sa vitesse de Pointe rien qu'en tenant son doigt, et la Pointe cesserait d'être une stat.
+Le plafond lu avant le pilotage n'a pas ce défaut : le pilotage ne peut jamais que remplir
+un plafond qu'il n'a pas fixé.
+
+Le plafond continue donc de borner le **pilotage** — un joueur ne dépasse jamais sa vitesse
+de Pointe par son seul doigt. Il ne borne plus les **coups reçus**.
 
 ### 1.2 Répulsion violente
 
