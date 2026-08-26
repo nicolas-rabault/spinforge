@@ -37,28 +37,27 @@ export function stackOf(meta: MetaState, model: string, rank: number): PieceStac
   return meta.inventory.find((s) => s.model === model && s.rank === rank);
 }
 
-/** Range une pièce dans l'inventaire. Les doublons dorment au niveau 0 ;
- *  `bestLevel` ne retient que le meilleur, pour ne rien perdre si l'on
- *  déséquipe une pièce améliorée. */
+/** Range une pièce dans l'inventaire. `levels` reste trié du meilleur au moins
+ *  bon : c'est ce qui permet à `takePiece` de toujours rendre le meilleur
+ *  exemplaire sans jamais perdre le niveau de ceux qui restent. */
 export function addPiece(meta: MetaState, piece: PieceInstance): void {
   const stack = stackOf(meta, piece.model, piece.rank);
   if (stack) {
-    stack.count++;
-    stack.bestLevel = Math.max(stack.bestLevel, piece.level);
+    const i = stack.levels.findIndex((l) => l < piece.level);
+    if (i === -1) stack.levels.push(piece.level);
+    else stack.levels.splice(i, 0, piece.level);
     return;
   }
-  meta.inventory.push({ model: piece.model, rank: piece.rank, count: 1, bestLevel: piece.level });
+  meta.inventory.push({ model: piece.model, rank: piece.rank, levels: [piece.level] });
 }
 
-/** Retire un exemplaire. Retourne le niveau du meilleur exemplaire retiré,
- *  ou `null` si la pile n'existe pas ou est vide. */
+/** Retire le meilleur exemplaire de la pile. Retourne son niveau, ou `null` si
+ *  la pile n'existe pas ou est vide. */
 export function takePiece(meta: MetaState, model: string, rank: number): number | null {
   const stack = stackOf(meta, model, rank);
-  if (!stack || stack.count === 0) return null;
-  const level = stack.bestLevel;
-  stack.count--;
-  if (stack.count === 0) meta.inventory = meta.inventory.filter((s) => s !== stack);
-  else stack.bestLevel = 0; // le meilleur vient d'être sorti ; les autres dorment au niveau 0
+  if (!stack || stack.levels.length === 0) return null;
+  const level = stack.levels.shift()!;
+  if (stack.levels.length === 0) meta.inventory = meta.inventory.filter((s) => s !== stack);
   return level;
 }
 

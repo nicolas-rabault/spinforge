@@ -13,13 +13,16 @@ export interface PieceInstance {
   level: number;
 }
 
-/** Les doublons vivent en piles. `bestLevel` n'existe que pour ne rien perdre
- *  lorsqu'on déséquipe une pièce améliorée : les doublons dorment au niveau 0. */
+/** Les doublons vivent en piles, un niveau par exemplaire, triés du meilleur au
+ *  moins bon (`levels[0]` est toujours le meilleur). Un résumé du genre
+ *  « meilleur niveau vu » a été tenté et abandonné : il ne peut représenter
+ *  qu'un seul exemplaire amélioré à la fois, et en oublie le niveau des autres
+ *  dès qu'on en retire un — violation directe de « on ne perd jamais de niveau
+ *  en fusionnant ». La liste explicite n'a pas ce problème. */
 export interface PieceStack {
   model: string;
   rank: number;
-  count: number;
-  bestLevel: number;
+  levels: number[];
 }
 
 const RANK_LABELS = [

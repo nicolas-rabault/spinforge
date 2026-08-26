@@ -3,7 +3,7 @@ import type { MetaState } from './types';
 
 /** Numéro de schéma du méta sérialisé. À incrémenter dès que la forme de
  *  `MetaState` change, en ajoutant la migration correspondante ci-dessous. */
-export const SAVE_SCHEMA = 1;
+export const SAVE_SCHEMA = 2;
 
 interface Envelope {
   v: number;
@@ -12,6 +12,34 @@ interface Envelope {
 
 export function serializeMeta(meta: MetaState): string {
   return JSON.stringify({ v: SAVE_SCHEMA, meta } satisfies Envelope);
+}
+
+/** Forme d'une pile au schéma 1 : un compteur et le meilleur niveau vu. Elle ne
+ *  pouvait représenter qu'un seul exemplaire amélioré à la fois dans une pile —
+ *  c'est le défaut que le schéma 2 corrige en gardant un niveau par exemplaire. */
+interface StackV1 {
+  model?: unknown;
+  rank?: unknown;
+  count?: unknown;
+  bestLevel?: unknown;
+}
+
+/**
+ * Migration schéma 1 → 2 : `{ count, bestLevel }` devient `{ levels }`. Le
+ * meilleur niveau connu passe en tête ; les autres exemplaires, dont le
+ * schéma 1 ne connaissait pas le niveau individuel, prennent 0 — la même
+ * hypothèse conservatrice que l'ancien `takePiece`, appliquée une bonne fois
+ * ici plutôt qu'à chaque retrait.
+ */
+function migrateInventoryV1(inventory: unknown): unknown {
+  if (!Array.isArray(inventory)) return inventory;
+  return inventory.map((raw) => {
+    const s = raw as StackV1;
+    if (typeof s.count !== 'number') return raw; // forme déjà inattendue : laissée telle quelle, isComplete tranchera
+    const best = typeof s.bestLevel === 'number' ? s.bestLevel : 0;
+    const levels = [best, ...(Array(Math.max(0, s.count - 1)).fill(0) as number[])];
+    return { model: s.model, rank: s.rank, levels };
+  });
 }
 
 /** Complète un méta partiel avec les valeurs de départ. C'est le mécanisme sur
@@ -62,8 +90,9 @@ export function deserializeMeta(json: string): MetaState | null {
     if (typeof env.meta !== 'object' || env.meta === null) return null;
 
     const raw = env.meta as Record<string, unknown>;
-    // Schéma courant : exigence stricte. Schéma antérieur : on complète.
+    // Schéma courant : exigence stricte. Schéma antérieur : migration puis complétion.
     if (env.v === SAVE_SCHEMA && !isComplete(raw)) return null;
+    if (env.v < SAVE_SCHEMA) raw.inventory = migrateInventoryV1(raw.inventory);
     return hydrate(raw);
   } catch {
     // Filet : toute forme imprévue (un champ non nul mais du mauvais type,

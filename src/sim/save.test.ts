@@ -8,8 +8,10 @@ function filled() {
   meta.gems = 80;
   meta.equipped.lame = { model: 'lame.couronne-solaire', rank: 4, level: 12 };
   meta.inventory = [
-    { model: 'disque.lourd', rank: 1, count: 7, bestLevel: 3 },
-    { model: 'pointe.furie', rank: 3, count: 2, bestLevel: 0 },
+    // Plusieurs niveaux réellement distincts dans la même pile : c'est justement
+    // ce que le schéma 1 (`count` + `bestLevel`) ne pouvait pas représenter.
+    { model: 'disque.lourd', rank: 1, levels: [5, 3, 0, 0, 0, 0, 0] },
+    { model: 'pointe.furie', rank: 3, levels: [0, 0] },
   ];
   meta.pity = { bronze: 0, arene: 6, mythique: 19 };
   meta.chapterValidated = true;
@@ -26,8 +28,8 @@ describe('aller-retour', () => {
   it('ne partage aucune référence avec l’original', () => {
     const meta = filled();
     const back = deserializeMeta(serializeMeta(meta))!;
-    back.inventory[0].count = 99;
-    expect(meta.inventory[0].count).toBe(7);
+    back.inventory[0].levels[0] = 99;
+    expect(meta.inventory[0].levels[0]).toBe(5);
   });
 
   it('écrit le numéro de schéma courant', () => {
@@ -77,5 +79,34 @@ describe('migration', () => {
     // Les champs absents en v0 prennent leur valeur de départ.
     expect(back!.inventory).toEqual([]);
     expect(back!.equipped.lame.rank).toBe(1);
+  });
+
+  // Celle-ci a réellement existé : le schéma 1 stockait chaque pile en
+  // `{ count, bestLevel }`. La migration doit convertir vers `{ levels }` en
+  // mettant le meilleur niveau connu en tête et en complétant le reste à 0 —
+  // exactement l'hypothèse que l'ancien `takePiece` faisait à chaque retrait,
+  // appliquée ici une seule fois à la lecture.
+  it('migre un blob v1 réaliste : les piles `{ count, bestLevel }` deviennent `{ levels }`', () => {
+    const v1 = {
+      v: 1,
+      meta: {
+        rngState: 42,
+        credits: 500,
+        gems: 10,
+        equipped: createInitialMeta(1).equipped,
+        inventory: [
+          { model: 'disque.lourd', rank: 1, count: 4, bestLevel: 9 },
+          { model: 'pointe.furie', rank: 2, count: 1, bestLevel: 0 },
+        ],
+        pity: { bronze: 0, arene: 0, mythique: 0 },
+        chapterValidated: false,
+      },
+    };
+    const back = deserializeMeta(JSON.stringify(v1));
+    expect(back).not.toBeNull();
+    expect(back!.inventory).toEqual([
+      { model: 'disque.lourd', rank: 1, levels: [9, 0, 0, 0] },
+      { model: 'pointe.furie', rank: 2, levels: [0] },
+    ]);
   });
 });

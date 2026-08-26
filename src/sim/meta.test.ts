@@ -57,7 +57,7 @@ describe('inventaire', () => {
     addPiece(meta, { model: 'disque.lourd', rank: 1, level: 0 });
     addPiece(meta, { model: 'disque.lourd', rank: 1, level: 4 });
     expect(meta.inventory).toHaveLength(1);
-    expect(stackOf(meta, 'disque.lourd', 1)).toEqual({ model: 'disque.lourd', rank: 1, count: 2, bestLevel: 4 });
+    expect(stackOf(meta, 'disque.lourd', 1)).toEqual({ model: 'disque.lourd', rank: 1, levels: [4, 0] });
   });
 
   it('sépare les piles quand le rang diffère', () => {
@@ -81,7 +81,7 @@ describe('inventaire', () => {
     addPiece(meta, { model: 'disque.colosse', rank: 3, level: 2 });
     expect(equipFromStack(meta, 'disque.colosse', 3)).toBe(true);
     expect(meta.equipped.disque).toEqual({ model: 'disque.colosse', rank: 3, level: 2 });
-    expect(stackOf(meta, previous.model, previous.rank)!.count).toBe(1);
+    expect(stackOf(meta, previous.model, previous.rank)!.levels).toEqual([previous.level]);
   });
 
   it('refuse d’équiper une pièce absente', () => {

@@ -4,22 +4,19 @@ import { addPiece, stackOf, takePiece } from './meta';
 import type { MetaState } from './types';
 
 /** La recette dépend du rang **des pièces consommées**. `throughRank: 0`
- *  marque la règle ouverte, qui couvre tous les rangs au-delà. */
+ *  marque la règle ouverte, qui couvre tous les rangs au-delà. `config.test.ts`
+ *  impose que la dernière règle de `FUSION` porte toujours `throughRank: 0` :
+ *  la recherche aboutit donc toujours, pas de repli à écrire après coup. */
 export function fusionRecipe(rank: number): { identical: number; sacrifice: number } {
-  for (const rule of FUSION) {
-    if (rule.throughRank === 0 || rank <= rule.throughRank) {
-      return { identical: rule.identical, sacrifice: rule.sacrifice };
-    }
-  }
-  const last = FUSION[FUSION.length - 1];
-  return { identical: last.identical, sacrifice: last.sacrifice };
+  const rule = FUSION.find((r) => r.throughRank === 0 || rank <= r.throughRank)!;
+  return { identical: rule.identical, sacrifice: rule.sacrifice };
 }
 
 /** Nombre d'exemplaires disponibles, la pièce équipée comprise. */
 function availableIdentical(meta: MetaState, model: string, rank: number): number {
   const slot = modelById(model).slot;
   const equipped = meta.equipped[slot];
-  const inStack = stackOf(meta, model, rank)?.count ?? 0;
+  const inStack = stackOf(meta, model, rank)?.levels.length ?? 0;
   const fromEquipped = equipped.model === model && equipped.rank === rank ? 1 : 0;
   return inStack + fromEquipped;
 }
@@ -30,14 +27,25 @@ function availableIdentical(meta: MetaState, model: string, rank: number): numbe
 function sacrificeStack(meta: MetaState, model: string, rank: number) {
   const slot = modelById(model).slot;
   return meta.inventory.find(
-    (s) => s.count > 0 && modelById(s.model).slot === slot && !(s.model === model && s.rank === rank),
+    (s) => s.levels.length > 0 && modelById(s.model).slot === slot && !(s.model === model && s.rank === rank),
   );
+}
+
+/** Total des exemplaires sacrifiables (même emplacement, hors les identiques
+ *  nécessaires) toutes piles confondues. `sacrificeStack` ne rend qu'une pile à
+ *  la fois ; celle-ci additionne pour que `canFuse` compare un vrai nombre à
+ *  `recipe.sacrifice`, plutôt que de traiter le sacrifice comme un booléen. */
+function availableSacrifice(meta: MetaState, model: string, rank: number): number {
+  const slot = modelById(model).slot;
+  return meta.inventory
+    .filter((s) => modelById(s.model).slot === slot && !(s.model === model && s.rank === rank))
+    .reduce((sum, s) => sum + s.levels.length, 0);
 }
 
 export function canFuse(meta: MetaState, model: string, rank: number): boolean {
   const recipe = fusionRecipe(rank);
   if (availableIdentical(meta, model, rank) < recipe.identical) return false;
-  if (recipe.sacrifice > 0 && !sacrificeStack(meta, model, rank)) return false;
+  if (availableSacrifice(meta, model, rank) < recipe.sacrifice) return false;
   return true;
 }
 
@@ -69,7 +77,8 @@ export function tryFuse(meta: MetaState, model: string, rank: number): boolean {
     taken++;
   }
 
-  if (recipe.sacrifice > 0) {
+  // Autant de sacrifices que la recette l'exige — jamais un seul par hypothèse.
+  for (let i = 0; i < recipe.sacrifice; i++) {
     const victim = sacrificeStack(meta, model, rank)!;
     const level = takePiece(meta, victim.model, victim.rank)!;
     bestLevel = Math.max(bestLevel, level);
