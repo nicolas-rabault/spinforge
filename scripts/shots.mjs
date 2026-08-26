@@ -149,7 +149,7 @@ await page.getByRole('button', { name: 'Continuer' }).click();
 await page.getByRole('button', { name: 'Forge' }).click();
 await page.waitForTimeout(150);
 // Haut de l'écran Forge : la Lame Légende équipée porte ses trois talents actifs
-// (Estoc, Riposte, Percée) — lisible à son étiquette de rang couleur boss.
+// (Estoc, Riposte, Percée), listés en toutes lettres sous sa ligne de stat.
 await page.screenshot({ path: `${OUT}/forge-talent-actif.png` });
 console.log(`${OUT}/forge-talent-actif.png`);
 

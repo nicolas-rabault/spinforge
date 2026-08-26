@@ -3,6 +3,7 @@ import { playerStats, tryUpgrade, upgradeCost } from '../sim/economy';
 import { syncRunStats } from '../sim/sim';
 import { rankLabel, type Slot } from '../sim/piece';
 import { modelById } from '../content/pieces';
+import { talentsOf, TALENT_LABELS } from '../sim/talents';
 import { InventoryPanel } from './InventoryPanel';
 import type { MetaState, RunState, Stats } from '../sim/types';
 
@@ -44,6 +45,7 @@ export function ForgeScreen({
           playerStats({ ...meta, equipped: { ...meta.equipped, [row.key]: { ...piece, level: piece.level + 1 } } }),
         );
         const affordable = meta.credits >= cost;
+        const talents = talentsOf(row.key, piece.rank);
         return (
           <button
             key={row.key}
@@ -71,6 +73,11 @@ export function ForgeScreen({
               <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
                 {row.stat} {row.read(before).toFixed(0)} → {after.toFixed(0)}
               </span>
+              {talents.length > 0 ? (
+                <span style={{ fontSize: 12.5, color: 'var(--ember)' }}>
+                  {talents.map((id) => TALENT_LABELS[id]).join(' · ')}
+                </span>
+              ) : null}
             </span>
             <span style={{ font: '600 15px Oswald, ui-sans-serif, sans-serif', color: 'var(--ember)', fontVariantNumeric: 'tabular-nums' }}>
               {formatCredits(cost)}
