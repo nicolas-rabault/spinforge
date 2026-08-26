@@ -102,14 +102,44 @@ describe('buildLayout', () => {
 
   it('ne pose aucune zone sur le point d’apparition du joueur', () => {
     // Commencer une salle dans les pointes serait une perte de spin qu'aucun
-    // geste ne peut éviter.
-    for (let seed = 1; seed <= 200; seed++) {
+    // geste ne peut éviter. 300 graines (et non 200) pour que la boucle couvre
+    // au moins une activation du repli déterministe : il est rare (la première
+    // graine qui l'active, 221, tombait hors de la plage 1..200 initiale — voir
+    // le test suivant, qui l'épingle explicitement).
+    for (let seed = 1; seed <= 300; seed++) {
       const { layout } = buildLayout(10, seed);
       for (const z of layout.zones) {
         const d = Math.hypot(z.x - PLAYER_SPAWN.x, z.y - PLAYER_SPAWN.y);
         expect(d, `graine ${seed}, zone ${z.kind}`).toBeGreaterThanOrEqual(z.radius + ARENA.spawnClearance);
       }
     }
+  });
+
+  it('replie une zone hors du point d’apparition quand les tirages échouent', () => {
+    // La graine 221 (salle 10) est la première — trouvée par recherche linéaire,
+    // graine 1, 2, 3… — dont un tirage de zone épuise les douze essais de
+    // `PLACEMENT_TRIES` sans jamais dégager le point d'apparition : c'est la
+    // seule preuve directe que le repli `awayFromSpawn` s'active un jour, pas
+    // seulement en théorie. Si `ARENA.spawnClearance` ou le rayon d'une zone de
+    // `ZONES` change, cette graine peut cesser de déclencher le repli : il faut
+    // alors la rechercher à nouveau (même recherche linéaire), jamais supprimer
+    // le test.
+    const { layout } = buildLayout(10, 221);
+    const d = Math.hypot(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
+    // Même calcul que la production, pour ne jamais dupliquer un rayon ou une
+    // clearance en dur : la position attendue suit `balance.json`.
+    const expectedFallback = (radius: number) => {
+      const span = ARENA_RADIUS - radius;
+      const k = Math.min(span, d + radius + ARENA.spawnClearance) / d;
+      return { x: -PLAYER_SPAWN.x * k, y: -PLAYER_SPAWN.y * k };
+    };
+    const replied = layout.zones.find((z) => {
+      const away = expectedFallback(z.radius);
+      return Math.abs(z.x - away.x) < 1e-9 && Math.abs(z.y - away.y) < 1e-9;
+    });
+    expect(replied, 'aucune zone au point de repli attendu pour la graine 221').toBeDefined();
+    const toSpawn = Math.hypot(replied!.x - PLAYER_SPAWN.x, replied!.y - PLAYER_SPAWN.y);
+    expect(toSpawn).toBeGreaterThanOrEqual(replied!.radius + ARENA.spawnClearance);
   });
 
   it('garde chaque zone entièrement dans l’anneau', () => {
