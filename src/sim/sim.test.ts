@@ -184,6 +184,17 @@ describe('type et masse du joueur', () => {
     expect(run.player.type).toBe('endurance');
   });
 
+  it('createRun applique l’accélération du châssis sans passer par syncRunStats — le chemin de l’app au chargement (App.tsx) et au clic « rejouer » (CombatScreen)', () => {
+    const meta = createInitialMeta(1);
+    meta.toupies.unlocked.push('typhon-primal');
+    setActiveToupie(meta, 'typhon-primal');
+    const run = createRun(meta, 1);
+    // Si makePlayer recopiait PLAYER_BASE.accel en dur au lieu de stats.accel,
+    // cette assertion resterait sur la valeur neutre au lieu de la valeur du
+    // châssis : aucun syncRunStats n'intervient ici pour rattraper l'écart.
+    expect(run.player.accel).toBeCloseTo(PLAYER_BASE.accel * CHASSIS['typhon-primal'].accel!, 6);
+  });
+
   it('makePlayer multiplie la masse du profil par celle du talent Masse', () => {
     const sansTalent = createRun(createInitialMeta(1), 1);
     expect(sansTalent.player.mass).toBe(1);
