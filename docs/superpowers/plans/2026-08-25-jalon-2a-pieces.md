@@ -3683,6 +3683,7 @@ en dur."
 
 **Interfaces:**
 - Consumes: `equipFromStack` (Task 8), `canFuse`/`tryFuse`/`fusionRecipe` (Task 8), `rankColor` (Task 9), `syncRunStats` (Task 3).
+- **Forme d'une pile** : `PieceStack` est `{ model, rank, levels: number[] }` — un niveau par exemplaire, trié décroissant. Le nombre d'exemplaires est `levels.length`, le meilleur niveau `levels[0]`. La Task 8 a remplacé l'ancien couple `count`/`bestLevel`, qui perdait le niveau des doublons non consommés.
 - Produces: rien de nouveau pour les autres tâches.
 
 - [ ] **Step 1: Écrire `src/ui/InventoryPanel.tsx`**
@@ -3763,7 +3764,7 @@ export function InventoryPanel({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
               <span style={{ font: '500 16px Oswald, ui-sans-serif, sans-serif' }}>
                 {model.label}{' '}
-                <span style={{ color: 'var(--muted)', fontSize: 13 }}>×{stack.count}</span>
+                <span style={{ color: 'var(--muted)', fontSize: 13 }}>×{stack.levels.length}</span>
               </span>
               <span style={{ fontSize: 12.5, color: rankColor(stack.rank), whiteSpace: 'nowrap' }}>
                 {rankLabel(stack.rank)}
