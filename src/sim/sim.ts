@@ -4,6 +4,7 @@ import { decaySpin, resolveCollision } from './combat';
 import { applySteering, clampToArena, moveAndBounce } from './physics';
 import { nextRandom } from './rng';
 import { spawnSalle } from './salle';
+import { NEUTRAL_ZONE } from './terrain';
 import { resolveTalents } from './talents';
 import type { Input, MetaState, RunReward, RunState, Top } from './types';
 
@@ -95,8 +96,10 @@ export function tick(run: RunState, input: Input): RunReward | null {
   run.tick++;
   if (run.phase !== 'fighting') return null;
   if (run.tick % BOT_AI.retargetEveryTicks === 1) refreshBotAims(run);
-  applySteering(run.player, input.steer);
-  for (const bot of run.bots) applySteering(bot, bot.aim);
+  // NEUTRAL_ZONE en attendant que les zones soient branchées : la valeur neutre
+  // traverse le calcul sans rien changer.
+  applySteering(run.player, input.steer, NEUTRAL_ZONE);
+  for (const bot of run.bots) applySteering(bot, bot.aim, NEUTRAL_ZONE);
   moveAndBounce(run.player);
   for (const bot of run.bots) moveAndBounce(bot);
   for (const bot of run.bots) resolveCollision(run.player, bot);

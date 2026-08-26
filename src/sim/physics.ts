@@ -1,4 +1,5 @@
-import { ARENA_RADIUS, TICK_S, WALL_RESTITUTION } from './config';
+import { ARENA, ARENA_RADIUS, TICK_S, WALL_RESTITUTION } from './config';
+import type { ZoneMods } from './terrain';
 import type { Top, Vec } from './types';
 
 /** Vitesse maximale effective. Toupie folle la relève à mesure que le spin
@@ -10,19 +11,38 @@ function effectiveMaxSpeed(top: Top): number {
   return top.maxSpeed * (1 + top.talents.toupieFolle * lost);
 }
 
-export function applySteering(top: Top, steer: Vec | null): void {
+export function applySteering(top: Top, steer: Vec | null, zone: ZoneMods): void {
+  const max = effectiveMaxSpeed(top) * zone.speedMult;
+  // Plafond de CE tick, lu AVANT que le pilotage n'ait rien ajouté : l'ordinaire,
+  // ou la surcharge déjà présente — donc héritée d'un choc — amortie. Seul un choc
+  // peut lever le plafond ; le doigt du joueur, jamais.
+  //
+  // Amortir après coup toute vitesse supérieure au plafond laisserait au contraire
+  // le pilotage lui-même dépasser : chaque tick ajoute accel × TICK_S et n'en
+  // retire que 10 %. Point fixe v = 0,9 × (v + 90) = 810 px/s — trois fois et
+  // demie la vitesse de Pointe du joueur, rien qu'en tenant son doigt, et la
+  // Pointe cesserait d'être une stat.
+  const ceiling = Math.max(max, Math.hypot(top.vel.x, top.vel.y) * ARENA.overspeedDamping);
+
   if (steer) {
     const len = Math.hypot(steer.x, steer.y) || 1;
-    top.vel.x += (steer.x / len) * top.accel * TICK_S;
-    top.vel.y += (steer.y / len) * top.accel * TICK_S;
+    const accel = top.accel * zone.accelMult;
+    top.vel.x += (steer.x / len) * accel * TICK_S;
+    top.vel.y += (steer.y / len) * accel * TICK_S;
   } else {
-    top.vel.x *= top.talents.friction;
-    top.vel.y *= top.talents.friction;
+    // Une zone ne peut que rendre plus glissant : à friction de zone neutre (0),
+    // le `max` laisse celle du talent intacte.
+    const friction = Math.max(top.talents.friction, zone.friction);
+    top.vel.x *= friction;
+    top.vel.y *= friction;
   }
-  const max = effectiveMaxSpeed(top);
+
   const speed = Math.hypot(top.vel.x, top.vel.y);
-  if (speed > max) {
-    const k = max / speed;
+  if (speed > ceiling) {
+    // Tronquer au plafond ORDINAIRE annulait le recul d'une collision avant que
+    // `moveAndBounce` ne l'ait parcouru d'un seul pixel — la répulsion n'existait
+    // tout simplement pas.
+    const k = ceiling / speed;
     top.vel.x *= k;
     top.vel.y *= k;
   }
