@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARENA, BALANCE, BOTS_PER_SALLE, BREACH, CHESTS, FUSION, LAYOUTS, LOOT, RARITY, SALLES_PER_CHAPTER, SHARD, TALENTS, ZONES } from './config';
+import { ARENA, BALANCE, BOTS_PER_SALLE, BREACH, CHESTS, FUSION, LAYOUTS, LOOT, PLAYER_SPAWN, RARITY, SALLES_PER_CHAPTER, SHARD, TALENTS, ZONES } from './config';
 
 const SLOTS = ['lame', 'disque', 'pointe', 'noyau'];
 
@@ -107,6 +107,17 @@ describe('balance.json', () => {
   it("l'amortissement de surcharge résorbe sans jamais figer", () => {
     expect(ARENA.overspeedDamping).toBeGreaterThan(0);
     expect(ARENA.overspeedDamping).toBeLessThan(1);
+  });
+
+  it('le repli de placement reste géométriquement possible', () => {
+    // buildLayout replie une zone diamétralement opposée au point d'apparition
+    // quand douze tirages n'ont rien trouvé. Ce repli n'existe que si l'anneau
+    // est assez large pour la plus grosse zone.
+    const d = Math.hypot(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
+    for (const [name, zone] of Object.entries(ZONES)) {
+      expect(d + ARENA.radius - zone.radius, `zone ${name}`)
+        .toBeGreaterThanOrEqual(zone.radius + ARENA.spawnClearance);
+    }
   });
 
   it('le butin ne cite que des coffres existants', () => {
