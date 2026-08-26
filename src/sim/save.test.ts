@@ -109,4 +109,63 @@ describe('migration', () => {
       { model: 'pointe.furie', rank: 2, levels: [0] },
     ]);
   });
+
+  // Le bug qu'on referme : la migration (v < SAVE_SCHEMA) ne passait par aucune
+  // validation, contrairement au schéma courant. Un blob migré dont un
+  // emplacement équipé est amputé ressortait non nul de `deserializeMeta`, puis
+  // faisait lever un `TypeError` à la création du run — page blanche
+  // définitive, sans bandeau ni copie de secours.
+  it('rejette un blob migré dont un emplacement équipé est amputé', () => {
+    const { lame: _omise, ...reste } = createInitialMeta(1).equipped;
+    const v1 = {
+      v: 1,
+      meta: {
+        rngState: 42, credits: 500, gems: 10,
+        equipped: reste, // lame manquante
+        inventory: [],
+        pity: { bronze: 0, arene: 0, mythique: 0 },
+        chapterValidated: false,
+      },
+    };
+    expect(deserializeMeta(JSON.stringify(v1))).toBeNull();
+  });
+
+  it('rejette un blob migré dont un emplacement équipé vaut `null`', () => {
+    const v1 = {
+      v: 1,
+      meta: {
+        rngState: 42, credits: 500, gems: 10,
+        equipped: { ...createInitialMeta(1).equipped, lame: null },
+        inventory: [],
+        pity: { bronze: 0, arene: 0, mythique: 0 },
+        chapterValidated: false,
+      },
+    };
+    expect(deserializeMeta(JSON.stringify(v1))).toBeNull();
+  });
+});
+
+describe('isComplete renforcée', () => {
+  // Avant, seule la nullité de chaque emplacement équipé était vérifiée : un
+  // objet vide passait, puis produisait des statistiques à `NaN` partout où la
+  // pièce est lue — le joueur devient alors immortel, une comparaison avec
+  // `NaN` étant toujours fausse.
+  it('rejette un emplacement équipé sans modèle, rang ni niveau', () => {
+    const meta = { ...filled(), equipped: { ...filled().equipped, lame: {} } };
+    expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
+  });
+
+  // Avant, seul `Array.isArray` était vérifié : un inventaire de nombres nus
+  // passait puis faisait lever à l'ouverture de la Forge.
+  it('rejette un inventaire dont les entrées ne sont pas des piles', () => {
+    const meta = { ...filled(), inventory: [1, 2, 3] };
+    expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
+  });
+
+  // Avant, seule la présence d'un objet non nul était vérifiée : un `pity`
+  // vide passait puis cassait silencieusement les deux garanties de coffre.
+  it('rejette un `pity` sans ses trois compteurs', () => {
+    const meta = { ...filled(), pity: {} };
+    expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
+  });
 });
