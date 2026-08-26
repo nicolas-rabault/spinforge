@@ -1,4 +1,5 @@
 import { CHARGE_BONUS, DAMAGE_K, RESTITUTION, TICK_S } from './config';
+import { typeMult } from './typeChart';
 import type { Top } from './types';
 
 /** Décroissance d'un tick pour cette toupie, talents compris. 0 pendant une
@@ -28,13 +29,18 @@ function chargeWeight(share: number): number {
 }
 
 /** Dégâts qu'`att` inflige à `def` pour un impact donné. `share` est la part du
- *  rapprochement qu'`att` a elle-même provoquée. Les trois facteurs se composent :
+ *  rapprochement qu'`att` a elle-même provoquée. Les quatre facteurs se composent :
  *  la charge module selon qui a foncé, Percée retire une part de la défense,
- *  Estoc majore au-delà d'un seuil de vitesse. */
+ *  Estoc majore au-delà d'un seuil de vitesse, et le triangle des forces module
+ *  selon les types. Aucun ne remplace les autres — en particulier, le triangle
+ *  se pose *par-dessus* le partage de charge, qui reste seul juge de qui a foncé. */
 function damage(att: Top, def: Top, impact: number, share: number): number {
   const defense = def.defense * (1 - att.talents.defenseIgnore);
   const bonus = impact >= att.talents.estocThreshold ? 1 + att.talents.estocBonus : 1;
-  return ((impact * att.attack) / (att.attack + defense)) * DAMAGE_K * chargeWeight(share) * bonus;
+  return (
+    ((impact * att.attack) / (att.attack + defense)) *
+    DAMAGE_K * chargeWeight(share) * bonus * typeMult(att.type, def.type)
+  );
 }
 
 export function resolveCollision(a: Top, b: Top): void {

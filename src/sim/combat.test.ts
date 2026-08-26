@@ -3,6 +3,7 @@ import { decayPerTick, decaySpin, resolveCollision } from './combat';
 import { TALENTS, TICK_S } from './config';
 import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
+import type { TopType } from '../content/toupies';
 
 function top(over: Partial<Top> = {}): Top {
   return {
@@ -242,5 +243,65 @@ describe('décroissance modulée', () => {
     expect(t.decayPauseTicks).toBe(0);
     decaySpin(t);
     expect(t.spin).toBeLessThan(1000);
+  });
+});
+
+describe('triangle des forces dans le combat', () => {
+  /** Deux toupies identiques qui se percutent de face : tout écart de dégâts
+   *  ne peut venir que du type. */
+  function headOn(attType: TopType, defType: TopType) {
+    const a = top({ pos: { x: -10, y: 0 }, vel: { x: 100, y: 0 }, type: attType });
+    const b = top({ pos: { x: 10, y: 0 }, vel: { x: -100, y: 0 }, type: defType });
+    const spinB = b.spin;
+    resolveCollision(a, b);
+    return spinB - b.spin;
+  }
+
+  it('fait mal quand le type domine', () => {
+    const neutre = headOn('attaque', 'attaque');
+    const dominant = headOn('attaque', 'endurance');
+    expect(dominant).toBeGreaterThan(neutre);
+    expect(dominant / neutre).toBeCloseTo(1.25, 2);
+  });
+
+  it('donne à Équilibre son +10 % contre tous', () => {
+    const neutre = headOn('attaque', 'attaque');
+    for (const def of ['attaque', 'endurance', 'defense', 'equilibre'] as TopType[]) {
+      expect(headOn('equilibre', def) / neutre).toBeCloseTo(1.1, 2);
+    }
+  });
+
+  it('n’expose jamais Équilibre au +25 %', () => {
+    const neutre = headOn('attaque', 'attaque');
+    expect(headOn('attaque', 'equilibre') / neutre).toBeCloseTo(1, 2);
+  });
+
+  it('joue dans les deux sens — le bot dominant frappe plus fort aussi', () => {
+    const a = top({ pos: { x: -10, y: 0 }, vel: { x: 100, y: 0 }, type: 'attaque' });
+    const b = top({ pos: { x: 10, y: 0 }, vel: { x: -100, y: 0 }, type: 'defense' });
+    const spinA = a.spin;
+    const spinB = b.spin;
+    resolveCollision(a, b);
+    // Défense domine Attaque : b encaisse moins que ce qu'il inflige.
+    expect(spinA - a.spin).toBeGreaterThan(spinB - b.spin);
+  });
+
+  // Le triangle s'ajoute au partage de charge, il ne s'y substitue pas.
+  it('se compose avec le partage de charge sans l’écraser', () => {
+    // Assaut pur : seul a avance. b est immobile.
+    const charge = (attType: TopType, defType: TopType) => {
+      const a = top({ pos: { x: -10, y: 0 }, vel: { x: 200, y: 0 }, type: attType });
+      const b = top({ pos: { x: 10, y: 0 }, vel: { x: 0, y: 0 }, type: defType });
+      const spinB = b.spin;
+      resolveCollision(a, b);
+      return spinB - b.spin;
+    };
+    const chargeNeutre = charge('attaque', 'attaque');
+    const chargeDominante = charge('attaque', 'endurance');
+    const frontalNeutre = headOn('attaque', 'attaque');
+    // Le rapport de type est le même quel que soit le mode d'engagement…
+    expect(chargeDominante / chargeNeutre).toBeCloseTo(1.25, 2);
+    // …et la prime de charge existe toujours par-dessus.
+    expect(chargeNeutre).toBeGreaterThan(frontalNeutre * 0.9);
   });
 });
