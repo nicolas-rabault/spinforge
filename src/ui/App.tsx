@@ -6,6 +6,7 @@ import { formatCredits } from './format';
 import { CombatScreen } from './CombatScreen';
 import { ForgeScreen } from './ForgeScreen';
 import { ChestScreen } from './ChestScreen';
+import { ToupiesScreen } from './ToupiesScreen';
 import { TabBar, type Tab } from './TabBar';
 
 export function App() {
@@ -98,6 +99,7 @@ export function App() {
       </div>
       {tab === 'forge' ? <ForgeScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
       {tab === 'coffres' ? <ChestScreen metaRef={metaRef} onChanged={metaChanged} /> : null}
+      {tab === 'toupies' ? <ToupiesScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
 
       <TabBar tab={tab} onChange={setTab} />
     </div>
