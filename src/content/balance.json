@@ -21,6 +21,7 @@
     "rewardBase": 70, "rewardGrowth": 1.13, "bossRewardMult": 10,
     "bossGems": 60
   },
+  "toupieShop": { "priceGems": 900 },
   "pieceEffect": {
     "lameAttack": 0.1, "disqueDefense": 0.1,
     "pointeSpeed": 0.04, "pointeDecay": 0.05, "noyauSpin": 0.08

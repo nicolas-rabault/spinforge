@@ -47,6 +47,7 @@ export interface Balance {
     rewardBase: number; rewardGrowth: number; bossRewardMult: number;
     bossGems: number;
   };
+  toupieShop: { priceGems: number };
   pieceEffect: { lameAttack: number; disqueDefense: number; pointeSpeed: number; pointeDecay: number; noyauSpin: number };
   rarity: { step: number; legendRank: number };
   talents: {
@@ -98,6 +99,7 @@ export const BOT_SPAWN_RING = BALANCE.bot.spawnRing;
 export const BOT_AI = BALANCE.bot.ai;
 export const BOSS = BALANCE.boss;
 export const ECON = BALANCE.econ;
+export const TOUPIE_SHOP = BALANCE.toupieShop;
 export const PIECE_EFFECT = BALANCE.pieceEffect;
 export const RARITY = BALANCE.rarity;
 export const TALENTS = BALANCE.talents;

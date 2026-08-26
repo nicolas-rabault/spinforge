@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { addPiece, applyReward, applyRunReward, createInitialMeta, equipFromStack, stackOf, takePiece } from './meta';
-import { SALLES_PER_CHAPTER } from './config';
+import {
+  addPiece,
+  applyReward,
+  applyRunReward,
+  buyToupie,
+  canClaimFounderGift,
+  claimFounderGift,
+  createInitialMeta,
+  equipFromStack,
+  setActiveToupie,
+  stackOf,
+  takePiece,
+} from './meta';
+import { SALLES_PER_CHAPTER, TOUPIE_SHOP } from './config';
 
 describe('createInitialMeta', () => {
   it('démarre sans monnaie, sans doublon, avec quatre pièces équipées', () => {
@@ -87,5 +99,78 @@ describe('inventaire', () => {
   it('refuse d’équiper une pièce absente', () => {
     const meta = createInitialMeta(1);
     expect(equipFromStack(meta, 'disque.colosse', 9)).toBe(false);
+  });
+});
+
+describe('toupies du méta', () => {
+  it('démarre avec la seule toupie de départ, active', () => {
+    const meta = createInitialMeta(1);
+    expect(meta.toupies.unlocked).toEqual(['brasier-solaire']);
+    expect(meta.toupies.active).toBe('brasier-solaire');
+    expect(meta.founderGiftClaimed).toBe(false);
+  });
+
+  it('n’active que ce qui est débloqué', () => {
+    const meta = createInitialMeta(1);
+    expect(setActiveToupie(meta, 'typhon-primal')).toBe(false);
+    expect(meta.toupies.active).toBe('brasier-solaire');
+  });
+
+  it('achète une toupie, une seule fois, et débite les gemmes', () => {
+    const meta = createInitialMeta(1);
+    meta.gems = TOUPIE_SHOP.priceGems * 2;
+    expect(buyToupie(meta, 'typhon-primal')).toBe(true);
+    expect(meta.gems).toBe(TOUPIE_SHOP.priceGems);
+    expect(meta.toupies.unlocked).toContain('typhon-primal');
+    // Deuxième achat de la même : refusé, et surtout pas débité.
+    expect(buyToupie(meta, 'typhon-primal')).toBe(false);
+    expect(meta.gems).toBe(TOUPIE_SHOP.priceGems);
+  });
+
+  it('refuse l’achat sans les gemmes, sans rien débiter', () => {
+    const meta = createInitialMeta(1);
+    meta.gems = TOUPIE_SHOP.priceGems - 1;
+    expect(buyToupie(meta, 'typhon-primal')).toBe(false);
+    expect(meta.gems).toBe(TOUPIE_SHOP.priceGems - 1);
+    expect(meta.toupies.unlocked).toEqual(['brasier-solaire']);
+  });
+
+  it('n’ouvre le cadeau qu’une fois le chapitre validé', () => {
+    const meta = createInitialMeta(1);
+    expect(canClaimFounderGift(meta)).toBe(false);
+    expect(claimFounderGift(meta, 'carapace-abyssale')).toBe(false);
+    meta.chapterValidated = true;
+    expect(canClaimFounderGift(meta)).toBe(true);
+    expect(claimFounderGift(meta, 'carapace-abyssale')).toBe(true);
+    expect(meta.toupies.unlocked).toContain('carapace-abyssale');
+    expect(meta.founderGiftClaimed).toBe(true);
+  });
+
+  // Le drapeau explicite existe pour ce cas précis : la déduction
+  // « unlocked.length === 1 » deviendrait fausse dès qu’on achète avant de réclamer.
+  it('laisse le cadeau réclamable après un achat en boutique', () => {
+    const meta = createInitialMeta(1);
+    meta.chapterValidated = true;
+    meta.gems = TOUPIE_SHOP.priceGems;
+    buyToupie(meta, 'typhon-primal');
+    expect(canClaimFounderGift(meta)).toBe(true);
+    expect(claimFounderGift(meta, 'tigre-foudre')).toBe(true);
+    expect(meta.toupies.unlocked).toHaveLength(3);
+  });
+
+  it('ne réclame pas deux fois', () => {
+    const meta = createInitialMeta(1);
+    meta.chapterValidated = true;
+    claimFounderGift(meta, 'carapace-abyssale');
+    expect(canClaimFounderGift(meta)).toBe(false);
+    expect(claimFounderGift(meta, 'tigre-foudre')).toBe(false);
+    expect(meta.toupies.unlocked).not.toContain('tigre-foudre');
+  });
+
+  it('refuse de réclamer une toupie déjà possédée', () => {
+    const meta = createInitialMeta(1);
+    meta.chapterValidated = true;
+    expect(claimFounderGift(meta, 'brasier-solaire')).toBe(false);
+    expect(meta.founderGiftClaimed).toBe(false);
   });
 });

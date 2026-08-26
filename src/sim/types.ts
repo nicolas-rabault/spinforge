@@ -1,3 +1,4 @@
+import type { ToupieId } from '../content/toupies';
 import type { PieceInstance, PieceStack, Slot } from './piece';
 import type { TalentMods } from './talents';
 
@@ -71,4 +72,11 @@ export interface MetaState {
   inventory: PieceStack[];
   pity: Record<ChestKind, number>;
   chapterValidated: boolean;
+  /** Les toupies possédées et celle qu'on pilote. `unlocked` est une liste et
+   *  non un `Set` : elle doit se sérialiser en JSON. */
+  toupies: { unlocked: ToupieId[]; active: ToupieId };
+  /** Le Fondateur offert à la validation du chapitre a-t-il été réclamé ?
+   *  Champ explicite, et non déduit de `unlocked.length` : la déduction
+   *  deviendrait fausse dès qu'un joueur achète avant de réclamer. */
+  founderGiftClaimed: boolean;
 }

@@ -1,5 +1,6 @@
 import { modelById } from '../content/pieces';
-import { SALLES_PER_CHAPTER } from './config';
+import { STARTER_TOUPIE, toupieById, type Toupie, type ToupieId } from '../content/toupies';
+import { SALLES_PER_CHAPTER, TOUPIE_SHOP } from './config';
 import { STARTER_EQUIPMENT } from './piece';
 import type { PieceInstance, PieceStack, Slot } from './piece';
 import type { MetaState, RunReward } from './types';
@@ -18,6 +19,8 @@ export function createInitialMeta(seed: number): MetaState {
     inventory: [],
     pity: { bronze: 0, arene: 0, mythique: 0 },
     chapterValidated: false,
+    toupies: { unlocked: [STARTER_TOUPIE], active: STARTER_TOUPIE },
+    founderGiftClaimed: false,
   };
 }
 
@@ -69,5 +72,41 @@ export function equipFromStack(meta: MetaState, model: string, rank: number): bo
   const previous = meta.equipped[slot];
   meta.equipped[slot] = { model, rank, level };
   addPiece(meta, previous);
+  return true;
+}
+
+export function activeToupie(meta: MetaState): Toupie {
+  return toupieById(meta.toupies.active);
+}
+
+/** Bascule la toupie pilotée. Gratuit et réversible : aucune pièce ne bouge,
+ *  toutes sont interchangeables. C'est ce qui fait de la contre-pioche une
+ *  décision qu'on reprend avant chaque run, et non un engagement. */
+export function setActiveToupie(meta: MetaState, id: ToupieId): boolean {
+  if (!meta.toupies.unlocked.includes(id)) return false;
+  meta.toupies.active = id;
+  return true;
+}
+
+export function buyToupie(meta: MetaState, id: ToupieId): boolean {
+  if (meta.toupies.unlocked.includes(id)) return false;
+  if (meta.gems < TOUPIE_SHOP.priceGems) return false;
+  meta.gems -= TOUPIE_SHOP.priceGems;
+  meta.toupies.unlocked.push(id);
+  return true;
+}
+
+export function canClaimFounderGift(meta: MetaState): boolean {
+  return meta.chapterValidated && !meta.founderGiftClaimed;
+}
+
+/** Le Fondateur offert pour avoir franchi le mur. Le joueur choisit lequel :
+ *  c'est ce choix qui ouvre le triangle, jusque-là inerte pour un joueur qui
+ *  n'a qu'Équilibre. */
+export function claimFounderGift(meta: MetaState, id: ToupieId): boolean {
+  if (!canClaimFounderGift(meta)) return false;
+  if (meta.toupies.unlocked.includes(id)) return false;
+  meta.toupies.unlocked.push(id);
+  meta.founderGiftClaimed = true;
   return true;
 }

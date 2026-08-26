@@ -1,10 +1,12 @@
+import { STARTER_TOUPIE, TOUPIES, type ToupieId } from '../content/toupies';
 import { createInitialMeta } from './meta';
 import type { MetaState } from './types';
 import type { PieceInstance, PieceStack } from './piece';
 
-/** Numéro de schéma du méta sérialisé. À incrémenter dès que la forme de
- *  `MetaState` change, en ajoutant la migration correspondante ci-dessous. */
-export const SAVE_SCHEMA = 2;
+/** Numéro de schéma du méta sérialisé. Deux migrations vivent ci-dessous :
+ *  1 → 2 (inventaire `{count, bestLevel}` devenu `{levels}`) et 2 → 3
+ *  (ajout du bloc `toupies` et de `founderGiftClaimed`). */
+export const SAVE_SCHEMA = 3;
 
 interface Envelope {
   v: number;
@@ -43,6 +45,29 @@ function migrateInventoryV1(inventory: unknown): unknown {
   });
 }
 
+const KNOWN_TOUPIES = new Set<string>(TOUPIES.map((t) => t.id));
+
+/**
+ * Normalise le bloc `toupies`. Trois cas se rejoignent ici : le champ absent
+ * (schéma 2, migration), un identifiant inconnu (données trafiquées ou
+ * catalogue réduit depuis), et une toupie active qu'on ne possède pas. Tous
+ * retombent sur la toupie de départ plutôt que de propager une valeur qui
+ * ferait lever `toupieById` à la création du run.
+ */
+function hydrateToupies(raw: unknown): MetaState['toupies'] {
+  const fallback = { unlocked: [STARTER_TOUPIE], active: STARTER_TOUPIE };
+  if (typeof raw !== 'object' || raw === null) return fallback;
+  const t = raw as Record<string, unknown>;
+  const unlocked = Array.isArray(t.unlocked)
+    ? (t.unlocked.filter((id): id is ToupieId => typeof id === 'string' && KNOWN_TOUPIES.has(id)))
+    : [];
+  if (!unlocked.includes(STARTER_TOUPIE)) unlocked.unshift(STARTER_TOUPIE);
+  const active = typeof t.active === 'string' && unlocked.includes(t.active as ToupieId)
+    ? (t.active as ToupieId)
+    : STARTER_TOUPIE;
+  return { unlocked, active };
+}
+
 /** Complète un méta partiel avec les valeurs de départ. C'est le mécanisme sur
  *  lequel reposent les migrations : une version antérieure est, par
  *  construction, un méta auquel il manque des champs. */
@@ -56,6 +81,8 @@ function hydrate(partial: Record<string, unknown>): MetaState {
     inventory: (partial.inventory as MetaState['inventory']) ?? base.inventory,
     pity: (partial.pity as MetaState['pity']) ?? base.pity,
     chapterValidated: partial.chapterValidated === true,
+    toupies: hydrateToupies(partial.toupies),
+    founderGiftClaimed: partial.founderGiftClaimed === true,
   };
   return meta;
 }
@@ -110,7 +137,10 @@ function isComplete(m: Record<string, unknown>): boolean {
     typeof pity === 'object' && pity !== null &&
     chestKinds.every((k) => typeof pity[k] === 'number') &&
     typeof equipped === 'object' && equipped !== null &&
-    slots.every((s) => isValidPiece(equipped[s]))
+    slots.every((s) => isValidPiece(equipped[s])) &&
+    typeof m.toupies === 'object' && m.toupies !== null &&
+    Array.isArray((m.toupies as Record<string, unknown>).unlocked) &&
+    typeof (m.toupies as Record<string, unknown>).active === 'string'
   );
 }
 

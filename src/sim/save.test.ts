@@ -169,3 +169,35 @@ describe('isComplete renforcée', () => {
     expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
   });
 });
+
+describe('migration schéma 2 → 3', () => {
+  it('donne la toupie de départ et un cadeau en attente à une sauvegarde v2', () => {
+    const v2 = createInitialMeta(9);
+    delete (v2 as unknown as Record<string, unknown>).toupies;
+    delete (v2 as unknown as Record<string, unknown>).founderGiftClaimed;
+    const restored = deserializeMeta(JSON.stringify({ v: 2, meta: v2 }));
+    expect(restored).not.toBeNull();
+    expect(restored!.toupies).toEqual({ unlocked: ['brasier-solaire'], active: 'brasier-solaire' });
+    expect(restored!.founderGiftClaimed).toBe(false);
+  });
+
+  it('retombe sur la toupie de départ si l’active n’est pas débloquée', () => {
+    const meta = createInitialMeta(9);
+    meta.toupies = { unlocked: ['brasier-solaire'], active: 'tigre-foudre' };
+    const restored = deserializeMeta(JSON.stringify({ v: 3, meta }));
+    expect(restored!.toupies.active).toBe('brasier-solaire');
+  });
+
+  it('rejette un blob au schéma courant privé de ses toupies', () => {
+    const meta = createInitialMeta(9);
+    delete (meta as unknown as Record<string, unknown>).toupies;
+    expect(deserializeMeta(JSON.stringify({ v: 3, meta }))).toBeNull();
+  });
+
+  it('écarte un identifiant de toupie inconnu au lieu de le propager', () => {
+    const meta = createInitialMeta(9);
+    meta.toupies = { unlocked: ['brasier-solaire', 'nawak' as never], active: 'brasier-solaire' };
+    const restored = deserializeMeta(JSON.stringify({ v: 3, meta }));
+    expect(restored!.toupies.unlocked).toEqual(['brasier-solaire']);
+  });
+});
