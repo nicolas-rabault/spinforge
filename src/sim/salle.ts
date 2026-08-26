@@ -20,6 +20,7 @@ export function makeBot(salle: number, index: number, angle: number): Top {
     pos: { x: Math.cos(angle) * dist, y: Math.sin(angle) * dist },
     vel: { x: 0, y: 0 },
     radius: boss ? BOSS.radius : BOT_BASE.radius,
+    mass: boss ? BOSS.mass : 1,
     spin: spinMax,
     spinMax,
     spinDecay: BOT_BASE.spinDecay,

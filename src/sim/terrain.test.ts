@@ -213,7 +213,7 @@ function shardTop(over: Partial<Top> = {}): Top {
     pos: { x: 0, y: 0 }, vel: { x: 0, y: 0 },
     radius: 12, spin: 500, spinMax: 1000, spinDecay: 10,
     attack: 10, defense: 10, maxSpeed: 240, accel: 900,
-    talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
+    talents: NEUTRAL_TALENTS, decayPauseTicks: 0, mass: 1,
     ...over,
   };
 }

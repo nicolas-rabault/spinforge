@@ -2,7 +2,7 @@
   "version": 1,
   "tickSeconds": 0.1,
   "arena": {
-    "radius": 150, "friction": 0.94, "wallRestitution": 0.8, "restitution": 0.8,
+    "radius": 150, "friction": 0.94, "wallRestitution": 0.8, "restitution": 1.6,
     "overspeedDamping": 0.9,
     "spawnClearance": 30,
     "breach": { "count": 2, "halfWidthDeg": 22, "ejectSpeed": 110, "fromSalle": 3 },

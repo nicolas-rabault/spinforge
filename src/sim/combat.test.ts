@@ -11,7 +11,7 @@ function top(over: Partial<Top> = {}): Top {
     pos: { x: 0, y: 0 }, vel: { x: 0, y: 0 },
     radius: 12, spin: 1000, spinMax: 1000, spinDecay: 10,
     attack: 10, defense: 10, maxSpeed: 240, accel: 900,
-    talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
+    talents: NEUTRAL_TALENTS, decayPauseTicks: 0, mass: 1,
     ...over,
   };
 }
@@ -269,5 +269,32 @@ describe('décroissance modulée', () => {
     expect(t.decayPauseTicks).toBe(0);
     decaySpin(t, NEUTRAL_ZONE);
     expect(t.spin).toBeLessThan(1000);
+  });
+});
+
+describe('resolveCollision — masse', () => {
+  it('une toupie lourde encaisse moins d’impulsion', () => {
+    const light = top({ pos: { x: 0, y: 0 }, vel: { x: 200, y: 0 } });
+    const heavy = top({ pos: { x: 20, y: 0 }, vel: { x: 0, y: 0 }, mass: 3 });
+    resolveCollision(light, heavy);
+    const ordinary = top({ pos: { x: 0, y: 0 }, vel: { x: 200, y: 0 } });
+    const peer = top({ pos: { x: 20, y: 0 }, vel: { x: 0, y: 0 } });
+    resolveCollision(ordinary, peer);
+    expect(heavy.vel.x).toBeLessThan(peer.vel.x);
+  });
+
+  it('la masse de la toupie et celle du talent se composent', () => {
+    // Masse (rang 11) doublait déjà la masse ; le champ `mass` la porte
+    // désormais aussi, et les deux se multiplient au lieu de se remplacer.
+    const a = top({ pos: { x: 0, y: 0 }, vel: { x: 200, y: 0 } });
+    const b = top({
+      pos: { x: 20, y: 0 }, mass: 2,
+      talents: { ...NEUTRAL_TALENTS, mass: 2 },
+    });
+    resolveCollision(a, b);
+    const c = top({ pos: { x: 0, y: 0 }, vel: { x: 200, y: 0 } });
+    const d = top({ pos: { x: 20, y: 0 }, mass: 4 });
+    resolveCollision(c, d);
+    expect(b.vel.x).toBeCloseTo(d.vel.x, 5);
   });
 });

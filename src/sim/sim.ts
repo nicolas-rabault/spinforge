@@ -17,6 +17,7 @@ function makePlayer(meta: MetaState): Top {
     pos: { x: PLAYER_SPAWN.x, y: PLAYER_SPAWN.y },
     vel: { x: 0, y: 0 },
     radius: PLAYER_BASE.radius,
+    mass: 1,
     spin: stats.spinMax,
     spinMax: stats.spinMax,
     spinDecay: stats.spinDecay,

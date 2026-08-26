@@ -14,6 +14,10 @@ export interface Top {
   vel: Vec;
   aim: Vec | null; // direction IA (bots) — null pour le joueur
   radius: number;
+  /** Masse propre, hors talent. 1 pour toute toupie ordinaire ; le boss est le
+   *  seul à en porter davantage aujourd'hui. Se **multiplie** avec
+   *  `talents.mass` (Masse, rang 11) au lieu de la remplacer. */
+  mass: number;
   spin: number;
   spinMax: number;
   spinDecay: number;
