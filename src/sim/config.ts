@@ -1,5 +1,6 @@
 import raw from '../content/balance.json';
 import type { TopType } from '../content/toupies';
+import type { ProfileAxis } from './profile';
 
 /** Emplacement d'une pièce. Répété ici plutôt qu'importé de `piece.ts` : ce
  *  fichier est la racine des dépendances de la simulation, il n'importe rien d'elle. */
@@ -53,6 +54,8 @@ export interface Balance {
   };
   toupieShop: { priceGems: number };
   pieceEffect: { lameAttack: number; disqueDefense: number; pointeSpeed: number; pointeDecay: number; noyauSpin: number };
+  chassis: Record<string, Partial<Record<ProfileAxis, number>>>;
+  models: Record<string, Partial<Record<ProfileAxis, number>>>;
   rarity: { step: number; legendRank: number };
   talents: {
     estoc: { rank: number; speedThreshold: number; damageBonus: number };
@@ -106,6 +109,8 @@ export const BOSS = BALANCE.boss;
 export const ECON = BALANCE.econ;
 export const TOUPIE_SHOP = BALANCE.toupieShop;
 export const PIECE_EFFECT = BALANCE.pieceEffect;
+export const CHASSIS = BALANCE.chassis;
+export const MODELS_PROFILE = BALANCE.models;
 export const RARITY = BALANCE.rarity;
 export const TALENTS = BALANCE.talents;
 export const FUSION = BALANCE.fusion;

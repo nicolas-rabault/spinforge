@@ -3,7 +3,7 @@ import { createRun, resetRun, syncRunStats, tick } from './sim';
 import { applyRunReward, createInitialMeta, setActiveToupie } from './meta';
 import { salleReward } from './economy';
 import { spawnSalle, botCountFor } from './salle';
-import { PLAYER_BASE, SALLES_PER_CHAPTER, TALENTS } from './config';
+import { CHASSIS, MODELS_PROFILE, PLAYER_BASE, SALLES_PER_CHAPTER, TALENTS } from './config';
 import { openChest } from './chest';
 
 function play(seed: number, n: number, clearEvery: number | null): string {
@@ -189,9 +189,13 @@ describe('type et masse du joueur', () => {
     expect(sansTalent.player.mass).toBe(1);
 
     const meta = createInitialMeta(1);
-    meta.equipped.disque.rank = TALENTS.masse.rank; // débloque le talent Masse
+    // Un Disque dont le profil pèse sur la masse (×1,30) : sans lui, stats.mass
+    // resterait à 1 et `stats.mass * talents.mass` serait indiscernable de
+    // `talents.mass` seul — le rang débloque aussi le talent Masse au passage.
+    meta.equipped.disque.model = 'disque.colosse';
+    meta.equipped.disque.rank = TALENTS.masse.rank;
     const avecTalent = createRun(meta, 1);
-    expect(avecTalent.player.mass).toBe(TALENTS.masse.mass);
+    expect(avecTalent.player.mass).toBeCloseTo(MODELS_PROFILE['disque.colosse'].mass! * TALENTS.masse.mass, 6);
   });
 
   it('syncRunStats recopie type, accel et masse quand la toupie active change', () => {
@@ -204,8 +208,11 @@ describe('type et masse du joueur', () => {
     syncRunStats(run, meta);
 
     expect(run.player.type).toBe('defense');
-    expect(run.player.accel).toBe(PLAYER_BASE.accel);
-    expect(run.player.mass).toBe(TALENTS.masse.mass);
+    // Carapace Abyssale pèse sur l'accélération (×0,80) et la masse (×1,40) :
+    // ces deux assertions divergeraient de PLAYER_BASE.accel / TALENTS.masse.mass
+    // seuls si `syncRunStats` cessait de recopier `stats.accel` / `stats.mass`.
+    expect(run.player.accel).toBeCloseTo(PLAYER_BASE.accel * CHASSIS['carapace-abyssale'].accel!, 6);
+    expect(run.player.mass).toBeCloseTo(CHASSIS['carapace-abyssale'].mass! * TALENTS.masse.mass, 6);
   });
 });
 

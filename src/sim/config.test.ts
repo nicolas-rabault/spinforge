@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALANCE, BOTS_PER_SALLE, CHESTS, FUSION, RARITY, SALLES_PER_CHAPTER, TALENTS } from './config';
+import { TOUPIES } from '../content/toupies';
 
 const SLOTS = ['lame', 'disque', 'pointe', 'noyau'];
 
@@ -57,6 +58,22 @@ describe('balance.json', () => {
     expect(table).toHaveLength(BALANCE.chapter.sallesPerChapter);
     const valid = ['attaque', 'endurance', 'defense', 'equilibre'];
     for (const t of table) expect(valid).toContain(t);
+  });
+
+  it('a un profil de châssis par toupie et laisse la toupie de départ neutre', () => {
+    for (const t of TOUPIES) expect(BALANCE.chassis[t.id]).toBeDefined();
+    expect(BALANCE.chassis['brasier-solaire']).toEqual({});
+  });
+
+  it('laisse l’équipement de départ strictement neutre', () => {
+    expect(BALANCE.models['disque.lourd']).toEqual({});
+    expect(BALANCE.models['pointe.plate']).toEqual({});
+  });
+
+  it('n’a que des multiplicateurs strictement positifs', () => {
+    for (const p of [...Object.values(BALANCE.chassis), ...Object.values(BALANCE.models)]) {
+      for (const v of Object.values(p)) expect(v).toBeGreaterThan(0);
+    }
   });
 });
 

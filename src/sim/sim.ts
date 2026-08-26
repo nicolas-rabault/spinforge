@@ -24,7 +24,7 @@ function makePlayer(meta: MetaState): Top {
     attack: stats.attack,
     defense: stats.defense,
     maxSpeed: stats.maxSpeed,
-    accel: PLAYER_BASE.accel,
+    accel: stats.accel,
     talents,
     decayPauseTicks: 0,
     type: activeToupie(meta).type,

@@ -1,5 +1,6 @@
 import { ECON, PIECE_EFFECT, PLAYER_BASE } from './config';
 import { rarityMult, type PieceInstance, type Slot } from './piece';
+import { resolveProfile } from './profile';
 import type { MetaState, RunReward, Stats } from './types';
 
 export function upgradeCost(level: number): number {
@@ -21,15 +22,18 @@ function factor(piece: PieceInstance, perLevel: number): number {
 
 export function playerStats(meta: MetaState): Stats {
   const { lame, disque, pointe, noyau } = meta.equipped;
+  const p = resolveProfile(meta);
   return {
-    attack: PLAYER_BASE.attack * factor(lame, PIECE_EFFECT.lameAttack),
-    defense: PLAYER_BASE.defense * factor(disque, PIECE_EFFECT.disqueDefense),
-    maxSpeed: PLAYER_BASE.maxSpeed * factor(pointe, PIECE_EFFECT.pointeSpeed),
-    spinMax: PLAYER_BASE.spinMax * factor(noyau, PIECE_EFFECT.noyauSpin),
-    spinDecay: PLAYER_BASE.spinDecay / factor(pointe, PIECE_EFFECT.pointeDecay),
-    // Valeurs neutres : la Task 6 y branchera les profils de châssis.
-    accel: PLAYER_BASE.accel,
-    mass: 1,
+    attack: PLAYER_BASE.attack * factor(lame, PIECE_EFFECT.lameAttack) * p.attack,
+    defense: PLAYER_BASE.defense * factor(disque, PIECE_EFFECT.disqueDefense) * p.defense,
+    maxSpeed: PLAYER_BASE.maxSpeed * factor(pointe, PIECE_EFFECT.pointeSpeed) * p.maxSpeed,
+    spinMax: PLAYER_BASE.spinMax * factor(noyau, PIECE_EFFECT.noyauSpin) * p.spinMax,
+    // La Pointe *divise* la décroissance par son facteur de rang et de niveau
+    // (c'est une perte : diviser est un gain) ; le profil, lui, multiplie, et
+    // ses valeurs sont écrites en conséquence — 0,75 veut dire « perd 25 % moins vite ».
+    spinDecay: (PLAYER_BASE.spinDecay / factor(pointe, PIECE_EFFECT.pointeDecay)) * p.spinDecay,
+    accel: PLAYER_BASE.accel * p.accel,
+    mass: p.mass,
   };
 }
 
