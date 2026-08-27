@@ -70,6 +70,13 @@ describe('takeSnapshot', () => {
     // retranchée à tort.
     expect(snap.tops[0].decayPerTick).not.toBeCloseTo(run.player.spinDecay, 5);
   });
+
+  it('emporte le type de chaque toupie', () => {
+    const run = createRun(createInitialMeta(1), 1);
+    const s = takeSnapshot(run);
+    expect(s.tops[0].type).toBe('equilibre');
+    expect(s.tops[1].type).toBe('endurance');
+  });
 });
 
 describe('snapshotById', () => {

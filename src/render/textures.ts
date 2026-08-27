@@ -29,6 +29,7 @@ export interface Textures {
   wave: Texture;
   shadow: Texture;
   caret: Texture;
+  typeMark: Texture;
 }
 
 function canvas(size: number): { el: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
@@ -138,6 +139,22 @@ function caretTexture(): Texture {
   return Texture.from(el);
 }
 
+/** Point de repère de type : disque plein, contour sombre pour rester net une
+ *  fois teinté par-dessus n'importe quelle usure du corps. */
+function typeMarkTexture(): Texture {
+  const size = 64;
+  const { el, ctx } = canvas(size);
+  const c = size / 2;
+  ctx.beginPath();
+  ctx.arc(c, c, c * 0.8, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.lineWidth = size * 0.09;
+  ctx.strokeStyle = 'rgba(10,13,18,.55)';
+  ctx.stroke();
+  return Texture.from(el);
+}
+
 function shadowTexture(): Texture {
   const size = 128;
   const { el, ctx } = canvas(size);
@@ -167,13 +184,14 @@ export function createTextures(): Textures {
     wave: waveTexture(),
     shadow: shadowTexture(),
     caret: caretTexture(),
+    typeMark: typeMarkTexture(),
   };
 }
 
 export function destroyTextures(t: Textures): void {
   const all = [
     ...t.body.player, ...t.body.bot, ...t.rim.player, ...t.rim.bot,
-    t.core, t.halo, t.spark, t.wave, t.shadow, t.caret,
+    t.core, t.halo, t.spark, t.wave, t.shadow, t.caret, t.typeMark,
   ];
   for (const tex of all) tex.destroy(true);
 }

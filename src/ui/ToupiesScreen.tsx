@@ -120,7 +120,7 @@ export function ToupiesScreen({
           {groups.map((g) => (
             <div key={g.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
               <span style={{ color: 'var(--muted)' }}>{g.label}</span>
-              <span>{TYPE_LABELS[g.type]}</span>
+              <span style={{ color: `var(--type-${g.type})` }}>{TYPE_LABELS[g.type]}</span>
             </div>
           ))}
         </div>
@@ -149,7 +149,7 @@ export function ToupiesScreen({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
               <div>
                 <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif' }}>{t.label}</p>
-                <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)' }}>{TYPE_LABELS[t.type]}</p>
+                <p style={{ margin: 0, fontSize: 12.5, color: `var(--type-${t.type})` }}>{TYPE_LABELS[t.type]}</p>
               </div>
               {owned && isActive ? (
                 <span

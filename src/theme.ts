@@ -3,6 +3,7 @@
  * Source unique : PixiJS lit les entiers, React lit les variables CSS injectées par
  * applyThemeToDocument(). Aucune couleur ne doit être écrite en dur ailleurs.
  */
+import type { TopType } from './content/toupies';
 
 export const PALETTE = {
   bg: 0x0b0e13,
@@ -20,6 +21,16 @@ export const PALETTE = {
   text: 0xe8eaee,
   muted: 0x8a94a6,
 } as const;
+
+/** Une teinte par type, pour le repère porté par chaque toupie. Distinctes de
+ *  `PALETTE.player` / `.bot` / `.boss`, qui disent le camp : le camp et le type
+ *  sont deux informations différentes et doivent rester lisibles séparément. */
+export const TYPE_TINT: Record<TopType, number> = {
+  attaque: 0xff5f56,
+  endurance: 0x5fd98a,
+  defense: 0x5f9dff,
+  equilibre: 0xd7c9a8,
+};
 
 export type Camp = 'player' | 'bot' | 'boss';
 
@@ -45,5 +56,8 @@ export function applyThemeToDocument(): void {
   const root = document.documentElement.style;
   for (const [name, value] of Object.entries(PALETTE)) {
     root.setProperty(`--${name}`, hex(value));
+  }
+  for (const [type, value] of Object.entries(TYPE_TINT)) {
+    root.setProperty(`--type-${type}`, hex(value));
   }
 }

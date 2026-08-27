@@ -7,7 +7,7 @@ import type { Snapshot, TopSnapshot } from './snapshot';
 function topSnap(over: Partial<TopSnapshot> = {}): TopSnapshot {
   return {
     id: 'player', x: 0, y: 0,
-    spin: 1000, decayPerTick: 20, isPlayer: true,
+    spin: 1000, decayPerTick: 20, isPlayer: true, type: 'equilibre',
     ...over,
   };
 }
@@ -111,15 +111,15 @@ it('ne masque pas un choc quand la décroissance est suspendue', () => {
   const before: Snapshot = {
     salle: 1, phase: 'fighting',
     tops: [
-      { id: 'player', x: 0, y: 0, spin: 1000, decayPerTick: 0, isPlayer: true },
-      { id: 'bot-1-0', x: 30, y: 0, spin: 500, decayPerTick: 12, isPlayer: false },
+      { id: 'player', x: 0, y: 0, spin: 1000, decayPerTick: 0, isPlayer: true, type: 'equilibre' },
+      { id: 'bot-1-0', x: 30, y: 0, spin: 500, decayPerTick: 12, isPlayer: false, type: 'endurance' },
     ],
   };
   const after: Snapshot = {
     salle: 1, phase: 'fighting',
     tops: [
-      { id: 'player', x: 0, y: 0, spin: 950, decayPerTick: 0, isPlayer: true },
-      { id: 'bot-1-0', x: 30, y: 0, spin: 500 - 1.2, decayPerTick: 12, isPlayer: false },
+      { id: 'player', x: 0, y: 0, spin: 950, decayPerTick: 0, isPlayer: true, type: 'equilibre' },
+      { id: 'bot-1-0', x: 30, y: 0, spin: 500 - 1.2, decayPerTick: 12, isPlayer: false, type: 'endurance' },
     ],
   };
   const events = observe(before, after);

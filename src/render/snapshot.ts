@@ -1,3 +1,4 @@
+import type { TopType } from '../content/toupies';
 import { decayPerTick } from '../sim/combat';
 import type { Phase, RunState } from '../sim/types';
 
@@ -12,6 +13,9 @@ export interface TopSnapshot {
    *  `spinDecay` mentirait dès qu'un talent module l'endurance. */
   decayPerTick: number;
   isPlayer: boolean;
+  /** Type du triangle des forces (Task 4) — constant pour une toupie donnée,
+   *  porte le repère visuel de topView.ts. */
+  type: TopType;
 }
 
 export interface Snapshot {
@@ -28,6 +32,7 @@ function snap(top: RunState['player']): TopSnapshot {
     spin: top.spin,
     decayPerTick: decayPerTick(top),
     isPlayer: top.isPlayer,
+    type: top.type,
   };
 }
 

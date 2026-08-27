@@ -1,4 +1,5 @@
 import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import type { TopType } from '../content/toupies';
 import { ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
 import { PALETTE, spinTint } from '../theme';
 import type { RunState } from '../sim/types';
@@ -103,12 +104,12 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
     }
   }
 
-  function viewFor(id: string, isPlayer: boolean, radius: number, salle: number): TopView {
+  function viewFor(id: string, isPlayer: boolean, radius: number, salle: number, type: TopType): TopView {
     let view = views.get(id);
     if (!view) {
       const shape: Shape = isPlayer ? 'player' : 'bot';
       const boss = !isPlayer && salle === SALLES_PER_CHAPTER;
-      view = createTopView(tex, shape, isPlayer ? 'player' : boss ? 'boss' : 'bot', radius, boss);
+      view = createTopView(tex, shape, isPlayer ? 'player' : boss ? 'boss' : 'bot', radius, boss, type);
       topLayer.addChild(view.container);
       views.set(id, view);
     }
@@ -203,7 +204,7 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
 
       for (const top of tops) {
         live.add(top.id);
-        const view = viewFor(top.id, top.isPlayer, top.radius, state.salle);
+        const view = viewFor(top.id, top.isPlayer, top.radius, state.salle, top.type);
         // Le joueur reste dans state.player même mort (sim.ts ne fait que basculer
         // phase à 'dead', il ne le retire jamais) : reviver sans condition annulerait
         // kill() à l'image même où il vient d'être appelé, et l'agonie ne jouerait

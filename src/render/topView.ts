@@ -1,5 +1,6 @@
 import { Container, Sprite } from 'pixi.js';
-import { PALETTE, spinTint, type Camp } from '../theme';
+import type { TopType } from '../content/toupies';
+import { PALETTE, spinTint, TYPE_TINT, type Camp } from '../theme';
 import { FEEL, spinOmega } from './feel';
 import type { Shape, Textures } from './textures';
 
@@ -32,7 +33,8 @@ export function createTopView(
   shape: Shape,
   camp: Camp,
   radius: number,
-  isBoss = false,
+  isBoss: boolean,
+  type: TopType,
 ): TopView {
   const container = new Container();
   const trail = new Container();
@@ -55,6 +57,22 @@ export function createTopView(
     caret.anchor.set(0.5, 1);
     caret.width = caret.height = size * FEEL.caretSizeMult;
     caret.tint = PALETTE.player;
+  }
+
+  // Repère de type : dit « attaque / endurance / défense / équilibre » d'un
+  // coup d'œil, sans lire aucune barre — le cœur de cette tâche. Réservé aux
+  // toupies non-joueur (le joueur connaît déjà la sienne, écran Toupies).
+  // Posé sur `container` et non `pivot` : comme le marqueur du joueur ci-dessus,
+  // il ne doit pas suivre la rotation du corps pour rester net à tout régime.
+  // Teinte fixe (TYPE_TINT), jamais spinTint : un repère d'identité ne suit pas
+  // l'état de santé (docs/ameliorations.md). Rayon + décalage < 1 : il reste
+  // dans le disque, jamais au-delà de son bord.
+  const typeMark = !isPlayer ? new Sprite(tex.typeMark) : null;
+  if (typeMark) {
+    typeMark.anchor.set(0.5);
+    typeMark.width = typeMark.height = size * FEEL.typeMarkSizeMult;
+    typeMark.tint = TYPE_TINT[type];
+    typeMark.y = -radius * FEEL.typeMarkGapMult;
   }
 
   const halo = new Sprite(tex.halo);
@@ -103,6 +121,7 @@ export function createTopView(
   if (ring) container.addChildAt(ring, 1);
   if (marker) container.addChildAt(marker, 0);
   if (caret) container.addChild(caret);
+  if (typeMark) container.addChild(typeMark);
 
   const ghosts: Ghost[] = [];
   let angle = Math.random() * Math.PI * 2;

@@ -54,6 +54,12 @@ export const FEEL = {
   caretGapMult: 1.45,
   caretBobMult: 0.16,
 
+  // repère de type : point posé sur le corps de chaque toupie non-joueur, teinte
+  // fixe (TYPE_TINT, jamais spinTint) — même règle que le marqueur ci-dessus.
+  // Rayon + décalage < 1 : il ne doit jamais dépasser du disque.
+  typeMarkSizeMult: 0.22,
+  typeMarkGapMult: 0.62,
+
   // boss
   bossHaloMult: 2.7,
   bossRingSpeed: -0.42,
