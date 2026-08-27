@@ -18,7 +18,16 @@ Piliers non négociables :
 - **Pilotage** : glisser le doigt n'importe où = direction visée (joystick virtuel relatif au point de contact, zone morte 8 px) ; la toupie accélère dans cette direction ; relâcher = elle file sur sa lancée avec friction.
 - Dégâts d'un choc : proportionnels à la vitesse relative d'impact, modulés par `attaque de l'attaquant / (attaque + défense du défenseur)`. Les deux perdent du spin, le défenseur davantage si son ratio est défavorable.
 - **Partage de charge** : la vitesse relative d'impact est la somme exacte des deux vitesses de fermeture, et les dégâts se répartissent selon la part que chacun a lui-même provoquée. Un assaut pur inflige ×1,3 et encaisse ×0,7 (`CHARGE_BONUS`) ; un choc frontal, où les deux avancent autant, reste rigoureusement symétrique. **Sans cette règle le pilotage ne sert à rien** : mesuré à l'autopilote, un joueur qui ne touchait jamais l'écran validait le chapitre 1 aussi vite qu'un joueur qui charge. Voir `docs/ameliorations.md`.
-- **Types** (jalon 2+) : Attaque > Endurance > Défense > Attaque (+25 % de dégâts sur le type dominé), Équilibre neutre (+10 % partout). Certaines Lames tournent à gauche (chocs frontaux amplifiés contre rotation droite).
+- **Types** : Attaque > Endurance > Défense > Attaque. Le type dominant inflige **+25 %**.
+  La règle est **symétrique** — un bot dont le type domine celui du joueur frappe plus fort
+  lui aussi, et c'est ce qui fait de la contre-pioche une décision. **Équilibre est hors du
+  triangle** : il inflige +10 % à tout le monde et, surtout, il n'est le type dominé de
+  personne — il ne subit jamais le +25 %. Le facteur de type se **compose** avec le partage
+  de charge et les talents : il ne les remplace pas. Le type est porté par le **châssis** de
+  la toupie, qui n'est pas un cinquième emplacement — toutes les pièces restent
+  interchangeables entre châssis. Le type des bots est fixé par chapitre et par salle.
+  Certaines Lames tournent à gauche (chocs frontaux amplifiés contre rotation droite) —
+  Saison 1, jalon 4.
 
 ## Structure : chapitres & salles
 
@@ -40,6 +49,12 @@ Une toupie = 4 emplacements. **Lame + Noyau sont signature** d'une toupie ; **Di
 | Noyau | spin max (+ capacité signature, jalon 2+) | spin max ×(1 + 0,08 × niveau) |
 
 Chaque pièce progresse sur deux axes infinis : **niveau** (crédits/fragments) et **rareté** (fusion).
+
+> **La Pointe est le seul emplacement à double rendement.** Son rang multiplie la vitesse
+> **et** divise la décroissance, `1,08^(rang−1)` sur les deux axes — là où la Lame, le Disque
+> et le Noyau n'achètent qu'une stat par rang. C'est délibéré : la Pointe est le créneau
+> mobilité + survie. À Légende (rang 11), une Pointe de niveau 0 porte à la fois la vitesse
+> de 240 à 518 et la décroissance de 20 à 9,26.
 
 ## Économie
 
