@@ -62,7 +62,7 @@ Chaque pièce progresse sur deux axes infinis : **niveau** (crédits/fragments) 
 
 **Courbes** :
 - `coût(niveau) = 100 × 1,08^niveau`
-- `revenu(salle) = 70 × 1,13^(salle−1)` par salle vidée ; boss ×10. (Calibré au jalon 1.5 par mesure : un chapitre 1 se valide en ~21 runs. La base est passée de 120 à 70 avec le partage de charge, qui a rendu le pilotage bien plus efficace — à 120 le chapitre tombait à 1,43 h. L'économie commande la durée, le combat commande la forme de la difficulté.)
+- `revenu(salle) = 60 × 1,13^(salle−1)` par salle vidée ; boss ×10. (Calibré par mesure, à chaque fois sur la seule base : **120 → 70** au jalon 1.5, quand le partage de charge a rendu le pilotage bien plus efficace — à 120 le chapitre tombait à 1,43 h ; puis **70 → 60** au jalon 2b, quand le triangle des forces a donné à la toupie de départ, Équilibre, un +10 % de dégâts qu'elle n'encaisse jamais en retour — à 70 le chapitre tombait à 1,66 h. Chapitre 1 mesuré à 23 runs / 1,91 h. L'économie commande la durée, le combat commande la forme de la difficulté : c'est pourquoi seule cette constante bouge.)
 
 **Coffres** : Bronze (2 000 crédits, ×10 : 18 000 — pièces Commun→Rare) · Arène (300 gemmes, ×10 : 2 680, 1 gratuit/4 h — Bon→Excellent, Excellent garanti au 10ᵉ) · Mythique (1 500 gemmes, ×10 : 13 500 — Excellent→Légende, Légende garantie au 30ᵉ). Arène et Mythique mêlent pièces génériques et **doublons signature** des toupies débloquées (seule source de fusion des Lames/Noyaux).
 
