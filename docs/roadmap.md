@@ -40,7 +40,7 @@ fusion sur les quatre paliers.
 **Critères** : ouvrir des coffres, fusionner jusqu'à changer de rang, équiper des pièces qui
 changent le gameplay ; pity vérifiés par test ; un rechargement conserve tout.
 
-## Jalon 2b — Les toupies
+## Jalon 2b — Les toupies ✦ plan : `docs/superpowers/plans/2026-08-27-jalon-2b-toupies.md`
 
 Les quatre Fondateurs (châssis + Lame/Noyau signature), types et triangle des forces,
 comportements distincts des modèles génériques, doublons signature des toupies débloquées.
@@ -265,3 +265,59 @@ la majorité des vrais coups. Refaite sur la bonne grandeur avant d'être retenu
 - `meta.test.ts` intitule « a son propre flux de RNG » un test qui ne vérifie que la
   normalisation de la graine ; la séparation des flux est garantie structurellement, par la
   signature de `tick`.
+
+## Dette connue (jalon 2b)
+
+Constatée pendant la revue de branche du jalon 2b. Aucun de ces points n'est bloquant.
+
+**Contenu différé — aucun n'est un défaut, tous attendent du contenu qui n'existe pas encore.**
+- Les capacités de Noyau déclenchables (*Tornade Galopante*, *Spirale Ascendante*, *Forteresse*,
+  *Griffe Éclair*) ne sont pas branchées : reportées au jalon 4 avec la Saison 1, faute d'un
+  canal d'entrée pour les déclencher (glisser pilote déjà la direction).
+- La rotation gauche n'est pas implémentée : aucun des quatre Fondateurs n'y tourne, elle
+  arrive avec la Saison 1.
+- Les tables de types des chapitres 2 à 8 sont absentes de `botTypes`
+  (`src/content/balance.json`) : ces chapitres n'existent pas encore (jalons 3 et 4). Un
+  chapitre sans entrée retombe sur celle du chapitre 1 (`botTypeFor`, `src/sim/salle.ts:14`),
+  ce qui laisse la simulation valide entre-temps.
+- `chapterGroups(1)` code le chapitre 1 en dur au lieu de lire `runRef.current.chapter`
+  (`src/ui/ToupiesScreen.tsx:75`). Équivalent aujourd'hui — un seul chapitre existe — faux dès
+  que le jalon 3 ouvre le chapitre 2.
+- `viewFor` mémorise ses vues par `bot-{salle}-{index}` sans le chapitre
+  (`src/render/arena.ts:107`, id posé par `src/sim/salle.ts:26`). Une vue peut survivre ~1 s à
+  la mort de son bot ; au chapitre 2, un `bot-1-0` recréé dans cette fenêtre reprendrait la
+  teinte de type du chapitre 1. Inatteignable aujourd'hui (`createRun` fixe `chapter: 1`), à
+  corriger avec le point précédent.
+
+**Lisibilité du repère de type.**
+Le contour du repère (`typeMarkTexture`, `src/render/textures.ts`) a été renforcé (épaisseur et
+opacité) pour mieux détacher le rouge d'Attaque du corps orange des bots, et la transition de
+salle annonce désormais le type en toutes lettres — ce qui rend la lecture à la seule teinte
+beaucoup moins critique. La teinte elle-même (`TYPE_TINT.attaque`, `src/theme.ts`) n'a pas été
+retouchée : c'est une décision de direction artistique qui appartient au joueur, pas à ce
+correctif.
+
+**Équilibrage**
+- `mass: 1` en dur dans `src/sim/salle.ts:42` : c'est la seule stat de bot qui ne vit pas dans
+  `balance.json` (`bot.base` porte `accel`/`maxSpeed`/`radius`/`spinMax`/`spinDecay`/`attack`/
+  `defense`, pas la masse). Non corrigé ici, faute d'un chiffre à choisir sans rouvrir la
+  calibration du chapitre 1.
+
+**Simulation et tests**
+- `NEUTRAL_PROFILE` (`src/sim/profile.ts`) n'a plus qu'un seul consommateur interne au
+  fichier ; il reste exporté sans appelant externe.
+- Aucun test ne compose triangle × Estoc, alors que c'est la pile du pire cas chiffrée au
+  § 3.2 de la spec (2,11) — seuls triangle × partage de charge et triangle seul sont couverts.
+- Les quatre tests de déterminisme (`src/sim/sim.test.ts:37-60`) passent tous par
+  `createInitialMeta`, donc toujours Brasier Solaire avec un profil de châssis `{}` : aucun
+  châssis non neutre n'est jamais rejoué sous ce test.
+- Aucun test ne couvre `TYPE_TINT` (`src/theme.ts`) : ni les quatre teintes distinctes, ni
+  l'injection des variables `--type-*` dont dépend tout `ToupiesScreen`.
+
+**Interface**
+- `ForgeScreen` s'intitule « Ta toupie » sans nommer le châssis actif ni son type.
+- `claimFounderGift` est un choix permanent parmi trois, déclenché par un seul appui, sans
+  écran de confirmation (`src/ui/ToupiesScreen.tsx`).
+- L'observation de lisibilité sur le rouge d'Attaque (constatée pendant l'exécution du plan,
+  Task 9) n'a été consignée que dans le registre SDD, jamais dans `docs/ameliorations.md`, le
+  registre que `CLAUDE.md` désigne pour les retours de jeu.
