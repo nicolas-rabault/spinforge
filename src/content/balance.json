@@ -7,7 +7,7 @@
     "spawnClearance": 30,
     "breach": { "count": 2, "halfWidthDeg": 34, "ejectSpeed": 400, "fromSalle": 3 },
     "shard": {
-      "everyTicks": 90, "lifeTicks": 60, "radius": 14, "spinGain": 0.18,
+      "everyTicks": 72, "lifeTicks": 60, "radius": 14, "spinGain": 0.18,
       "minRadius": 0.15, "maxRadius": 0.7
     },
     "zones": {
