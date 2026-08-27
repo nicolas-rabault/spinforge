@@ -20,6 +20,8 @@ export interface Snapshot {
   salle: number;
   phase: Phase;
   tops: TopSnapshot[];
+  /** Ids éjectés pendant le tick que cet instantané clôt. */
+  ejected: string[];
 }
 
 function snap(top: Top, layout: ArenaLayout): TopSnapshot {
@@ -38,6 +40,9 @@ export function takeSnapshot(run: RunState): Snapshot {
     salle: run.salle,
     phase: run.phase,
     tops: [snap(run.player, run.arena), ...run.bots.map((bot) => snap(bot, run.arena))],
+    // `tick()` réaffecte `run.ejected` à un tableau neuf : cet instantané garde
+    // donc bien celui de son propre tick, sans copie.
+    ejected: run.ejected,
   };
 }
 

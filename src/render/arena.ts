@@ -1,5 +1,5 @@
 import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
-import { ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
+import { ARENA, ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
 import { PALETTE, spinTint } from '../theme';
 import type { RunState } from '../sim/types';
 import type { Zone } from '../sim/terrain';
@@ -73,6 +73,14 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   // La porte du haut, qui s'allume pendant la transition de salle.
   const door = new Graphics();
   floorLayer.addChild(door);
+
+  // L'éclat de Gyre : un sprite unique, positionné et mis à l'échelle par
+  // image — pas de géométrie retracée, seulement une transform.
+  const shard = new Sprite(tex.shard);
+  shard.anchor.set(0.5);
+  shard.blendMode = 'add';
+  shard.visible = false;
+  floorLayer.addChild(shard);
 
   // Même réserve que la porte (dette 1.5) : retracé par image parce que
   // l'ouverture pulse. Deux arcs par brèche, sans effet mesuré sur la cadence.
@@ -176,7 +184,15 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       for (const death of events.deaths) {
         const view = views.get(death.id);
         view?.kill();
-        effects.wave(death.x, death.y, FEEL.waveRadius, 0xffd9a0);
+        if (death.cause === 'ringout') {
+          // L'éjection part vers l'extérieur : l'onde s'ouvre plus large et la
+          // secousse est franche. C'est le retour qui apprend la règle sans texte.
+          effects.wave(death.x, death.y, FEEL.waveRadius * 2.2, PALETTE.zoneSpike);
+          const d = Math.hypot(death.x, death.y) || 1;
+          effects.hit(death.x, death.y, death.x / d, death.y / d, 1, PALETTE.zoneSpike);
+        } else {
+          effects.wave(death.x, death.y, FEEL.waveRadius, 0xffd9a0);
+        }
       }
       if (events.bossEntered) {
         bossEntry = FEEL.bossEntryLife;
@@ -209,6 +225,19 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       lastDraw = now;
       layout();
       syncZones(state);
+
+      // L'éclat pulse et tourne pour ne jamais se confondre avec une toupie
+      // immobile — c'est ce mouvement continu qui signale « à prendre ».
+      const shardNow = state.arena.shard;
+      shard.visible = shardNow !== null;
+      if (shardNow) {
+        shard.x = shardNow.x;
+        shard.y = shardNow.y;
+        const bob = 1 + 0.16 * Math.sin(now / 150);
+        shard.width = shard.height = ARENA.shard.radius * 2 * bob;
+        shard.rotation = now / 900;
+      }
+
       effects.update(dt);
       if (bossEntry > 0) {
         bossEntry = Math.max(0, bossEntry - dt);

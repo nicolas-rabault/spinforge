@@ -13,7 +13,7 @@ function topSnap(over: Partial<TopSnapshot> = {}): TopSnapshot {
 }
 
 function snapshot(tops: TopSnapshot[], over: Partial<Snapshot> = {}): Snapshot {
-  return { salle: 1, phase: 'fighting', tops, ...over };
+  return { salle: 1, phase: 'fighting', tops, ejected: [], ...over };
 }
 
 /** Le spin qu'une toupie aurait après un tick sans aucun choc. */
@@ -74,6 +74,30 @@ describe('observe — morts', () => {
   });
 });
 
+describe('observe — cause de la mort', () => {
+  it('qualifie une mort par épuisement', () => {
+    const before = snapshot([topSnap({ id: 'bot-1', isPlayer: false, spin: 5 })]);
+    const after = snapshot([]);
+    expect(observe(before, after).deaths[0].cause).toBe('spin');
+  });
+
+  it('qualifie une éjection', () => {
+    const before = snapshot([topSnap({ id: 'bot-1', isPlayer: false, spin: 500 })]);
+    const after = snapshot([], { ejected: ['bot-1'] });
+    expect(observe(before, after).deaths[0].cause).toBe('ringout');
+  });
+
+  // Le joueur aussi peut être éjecté (moveTop pousse 'player' dans run.ejected
+  // comme n'importe quel top) : la branche « mort du joueur » applique la même
+  // règle que celle des bots, ce que les deux tests ci-dessus ne couvrent pas.
+  it('qualifie une éjection du joueur', () => {
+    const p = topSnap();
+    const before = snapshot([p]);
+    const after = snapshot([p], { phase: 'dead', ejected: ['player'] });
+    expect(observe(before, after).deaths[0].cause).toBe('ringout');
+  });
+});
+
 describe('observe — progression', () => {
   it('signale un changement de salle', () => {
     const p = topSnap();
@@ -109,14 +133,14 @@ describe('observe — progression', () => {
 
 it('ne masque pas un choc quand la décroissance est suspendue', () => {
   const before: Snapshot = {
-    salle: 1, phase: 'fighting',
+    salle: 1, phase: 'fighting', ejected: [],
     tops: [
       { id: 'player', x: 0, y: 0, spin: 1000, decayPerTick: 0, isPlayer: true },
       { id: 'bot-1-0', x: 30, y: 0, spin: 500, decayPerTick: 12, isPlayer: false },
     ],
   };
   const after: Snapshot = {
-    salle: 1, phase: 'fighting',
+    salle: 1, phase: 'fighting', ejected: [],
     tops: [
       { id: 'player', x: 0, y: 0, spin: 950, decayPerTick: 0, isPlayer: true },
       { id: 'bot-1-0', x: 30, y: 0, spin: 500 - 1.2, decayPerTick: 12, isPlayer: false },

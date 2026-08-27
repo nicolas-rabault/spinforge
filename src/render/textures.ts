@@ -31,6 +31,7 @@ export interface Textures {
   shadow: Texture;
   caret: Texture;
   zone: Record<ZoneKind, Texture>;
+  shard: Texture;
 }
 
 function canvas(size: number): { el: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
@@ -164,6 +165,37 @@ function caretTexture(): Texture {
   return Texture.from(el);
 }
 
+/** Éclat de Gyre : une étoile à quatre branches dans un halo. Des branches, quand
+ * tout le reste de l'arène est fait de disques : il doit se repérer au coin de
+ * l'œil sans jamais se confondre avec une toupie. */
+function shardTexture(): Texture {
+  const size = 128;
+  const { el, ctx } = canvas(size);
+  const r = size / 2;
+  ctx.translate(r, r);
+  const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+  glow.addColorStop(0, `${hex(PALETTE.ember)}cc`);
+  glow.addColorStop(0.45, `${hex(PALETTE.ember)}33`);
+  glow.addColorStop(1, `${hex(PALETTE.ember)}00`);
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = hex(PALETTE.text);
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const a = (i * Math.PI) / 4;
+    const rad = i % 2 === 0 ? r * 0.52 : r * 0.16;
+    const x = Math.cos(a) * rad;
+    const y = Math.sin(a) * rad;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  return Texture.from(el);
+}
+
 function shadowTexture(): Texture {
   const size = 128;
   const { el, ctx } = canvas(size);
@@ -199,13 +231,14 @@ export function createTextures(): Textures {
       pointes: zoneTexture(PALETTE.zoneSpike, true),
       glisse: zoneTexture(PALETTE.zoneSlick, false),
     },
+    shard: shardTexture(),
   };
 }
 
 export function destroyTextures(t: Textures): void {
   const all = [
     ...t.body.player, ...t.body.bot, ...t.rim.player, ...t.rim.bot,
-    t.core, t.halo, t.spark, t.wave, t.shadow, t.caret,
+    t.core, t.halo, t.spark, t.wave, t.shadow, t.caret, t.shard,
   ];
   for (const tex of all) tex.destroy(true);
   for (const tex of Object.values(t.zone)) tex.destroy(true);
