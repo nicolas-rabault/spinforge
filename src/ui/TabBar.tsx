@@ -3,7 +3,7 @@ export type Tab = 'combat' | 'forge' | 'coffres';
 const LABELS: Record<Tab, string> = { combat: 'Combat', forge: 'Forge', coffres: 'Coffres' };
 const LOCKED = ['Toupies'];
 
-export function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
+export function TabBar({ tab, onChange, pending }: { tab: Tab; onChange: (t: Tab) => void; pending: number }) {
   return (
     <nav style={{ display: 'flex', gap: 7 }}>
       {(['combat', 'forge', 'coffres'] as const).map((t) => (
@@ -20,6 +20,17 @@ export function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void
           }}
         >
           {LABELS[t]}
+          {t === 'coffres' && pending > 0 ? (
+            <span
+              aria-label={`${pending} coffre${pending > 1 ? 's' : ''} à ouvrir`}
+              style={{
+                marginLeft: 6, padding: '1px 6px', borderRadius: 999, fontSize: 11.5,
+                background: 'var(--ember)', color: 'var(--ink)', fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {pending}
+            </span>
+          ) : null}
         </button>
       ))}
       {LOCKED.map((label) => (
