@@ -123,8 +123,12 @@ est 0,35 h / 10 runs. Ce n'est pas un manque de réglage : plus de 150 combinais
 mesurées (`econ.rewardBase`, `rewardGrowth`, `upgradeGrowth`, et `upgradeBase` en bouton
 secondaire), et chaque point qui s'approche de la cible déplace la concentration des morts de
 la salle 10 vers la salle 6 ou 7 — une tension structurelle reproductible, pas du bruit.
-Tranché en faveur du pilier « le boss est le mur » plutôt que de la vitesse : dix runs de
-~2 min avec un coffre à chaque salle sert d'ailleurs un idle mobile au moins aussi bien que
+Le pilier « le mur n'est jamais un bug, c'est le produit » n'est pour autant pas abandonné :
+il ne disparaît pas, il **déménage aux chapitres 3-4**, une fois l'enchaînement des chapitres
+livré au jalon 3 — ce jalon ne peut pas le vérifier lui-même, les chapitres 2 et suivants
+n'étant pas atteignables aujourd'hui (spec § 3.3, § 3.4). Ce jalon-ci a tranché en faveur
+de ce pilier plutôt que de la vitesse : dix runs de
+~2 min avec un coffre à chaque salle servent d'ailleurs un idle mobile au moins aussi bien que
 quatre runs de 5 minutes. Le boss lui-même reste au-dessus de sa cible de combat (87,1 s
 contre 60 s visés) malgré la chute depuis les 183 s de départ — voir « Dette connue
 (jalon 2.5) » ci-dessous. Détail du balayage, tableaux complets et diagnostic des trois
@@ -240,9 +244,13 @@ jalon 3, quand le farm AUTO fera tourner l'arène en continu et rendra la queue 
 - La taille des toupies à l'écran (~28 px de diamètre, soit `PLAYER_BASE.radius` /
   `BOT_BASE.radius` = 12 dans `config.ts`) a été jugée en fin de jalon et **délibérément
   laissée telle quelle**. Ce rayon est une constante d'équilibrage, pas un réglage de
-  rendu : le modifier changerait la fréquence des chocs et invaliderait la calibration du
-  « MUR ~2 h » du chapitre 1 (autopilote, 5 seeds), qu'il faudrait alors refaire
-  entièrement. À rouvrir seulement si une remesure est de toute façon au programme.
+  rendu : le modifier changerait la fréquence des chocs et invaliderait ~~la calibration du
+  « MUR ~2 h » du chapitre 1 (autopilote, 5 seeds)~~ la calibration du chapitre 1 en vigueur,
+  qu'il faudrait alors refaire entièrement. **Mise à jour** : cette calibration a bougé deux
+  fois depuis « MUR ~2 h » — 2,08 h / 23 runs au jalon 2a, puis **0,35 h / 10 runs au
+  jalon 2.5** (voir « Équilibrage du chapitre 1 » plus haut, qui est la référence actuelle) —
+  sans que la raison du report change. À rouvrir seulement si une remesure est de toute
+  façon au programme.
 
 **Tests**
 - `spinOmega` (`src/render/feel.ts`) n'a pas de test dédié : fonction pure triviale, non
@@ -340,9 +348,13 @@ bloquant.
   palier, pas sur un pic isolé, mais l'un comme l'autre **doivent être remesurés au harnais**
   si la physique de collision, le contenu de la salle 10, ou le jeu de graines du harnais
   changent — ne pas supposer qu'ils restent stables.
-- Le boss reste à **87,1 s**, au-dessus de sa cible de 60 s (spec § 3.1) — loin des 183 s de
-  départ, mais la cible n'est pas tenue. Voir « Équilibrage du chapitre 1 » ci-dessus pour
-  l'arbitrage complet : la vitesse a été sacrifiée au pilier « le boss est le mur ».
+- Le boss reste à **87,1 s**. Deux cibles existent et aucune n'est tenue : la cible finale
+  du cahier des charges est **~45 s** (spec § 3.1, table de la § 3), soit un écart réel de
+  **~42 s** ; le repère intermédiaire de **60 s** que le combat seul visait avant le passage
+  à l'économie (spec § 3.2, celui qu'affiche `npm run calibrate`) est manqué de **~27 s**.
+  Loin des 183 s de départ, mais ni l'une ni l'autre cible n'est tenue. Voir « Équilibrage du
+  chapitre 1 » ci-dessus pour l'arbitrage complet : la vitesse a été sacrifiée au pilier
+  « le boss est le mur ».
 
 **Tests**
 - `ticksToFirstChest` (`scripts/calibrate.mjs`) n'a pas de test automatisé. C'est la mesure

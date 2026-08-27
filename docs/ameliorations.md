@@ -50,11 +50,15 @@ il ne bouge pas — le pilotage ne se voit pas.
 lieu de tronquer, et le plafond du tick se lit **avant** que le pilotage n'ait rien ajouté :
 
 ```ts
+// physics.ts, après correctif — extrait verbatim (commentaires abrégés, élision marquée)
 const max = effectiveMaxSpeed(top) * zone.speedMult;
-const inherited = Math.hypot(top.vel.x, top.vel.y);
-// Plafond de ce tick : l'ordinaire, ou la surcharge héritée d'un choc, amortie.
-const ceiling = Math.max(max, inherited * ARENA.overspeedDamping);
-// … pilotage ou friction …
+// Plafond de CE tick, lu AVANT que le pilotage n'ait rien ajouté : l'ordinaire,
+// ou la surcharge déjà présente — donc héritée d'un choc — amortie. Seul un choc
+// peut lever le plafond ; le doigt du joueur, jamais.
+const ceiling = Math.max(max, Math.hypot(top.vel.x, top.vel.y) * ARENA.overspeedDamping);
+
+// … pilotage ou friction, inchangés par ce correctif …
+
 const speed = Math.hypot(top.vel.x, top.vel.y);
 if (speed > ceiling) {
   const k = ceiling / speed;
@@ -175,7 +179,7 @@ qui s'approche de 15 min déplace la concentration des morts de la salle 10 vers
 Une revue indépendante a reproduit cette tension (`econ.rewardBase = 93` fait passer la
 salle 7 devant la salle 10 en nombre de morts) : ce n'est pas une affirmation non vérifiée.
 
-Tranché en faveur du pilier : dix runs de ~2 min avec un coffre à chaque salle sert un idle
+Tranché en faveur du pilier : dix runs de ~2 min avec un coffre à chaque salle servent un idle
 mobile au moins aussi bien que quatre runs de 5 minutes. Le boss reste lui aussi au-dessus de
 sa cible (87,1 s contre 60 s visés), pour la même raison — voir « Dette connue (jalon 2.5) »
 dans `docs/roadmap.md`. Y sont aussi consignées les deux valeurs les plus sensibles issues de
