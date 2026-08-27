@@ -73,6 +73,33 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   const door = new Graphics();
   floorLayer.addChild(door);
 
+  // Même réserve que la porte (dette 1.5) : retracé par image parce que
+  // l'ouverture pulse. Deux arcs par brèche, sans effet mesuré sur la cadence.
+  const breachEdges = new Graphics();
+  floorLayer.addChild(breachEdges);
+
+  // Les zones vivent sous les toupies et au-dessus du sol. Recréées à chaque
+  // changement de gabarit, jamais retracées par image.
+  const zoneLayer = new Container();
+  floorLayer.addChild(zoneLayer);
+  let zoneSignature = '';
+
+  function syncZones(state: RunState): void {
+    // Signature du gabarit : tant qu'elle ne change pas, rien à refaire.
+    const signature = state.arena.zones.map((z) => `${z.kind}:${z.x.toFixed(1)}:${z.y.toFixed(1)}`).join('|');
+    if (signature === zoneSignature) return;
+    zoneSignature = signature;
+    zoneLayer.removeChildren().forEach((child) => child.destroy());
+    for (const zone of state.arena.zones) {
+      const sprite = new Sprite(tex.zone[zone.kind]);
+      sprite.anchor.set(0.5);
+      sprite.width = sprite.height = zone.radius * 2;
+      sprite.x = zone.x;
+      sprite.y = zone.y;
+      zoneLayer.addChild(sprite);
+    }
+  }
+
   // Même rayon que dim, à dessein : un second rayon dupliqué aurait fini par
   // déborder du disque du sol, exactement le défaut que dim a déjà corrigé.
   const flash = new Graphics().circle(0, 0, FLOOR_VISUAL_RADIUS).fill(0xffe2b2);
@@ -177,6 +204,7 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       const dt = Math.min((now - lastDraw) / 1000, 0.05);
       lastDraw = now;
       layout();
+      syncZones(state);
       effects.update(dt);
       if (bossEntry > 0) {
         bossEntry = Math.max(0, bossEntry - dt);
@@ -194,6 +222,19 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       door.clear();
       door.arc(0, 0, ARENA_RADIUS, -1.9, -1.24);
       door.stroke({ width: 3 + 4 * lit, color: PALETTE.ember, alpha: 0.22 + 0.7 * lit });
+
+      // Les brèches se dessinent comme une ABSENCE : l'anneau s'interrompt, et
+      // deux arêtes pulsent de part et d'autre. C'est la seule information dont
+      // dépend la survie du joueur : elle doit se lire à un demi-écran.
+      const pulse = 0.55 + 0.45 * Math.sin(now / 190);
+      breachEdges.clear();
+      for (const breach of state.arena.breaches) {
+        breachEdges.arc(0, 0, ARENA_RADIUS, breach.angle - breach.halfWidth, breach.angle + breach.halfWidth);
+        breachEdges.stroke({ width: 5, color: PALETTE.bg, alpha: 1 });
+        breachEdges.arc(0, 0, ARENA_RADIUS * 0.965, breach.angle - breach.halfWidth, breach.angle + breach.halfWidth);
+        breachEdges.stroke({ width: 2.5, color: PALETTE.zoneSpike, alpha: 0.35 + 0.5 * pulse });
+      }
+
       world.x = app.screen.width / 2 + effects.shake.x * world.scale.x;
       world.y = app.screen.height / 2 + effects.shake.y * world.scale.y;
 

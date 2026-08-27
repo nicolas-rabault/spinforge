@@ -1,5 +1,6 @@
 import { Texture } from 'pixi.js';
 import { hex, PALETTE } from '../theme';
+import type { ZoneKind } from '../sim/config';
 
 export type Shape = 'player' | 'bot';
 
@@ -29,6 +30,7 @@ export interface Textures {
   wave: Texture;
   shadow: Texture;
   caret: Texture;
+  zone: Record<ZoneKind, Texture>;
 }
 
 function canvas(size: number): { el: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
@@ -123,6 +125,30 @@ function waveTexture(): Texture {
   return Texture.from(el);
 }
 
+/** Disque de zone : un halo doux au centre, un liseré net au bord. Le liseré est
+ * ce qui rend la frontière estimable — sans lui le joueur ne sait pas où il entre. */
+function zoneTexture(color: number, dashed: boolean): Texture {
+  const size = 256;
+  const { el, ctx } = canvas(size);
+  const r = size / 2;
+  ctx.translate(r, r);
+  const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+  grad.addColorStop(0, `${hex(color)}44`);
+  grad.addColorStop(0.72, `${hex(color)}22`);
+  grad.addColorStop(1, `${hex(color)}00`);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = `${hex(color)}cc`;
+  ctx.lineWidth = size * 0.018;
+  if (dashed) ctx.setLineDash([size * 0.05, size * 0.04]);
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.93, 0, Math.PI * 2);
+  ctx.stroke();
+  return Texture.from(el);
+}
+
 /** Chevron « c'est toi », pointe en bas, dessiné dans le tiers haut du carré. */
 function caretTexture(): Texture {
   const size = 64;
@@ -167,6 +193,12 @@ export function createTextures(): Textures {
     wave: waveTexture(),
     shadow: shadowTexture(),
     caret: caretTexture(),
+    zone: {
+      // Le trait continu se lit comme un sol, le pointillé comme un danger.
+      accelerateur: zoneTexture(PALETTE.zoneBoost, false),
+      pointes: zoneTexture(PALETTE.zoneSpike, true),
+      glisse: zoneTexture(PALETTE.zoneSlick, false),
+    },
   };
 }
 
@@ -176,6 +208,7 @@ export function destroyTextures(t: Textures): void {
     t.core, t.halo, t.spark, t.wave, t.shadow, t.caret,
   ];
   for (const tex of all) tex.destroy(true);
+  for (const tex of Object.values(t.zone)) tex.destroy(true);
 }
 
 /** Sol de l'arène : plaque d'acier tournée, rouillée et rivetée du Hangar Rouillé. */
