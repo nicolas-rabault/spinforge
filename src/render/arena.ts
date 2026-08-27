@@ -2,6 +2,7 @@ import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
 import { PALETTE, spinTint } from '../theme';
 import type { RunState } from '../sim/types';
+import type { Zone } from '../sim/terrain';
 import { createTextures, destroyTextures, floorTexture, FLOOR_EDGE, FLOOR_OVERSCAN, type Shape } from './textures';
 import { FEEL } from './feel';
 import { createTopView, type TopView } from './topView';
@@ -82,13 +83,16 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   // changement de gabarit, jamais retracées par image.
   const zoneLayer = new Container();
   floorLayer.addChild(zoneLayer);
-  let zoneSignature = '';
+  let lastZones: Zone[] | null = null;
 
   function syncZones(state: RunState): void {
-    // Signature du gabarit : tant qu'elle ne change pas, rien à refaire.
-    const signature = state.arena.zones.map((z) => `${z.kind}:${z.x.toFixed(1)}:${z.y.toFixed(1)}`).join('|');
-    if (signature === zoneSignature) return;
-    zoneSignature = signature;
+    // `state.arena` est remplacé en bloc par startSalle() à chaque entrée de
+    // salle, et rien ne mute `zones` en place ensuite (buildLayout() le
+    // construit une fois pour toute la salle) : la référence du tableau est
+    // donc un identifiant fiable du gabarit, sans reconstruire une signature
+    // par image pour ne conclure « rien à faire » quasiment à chaque fois.
+    if (state.arena.zones === lastZones) return;
+    lastZones = state.arena.zones;
     zoneLayer.removeChildren().forEach((child) => child.destroy());
     for (const zone of state.arena.zones) {
       const sprite = new Sprite(tex.zone[zone.kind]);
