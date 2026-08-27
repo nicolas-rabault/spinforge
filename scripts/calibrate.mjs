@@ -3,12 +3,16 @@
 import { createRun, syncRunStats, tick } from '../src/sim/sim.ts';
 import { applyRunReward, createInitialMeta } from '../src/sim/meta.ts';
 import { tryUpgrade, upgradeCost } from '../src/sim/economy.ts';
-import { canOpen, openChest } from '../src/sim/chest.ts';
+import { canOpen, grantChest, openChest } from '../src/sim/chest.ts';
 import { addPiece } from '../src/sim/meta.ts';
 import { ARENA_RADIUS, TICK_S, SALLES_PER_CHAPTER } from '../src/sim/config.ts';
 
 const SEEDS = [1, 7, 42, 1337, 90210];
 const MAX_TICKS = 60 * 60 * 20 / TICK_S; // garde-fou : 20 h de jeu simulé
+// Ordre fixe, jamais celui d'un `Object.keys` : la file de butin doit se vider
+// pareil à chaque exécution du même seed, même si ce script n'est pas couvert
+// par le test de déterminisme de la simulation.
+const CHEST_KINDS = ['bronze', 'arene', 'mythique'];
 
 /** Brèche dont le centre est angulairement le plus proche de ce point. Retourne
  *  `null` avant la salle où les brèches apparaissent. */
@@ -60,11 +64,24 @@ function steerWithTerrain(run) {
     : { x: target.pos.x - me.x, y: target.pos.y - me.y };
 }
 
+/** Vide la file de butin (Task 10), comme un joueur qui ouvre ses coffres au fur
+ *  et à mesure. Retourne vrai si au moins un coffre en a été tiré. */
+function openLoot(meta) {
+  let opened = false;
+  for (const kind of CHEST_KINDS) {
+    while (meta.pending[kind] > 0) {
+      for (const piece of grantChest(meta, kind)) addPiece(meta, piece);
+      opened = true;
+    }
+  }
+  return opened;
+}
+
 /** Achats : un coffre Bronze par salle vidée quand il est abordable, puis
  *  l'emplacement le moins cher tant qu'il reste des crédits. Un joueur réel
  *  arbitre entre les deux ; ce partage est le plus simple qui mesure les deux.
- *  Retourne vrai si un coffre vient d'être ouvert : le butin par salle n'existe
- *  pas encore (Task 10), l'achat est donc la seule source de coffres à mesurer. */
+ *  Retourne vrai si un coffre vient d'être acheté et ouvert — une source parmi
+ *  deux : `openLoot` draine la file de butin séparément, avant cet appel. */
 function spend(meta, { buyChests }) {
   const opened = buyChests && canOpen(meta, 'bronze', 1);
   if (opened) {
@@ -105,7 +122,12 @@ function simulate(seed, { buyChests, steer }) {
       if (!salleDurations.has(salleBefore)) salleDurations.set(salleBefore, []);
       salleDurations.get(salleBefore).push(salleTicks);
       salleTicks = 0;
-      if (spend(meta, { buyChests }) && ticksToFirstChest === null) ticksToFirstChest = ticks;
+      // Le butin de salle (file `pending`) et l'achat sont deux sources de coffres
+      // distinctes ; le premier coffre mesuré est celui qui arrive en premier,
+      // peu importe laquelle des deux le fournit.
+      const lootOpened = openLoot(meta);
+      const purchaseOpened = spend(meta, { buyChests });
+      if ((lootOpened || purchaseOpened) && ticksToFirstChest === null) ticksToFirstChest = ticks;
       // Sans ce recopiage, une amélioration achetée en cours de run ne prendrait
       // effet qu'au run suivant — l'autopilote sous-mesurerait la progression.
       syncRunStats(run, meta);
