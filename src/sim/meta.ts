@@ -25,6 +25,7 @@ export function createInitialMeta(seed: number): MetaState {
 export function applyReward(meta: MetaState, reward: RunReward): void {
   meta.credits += reward.credits;
   meta.gems += reward.gems;
+  for (const kind of reward.chests) meta.pending[kind]++;
 }
 
 /** Applique au méta ce qu'une salle vidée vient de produire. `salleJustCleared`

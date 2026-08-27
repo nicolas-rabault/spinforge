@@ -161,7 +161,8 @@ export function tick(run: RunState, input: Input): RunReward | null {
   }
   if (run.bots.length === 0) {
     const boss = run.salle === SALLES_PER_CHAPTER;
-    const reward = salleReward(run.salle, boss);
+    const rolled = salleReward(run.salle, boss, run.rngState);
+    run.rngState = rolled.rngState;
     if (boss) run.salle = 1;
     else run.salle++;
     run.player.spin = Math.min(
@@ -169,7 +170,7 @@ export function tick(run: RunState, input: Input): RunReward | null {
       run.player.spin + run.player.talents.healBetweenSalles * run.player.spinMax,
     );
     startSalle(run);
-    return reward;
+    return rolled.reward;
   }
   return null;
 }

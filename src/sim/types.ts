@@ -52,6 +52,9 @@ export type ChestKind = 'bronze' | 'arene' | 'mythique';
 export interface RunReward {
   credits: number;
   gems: number;
+  /** Coffres lâchés par la salle. Le premier est garanti, le second est l'extra
+   *  quand il est tombé. */
+  chests: ChestKind[];
 }
 
 /** Ce qui vit à la cadence du tick. Jamais sauvegardé : fermer l'onglet en

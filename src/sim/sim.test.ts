@@ -92,11 +92,21 @@ describe('progression', () => {
     const run = createRun(meta, 1);
     for (const b of run.bots) b.spin = 0.0001; // le decay du prochain tick les achève
     const reward = tick(run, { steer: null });
-    expect(reward?.credits).toBeCloseTo(salleReward(1, false).credits, 5);
+    expect(reward?.credits).toBeCloseTo(salleReward(1, false, 1).reward.credits, 5);
     expect(run.salle).toBe(2);
     expect(run.bots).toHaveLength(botCountFor(2));
     // tick() n'a rien appliqué : le méta est hors de sa portée.
     expect(meta.credits).toBe(0);
+  });
+
+  it('vider une salle rapporte au moins un coffre', () => {
+    const run = createRun(createInitialMeta(1), 1);
+    let reward = null;
+    for (let i = 0; i < 6000 && reward === null; i++) {
+      reward = tick(run, { steer: run.bots[0] ? { x: run.bots[0].pos.x - run.player.pos.x, y: run.bots[0].pos.y - run.player.pos.y } : null });
+    }
+    expect(reward).not.toBeNull();
+    expect(reward!.chests.length).toBeGreaterThanOrEqual(1);
   });
 
   it('l’entrée dans une nouvelle salle remet à zéro la suspension de décroissance du joueur', () => {
@@ -122,8 +132,8 @@ describe('progression', () => {
     applyRunReward(meta, reward, SALLES_PER_CHAPTER);
     expect(meta.chapterValidated).toBe(true);
     expect(run.salle).toBe(1);
-    expect(meta.credits).toBeCloseTo(salleReward(SALLES_PER_CHAPTER, true).credits, 5);
-    expect(meta.gems).toBe(salleReward(SALLES_PER_CHAPTER, true).gems);
+    expect(meta.credits).toBeCloseTo(salleReward(SALLES_PER_CHAPTER, true, 1).reward.credits, 5);
+    expect(meta.gems).toBe(salleReward(SALLES_PER_CHAPTER, true, 1).reward.gems);
   });
 
   it('spin à zéro ⇒ mort ; resetRun repart salle 1 en gardant les crédits', () => {

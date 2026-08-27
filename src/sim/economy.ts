@@ -1,16 +1,31 @@
-import { ECON, PIECE_EFFECT, PLAYER_BASE } from './config';
+import { ECON, LOOT, PIECE_EFFECT, PLAYER_BASE } from './config';
+import { nextRandom } from './rng';
 import { rarityMult, type PieceInstance, type Slot } from './piece';
-import type { MetaState, RunReward, Stats } from './types';
+import type { ChestKind, MetaState, RunReward, Stats } from './types';
 
 export function upgradeCost(level: number): number {
   return ECON.upgradeBase * Math.pow(ECON.upgradeGrowth, level);
 }
 
-export function salleReward(salle: number, boss: boolean): RunReward {
+/** Ce qu'une salle vidée rapporte, et le nouvel état du flux. Le tirage d'extra
+ *  a lieu **de toute façon**, même quand la salle n'y a pas droit : un flux qui
+ *  n'avancerait pas de la même façon selon la salle rendrait toute mesure de
+ *  déterminisme illisible. */
+export function salleReward(
+  salle: number,
+  boss: boolean,
+  rngState: number,
+): { reward: RunReward; rngState: number } {
   const base = ECON.rewardBase * Math.pow(ECON.rewardGrowth, salle - 1);
-  return boss
-    ? { credits: base * ECON.bossRewardMult, gems: ECON.bossGems }
-    : { credits: base, gems: 0 };
+  const rule = boss ? LOOT.boss : LOOT.bySalle;
+  const chests: ChestKind[] = [rule.chest];
+  const r = nextRandom(rngState);
+  const eligible = boss || salle >= LOOT.bySalle.fromSalle;
+  if (eligible && r.value < rule.extraChance) chests.push(rule.extra);
+  const reward: RunReward = boss
+    ? { credits: base * ECON.bossRewardMult, gems: ECON.bossGems, chests }
+    : { credits: base, gems: 0, chests };
+  return { reward, rngState: r.state };
 }
 
 /** Les deux axes d'une pièce se multiplient : le niveau est linéaire, le rang

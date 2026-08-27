@@ -35,23 +35,30 @@ describe('createInitialMeta', () => {
 describe('applyReward', () => {
   it('ajoute crédits et gemmes', () => {
     const meta = createInitialMeta(1);
-    applyReward(meta, { credits: 120, gems: 0 });
-    applyReward(meta, { credits: 30, gems: 40 });
+    applyReward(meta, { credits: 120, gems: 0, chests: [] });
+    applyReward(meta, { credits: 30, gems: 40, chests: [] });
     expect(meta.credits).toBe(150);
     expect(meta.gems).toBe(40);
+  });
+
+  it('le butin d’une récompense rejoint la file', () => {
+    const meta = createInitialMeta(1);
+    applyReward(meta, { credits: 0, gems: 0, chests: ['bronze', 'arene'] });
+    expect(meta.pending.bronze).toBe(1);
+    expect(meta.pending.arene).toBe(1);
   });
 });
 
 describe('applyRunReward', () => {
   it('ne valide pas le chapitre sur une salle ordinaire', () => {
     const meta = createInitialMeta(1);
-    applyRunReward(meta, { credits: 120, gems: 0 }, 3);
+    applyRunReward(meta, { credits: 120, gems: 0, chests: [] }, 3);
     expect(meta.chapterValidated).toBe(false);
   });
 
   it('valide le chapitre quand la salle vidée était la dernière', () => {
     const meta = createInitialMeta(1);
-    applyRunReward(meta, { credits: 1, gems: 40 }, SALLES_PER_CHAPTER);
+    applyRunReward(meta, { credits: 1, gems: 40, chests: [] }, SALLES_PER_CHAPTER);
     expect(meta.chapterValidated).toBe(true);
     expect(meta.gems).toBe(40);
   });
