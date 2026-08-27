@@ -5,7 +5,7 @@
     "radius": 150, "friction": 0.94, "wallRestitution": 0.8, "restitution": 1.6,
     "overspeedDamping": 0.9,
     "spawnClearance": 30,
-    "breach": { "count": 2, "halfWidthDeg": 22, "ejectSpeed": 110, "fromSalle": 3 },
+    "breach": { "count": 2, "halfWidthDeg": 34, "ejectSpeed": 400, "fromSalle": 3 },
     "shard": {
       "everyTicks": 90, "lifeTicks": 60, "radius": 14, "spinGain": 0.18,
       "minRadius": 0.15, "maxRadius": 0.7
@@ -36,7 +36,7 @@
     "spawnRing": 0.6,
     "ai": { "retargetEveryTicks": 10, "aimJitter": 1.2 }
   },
-  "boss": { "spinMult": 4, "attackMult": 1.5, "radius": 18, "mass": 3 },
+  "boss": { "spinMult": 4, "attackMult": 1.5, "radius": 18, "mass": 0.9 },
   "econ": {
     "upgradeBase": 100, "upgradeGrowth": 1.08,
     "rewardBase": 70, "rewardGrowth": 1.13, "bossRewardMult": 10,
