@@ -82,5 +82,8 @@ export interface MetaState {
   equipped: Record<Slot, PieceInstance>;
   inventory: PieceStack[];
   pity: Record<ChestKind, number>;
+  /** Coffres gagnés et pas encore ouverts, par type. Un compteur plutôt qu'une
+   *  file : pas de plafond à inventer, donc jamais de butin jeté. */
+  pending: Record<ChestKind, number>;
   chapterValidated: boolean;
 }

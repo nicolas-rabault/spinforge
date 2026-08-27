@@ -52,6 +52,15 @@ function drawOne(meta: MetaState, kind: ChestKind): PieceInstance {
   return { model: model.id, rank, level: 0 };
 }
 
+/** Tire `count` pièces d'un coffre. Ne débite rien et ne vérifie rien : c'est le
+ *  tirage nu, partagé par l'achat et par le butin de salle — ainsi le pity et la
+ *  table de rangs ne peuvent pas diverger entre les deux. */
+export function drawPulls(meta: MetaState, kind: ChestKind, count: number): PieceInstance[] {
+  const pulls: PieceInstance[] = [];
+  for (let i = 0; i < count; i++) pulls.push(drawOne(meta, kind));
+  return pulls;
+}
+
 /** Retourne les pièces tirées, ou `null` si la monnaie manque — auquel cas
  *  rien n'est débité et le flux de RNG n'avance pas. */
 export function openChest(meta: MetaState, kind: ChestKind, count: 1 | 10): PieceInstance[] | null {
@@ -59,8 +68,12 @@ export function openChest(meta: MetaState, kind: ChestKind, count: 1 | 10): Piec
   const { currency, amount } = chestPrice(kind, count);
   if (currency === 'credits') meta.credits -= amount;
   else meta.gems -= amount;
+  return drawPulls(meta, kind, count);
+}
 
-  const pulls: PieceInstance[] = [];
-  for (let i = 0; i < count; i++) pulls.push(drawOne(meta, kind));
-  return pulls;
+/** Ouvre un coffre de la file de butin. `null` si la file est vide pour ce type. */
+export function grantChest(meta: MetaState, kind: ChestKind): PieceInstance[] | null {
+  if (meta.pending[kind] <= 0) return null;
+  meta.pending[kind]--;
+  return drawPulls(meta, kind, 1);
 }

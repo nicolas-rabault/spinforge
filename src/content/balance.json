@@ -73,7 +73,7 @@
   ],
   "chests": {
     "bronze": {
-      "currency": "credits", "price": 2000, "price10": 18000,
+      "currency": "credits", "price": 250, "price10": 2250,
       "slots": ["disque", "pointe"],
       "ranks": [{ "rank": 1, "p": 0.75 }, { "rank": 2, "p": 0.22 }, { "rank": 3, "p": 0.03 }],
       "pityThreshold": 0, "pityRank": 0

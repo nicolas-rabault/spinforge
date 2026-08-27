@@ -17,6 +17,7 @@ export function createInitialMeta(seed: number): MetaState {
     },
     inventory: [],
     pity: { bronze: 0, arene: 0, mythique: 0 },
+    pending: { bronze: 0, arene: 0, mythique: 0 },
     chapterValidated: false,
   };
 }
@@ -70,4 +71,9 @@ export function equipFromStack(meta: MetaState, model: string, rank: number): bo
   meta.equipped[slot] = { model, rank, level };
   addPiece(meta, previous);
   return true;
+}
+
+/** Nombre total de coffres en attente — la pastille de l'onglet Coffres. */
+export function pendingTotal(meta: MetaState): number {
+  return meta.pending.bronze + meta.pending.arene + meta.pending.mythique;
 }

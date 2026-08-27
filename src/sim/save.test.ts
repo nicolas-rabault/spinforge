@@ -86,6 +86,16 @@ describe('migration', () => {
   // mettant le meilleur niveau connu en tête et en complétant le reste à 0 —
   // exactement l'hypothèse que l'ancien `takePiece` faisait à chaque retrait,
   // appliquée ici une seule fois à la lecture.
+  it('charge une sauvegarde de schéma 2 avec une file de butin vide', () => {
+    const meta = createInitialMeta(3);
+    meta.credits = 1234;
+    const v2 = JSON.stringify({ v: 2, meta: { ...meta, pending: undefined } });
+    const loaded = deserializeMeta(v2);
+    expect(loaded).not.toBeNull();
+    expect(loaded!.credits).toBe(1234);
+    expect(loaded!.pending).toEqual({ bronze: 0, arene: 0, mythique: 0 });
+  });
+
   it('migre un blob v1 réaliste : les piles `{ count, bestLevel }` deviennent `{ levels }`', () => {
     const v1 = {
       v: 1,
@@ -166,6 +176,14 @@ describe('isComplete renforcée', () => {
   // vide passait puis cassait silencieusement les deux garanties de coffre.
   it('rejette un `pity` sans ses trois compteurs', () => {
     const meta = { ...filled(), pity: {} };
+    expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
+  });
+
+  it('refuse une sauvegarde du schéma courant amputée de sa file de butin', () => {
+    // Schéma courant : un champ manquant est un blob corrompu, pas une version
+    // antérieure — le compléter en silence masquerait le problème.
+    const meta = createInitialMeta(3) as unknown as Record<string, unknown>;
+    delete meta.pending;
     expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
   });
 });

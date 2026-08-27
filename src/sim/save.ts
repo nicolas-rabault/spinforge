@@ -4,7 +4,7 @@ import type { PieceInstance, PieceStack } from './piece';
 
 /** Numéro de schéma du méta sérialisé. À incrémenter dès que la forme de
  *  `MetaState` change, en ajoutant la migration correspondante ci-dessous. */
-export const SAVE_SCHEMA = 2;
+export const SAVE_SCHEMA = 3;
 
 interface Envelope {
   v: number;
@@ -55,6 +55,7 @@ function hydrate(partial: Record<string, unknown>): MetaState {
     equipped: (partial.equipped as MetaState['equipped']) ?? base.equipped,
     inventory: (partial.inventory as MetaState['inventory']) ?? base.inventory,
     pity: (partial.pity as MetaState['pity']) ?? base.pity,
+    pending: (partial.pending as MetaState['pending']) ?? base.pending,
     chapterValidated: partial.chapterValidated === true,
   };
   return meta;
@@ -102,6 +103,7 @@ function isComplete(m: Record<string, unknown>): boolean {
   const chestKinds = ['bronze', 'arene', 'mythique'];
   const equipped = m.equipped as Record<string, unknown> | null | undefined;
   const pity = m.pity as Record<string, unknown> | null | undefined;
+  const pending = m.pending as Record<string, unknown> | null | undefined;
   return (
     typeof m.rngState === 'number' &&
     typeof m.credits === 'number' &&
@@ -109,6 +111,8 @@ function isComplete(m: Record<string, unknown>): boolean {
     Array.isArray(m.inventory) && m.inventory.every(isValidStack) &&
     typeof pity === 'object' && pity !== null &&
     chestKinds.every((k) => typeof pity[k] === 'number') &&
+    typeof pending === 'object' && pending !== null &&
+    chestKinds.every((k) => typeof pending[k] === 'number') &&
     typeof equipped === 'object' && equipped !== null &&
     slots.every((s) => isValidPiece(equipped[s]))
   );
@@ -132,7 +136,10 @@ export function deserializeMeta(json: string): MetaState | null {
     // de tenter de le compléter. Schéma antérieur : migration puis complétion —
     // c'est le mécanisme même de l'évolution de schéma.
     if (env.v === SAVE_SCHEMA && !isComplete(raw)) return null;
-    if (env.v < SAVE_SCHEMA) raw.inventory = migrateInventoryV1(raw.inventory);
+    // Borne explicite : cette migration est celle du schéma 1 vers le 2, et elle
+    // seule. La comparer au schéma courant la ferait tourner sur tout blob plus
+    // ancien que le courant — donc sur des blobs v2 depuis que SAVE_SCHEMA vaut 3.
+    if (env.v < 2) raw.inventory = migrateInventoryV1(raw.inventory);
     const meta = hydrate(raw);
     // Filet appliqué au résultat final, quelle que soit la version d'origine :
     // la migration ci-dessus ne passe par aucune des deux gardes précédentes

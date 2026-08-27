@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addPiece, applyReward, applyRunReward, createInitialMeta, equipFromStack, stackOf, takePiece } from './meta';
+import { addPiece, applyReward, applyRunReward, createInitialMeta, equipFromStack, pendingTotal, stackOf, takePiece } from './meta';
 import { SALLES_PER_CHAPTER } from './config';
 
 describe('createInitialMeta', () => {
@@ -11,6 +11,12 @@ describe('createInitialMeta', () => {
     expect(Object.keys(meta.equipped).sort()).toEqual(['disque', 'lame', 'noyau', 'pointe']);
     expect(meta.pity).toEqual({ bronze: 0, arene: 0, mythique: 0 });
     expect(meta.chapterValidated).toBe(false);
+  });
+
+  it('démarre avec une file de butin vide', () => {
+    const meta = createInitialMeta(1);
+    expect(meta.pending).toEqual({ bronze: 0, arene: 0, mythique: 0 });
+    expect(pendingTotal(meta)).toBe(0);
   });
 
   it('ne partage aucun objet avec le modèle d’équipement de départ', () => {
@@ -87,5 +93,15 @@ describe('inventaire', () => {
   it('refuse d’équiper une pièce absente', () => {
     const meta = createInitialMeta(1);
     expect(equipFromStack(meta, 'disque.colosse', 9)).toBe(false);
+  });
+});
+
+describe('pendingTotal', () => {
+  it('somme les trois types', () => {
+    const meta = createInitialMeta(1);
+    meta.pending.bronze = 3;
+    meta.pending.arene = 2;
+    meta.pending.mythique = 1;
+    expect(pendingTotal(meta)).toBe(6);
   });
 });
