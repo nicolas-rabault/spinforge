@@ -19,12 +19,17 @@ Piliers non négociables :
 - Dégâts d'un choc : proportionnels à la vitesse relative d'impact, modulés par `attaque de l'attaquant / (attaque + défense du défenseur)`. Les deux perdent du spin, le défenseur davantage si son ratio est défavorable.
 - **Partage de charge** : la vitesse relative d'impact est la somme exacte des deux vitesses de fermeture, et les dégâts se répartissent selon la part que chacun a lui-même provoquée. Un assaut pur inflige ×1,3 et encaisse ×0,7 (`CHARGE_BONUS`) ; un choc frontal, où les deux avancent autant, reste rigoureusement symétrique. **Sans cette règle le pilotage ne sert à rien** : mesuré à l'autopilote, un joueur qui ne touchait jamais l'écran validait le chapitre 1 aussi vite qu'un joueur qui charge. Voir `docs/ameliorations.md`.
 - **Types** (jalon 2+) : Attaque > Endurance > Défense > Attaque (+25 % de dégâts sur le type dominé), Équilibre neutre (+10 % partout). Certaines Lames tournent à gauche (chocs frontaux amplifiés contre rotation droite).
+- **Répulsion** (jalon 2.5) : un choc rend plus d'énergie qu'il n'absorbe (`restitution` 1,6) — la rotation est le réservoir d'énergie du monde du jeu, chaque contact en convertit une part en recul. Le plafond de vitesse ne borne plus que le **pilotage** : un joueur ne dépasse jamais sa vitesse de Pointe par son seul doigt, mais le recul d'un choc peut le franchir — il retombe au plafond ordinaire en une poignée de ticks (amortissement de surcharge), assez pour se voir clairement « envoyé valser ». Voir `docs/ameliorations.md` pour la panne que cette règle a corrigée : sans elle, la répulsion existait dans le calcul mais n'était jamais parcourue.
+- **Brèches et éjection** (jalon 2.5) : le bord de l'arène porte des secteurs mortels. Y être poussé — vitesse sortante au-dessus d'un seuil, dans le secteur — élimine la toupie au même titre qu'un spin tombé à 0. Deux brèches par salle, réparties régulièrement : il reste toujours un secteur de bord plein assez large pour s'y adosser, une éjection est donc toujours évitable. Le boss est éjectable — c'est le moment de bravoure du chapitre — mais lourd (masse ×3) : il faut vraiment le travailler pour l'y pousser.
+- **Zones au sol** (jalon 2.5) : trois types de disques posés sur le terrain d'une salle, qui se composent quand ils se recouvrent — accélérateur (vitesse et accélération relevées), pointes (perte de spin continue, y compris pendant une pause d'endurance : ce sont des dégâts, pas de l'endurance), plaque glissante (friction quasi nulle — bon pour foncer, mortel près d'une brèche).
+- **Éclat de Gyre** (jalon 2.5) : apparaît périodiquement sur le terrain, entre 15 % et 70 % du rayon de l'arène. Le premier à le toucher — joueur ou bot — récupère 18 % de son spin maximal ; sans preneur, il s'efface après un délai. Dispute directe entre joueur et bots : le prendre, ou empêcher l'adversaire de le prendre — la répulsion devient ainsi un outil offensif autant que défensif.
 
 ## Structure : chapitres & salles
 
 - Un chapitre = **10 salles, la 10ᵉ est le boss**. Vider la salle ouvre la porte vers la suivante.
 - Chaque salle franchie offre un **choix d'atout temporaire** (jalon 3) et rapporte des crédits.
 - Nombre de bots par salle : salles 1-3 → 1, salles 4-6 → 2, salles 7-9 → 3, salle 10 → 1 boss (spin ×4, attaque ×1,5, rayon supérieur).
+- **Terrain** (jalon 2.5) : chaque salle porte un gabarit d'arène tiré du RNG du run — zones au sol dès la salle 1 (le premier objet de terrain rencontré est toujours un bonus, jamais une punition), brèches au bord à partir de la salle 3, quand le pilotage est acquis. Le gabarit s'enrichit par paliers jusqu'à la salle 10. Un seul gabarit existe à ce jour, pour le chapitre 1 (voir § 8 arènes-chapitres) — les chapitres suivants ne sont pas encore atteignables.
 - Mort du joueur → fin du run, retour salle 1 du chapitre, **crédits conservés**.
 - Valider la salle 10 = chapitre validé → chapitre suivant débloqué, et ce chapitre devient éligible au farm.
 
@@ -47,9 +52,17 @@ Chaque pièce progresse sur deux axes infinis : **niveau** (crédits/fragments) 
 
 **Courbes** :
 - `coût(niveau) = 100 × 1,08^niveau`
-- `revenu(salle) = 70 × 1,13^(salle−1)` par salle vidée ; boss ×10. (Calibré au jalon 1.5 par mesure : un chapitre 1 se valide en ~21 runs. La base est passée de 120 à 70 avec le partage de charge, qui a rendu le pilotage bien plus efficace — à 120 le chapitre tombait à 1,43 h. L'économie commande la durée, le combat commande la forme de la difficulté.)
+- `revenu(salle) = 86 × 1,13^(salle−1)` par salle vidée ; boss ×10. (Calibré au jalon 1.5 par mesure : un chapitre 1 se valide en ~21 runs — base 120 → 70 avec le partage de charge, qui a rendu le pilotage bien plus efficace. Recalibré au jalon 2.5 avec le terrain et le butin de salle : base 70 → 86, chapitre 1 à ~10 runs / 0,35 h. L'économie commande la durée, le combat commande la forme de la difficulté — historique complet des trois calibrations : `docs/roadmap.md`.)
 
-**Coffres** : Bronze (2 000 crédits, ×10 : 18 000 — pièces Commun→Rare) · Arène (300 gemmes, ×10 : 2 680, 1 gratuit/4 h — Bon→Excellent, Excellent garanti au 10ᵉ) · Mythique (1 500 gemmes, ×10 : 13 500 — Excellent→Légende, Légende garantie au 30ᵉ). Arène et Mythique mêlent pièces génériques et **doublons signature** des toupies débloquées (seule source de fusion des Lames/Noyaux).
+**Butin de salle — première source de pièces** (jalon 2.5). Chaque salle vidée lâche un coffre, sans rien acheter : c'est le robinet qui garantit qu'il y a toujours quelque chose à ouvrir. L'achat (coffres ci-dessous) reste le second robinet, celui qui pose un vrai arbitrage entre un coffre et une amélioration — l'un sans l'autre donne soit un distributeur passif, soit le mur qui bloquait le jeu avant ce jalon.
+
+| Salle | Coffre lâché |
+|---|---|
+| 1 à 3 | Bronze |
+| 4 à 9 | Bronze, + 20 % de chance d'un Arène |
+| 10 (boss) | Arène garanti, + 15 % de chance d'un Mythique |
+
+**Coffres** : Bronze (**250** crédits, ×10 : 2 250 — pièces Commun→Rare ; 2 000 avant le jalon 2.5, effondré pour ne plus concurrencer les améliorations, seul coffre acheté en crédits) · Arène (300 gemmes, ×10 : 2 680, 1 gratuit/4 h — Bon→Excellent, Excellent garanti au 10ᵉ) · Mythique (1 500 gemmes, ×10 : 13 500 — Excellent→Légende, Légende garantie au 30ᵉ). Arène et Mythique mêlent pièces génériques et **doublons signature** des toupies débloquées (seule source de fusion des Lames/Noyaux).
 
 **Raretés (11 rangs puis infini)** : Commun → Bon → Rare → Excellent (+1, +2) → Épique (+1, +2, +3) → Légende → Légende+N (∞). Chaque rang franchi débloque un talent de pièce.
 
@@ -76,6 +89,8 @@ Chaque pièce progresse sur deux axes infinis : **niveau** (crédits/fragments) 
 **Pièces génériques** : Disques — Lourd, Gravité, Éventail, Axial, Colosse, Météorite. Pointes — Plate, Aiguille, Orbitale, Gyroscope, Furie, Ressort. (Descriptifs fonctionnels, pas des marques.)
 
 **8 arènes-chapitres** : 1 Hangar Rouillé (aucun piège) · 2 Dojo Néon (murs élastiques) · 3 Marché Souterrain (piliers mobiles) · 4 Cratère de Magma (geysers) · 5 Temple sous la Glace (friction réduite) · 6 Jardin Suspendu (arène qui bascule) · 7 Station Orbitale (gravité réduite) · 8 Le Vortex (chapitre infini, modificateur toutes les 10 salles).
+
+Le **système de terrain** (répulsion, brèches, zones au sol, éclat) est livré au jalon 2.5 et actif dès le chapitre 1 ; les identités par chapitre ci-dessus restent du contenu à poser dessus, et sont inatteignables tant que l'enchaînement des chapitres n'existe pas (jalon 3).
 
 ## Règle IP
 

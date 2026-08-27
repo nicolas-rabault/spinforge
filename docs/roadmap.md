@@ -40,6 +40,38 @@ fusion sur les quatre paliers.
 **Critères** : ouvrir des coffres, fusionner jusqu'à changer de rang, équiper des pièces qui
 changent le gameplay ; pity vérifiés par test ; un rechargement conserve tout.
 
+## Jalon 2.5 — Le terrain et le butin ✦ plan : `docs/superpowers/plans/2026-08-27-jalon-2-5-terrain-et-butin.md`
+
+Inséré après le jalon 2a, à la suite d'une session de test du 2026-08-26 : le système de
+rangs, talents et fusion livré au jalon 2a ne se voyait jamais (chapitre 1 à 2,08 h, premier
+coffre Arène à 2,92 h), et le pilotage ne se sentait pas (charger un adversaire ne valait pas
+mieux que rester immobile). Spec :
+`docs/superpowers/specs/2026-08-26-jalon-2-5-terrain-et-butin-design.md`. Les trois remarques
+du joueur et leur diagnostic détaillé : `docs/ameliorations.md`.
+
+Contenu : l'arène devient un terrain — répulsion réellement parcourue (le plafond de vitesse
+ne borne plus que le pilotage, jamais les coups reçus), bord à brèches (éjection = mort),
+zones au sol (accélérateur, pointes, plaque glissante), éclat de Gyre à disputer entre joueur
+et bots · le butin coule — chaque salle vidée lâche un coffre, Bronze à 250 crédits (2 000
+avant) · un seul gabarit d'arène pour l'instant, celui du chapitre 1 — les identités des sept
+autres chapitres restent à poser (§ 8 arènes-chapitres de `docs/game-design.md`).
+
+**Critères d'acceptation**, jugés au harnais `npm run calibrate` (5 graines, politique
+« terrain ») :
+- un coffre ouvert dans les deux premières minutes — **tenu**, largement : médiane 0,00 h ;
+- le chapitre 1 validé en une session de ~15 min — **non tenu** : médiane 0,35 h (~21 min).
+  Plus de 150 combinaisons d'`econ.rewardBase`/`rewardGrowth`/`upgradeGrowth`/`upgradeBase`
+  ont été mesurées ; chaque point qui s'approche de 15 min déplace la concentration des morts
+  de la salle 10 vers la salle 6 ou 7, cassant le pilier « le boss est le mur ». Tranché en
+  faveur du pilier plutôt que de la vitesse — détail du balayage et arbitrage complet dans
+  « Équilibrage du chapitre 1 » ci-dessous ;
+- l'éjection tue le boss — **tenu** : la règle d'éjection est uniforme, le boss n'en est pas
+  exempté, seulement plus lourd (masse ×3) à y pousser ;
+- la politique passive reste très en retrait de la politique « terrain » au harnais —
+  **tenu, largement dépassé** : la politique passive ne valide jamais le chapitre 1 dans le
+  plafond de 20 h du harnais, contre 0,35 h en jouant le terrain — la forme la plus forte du
+  garde-fou que ce jalon existe pour produire.
+
 ## Jalon 2b — Les toupies
 
 Les quatre Fondateurs (châssis + Lame/Noyau signature), types et triangle des forces,
@@ -68,6 +100,35 @@ Traité au jalon 1.5, sauf la dette de simulation ci-dessous, dont une partie é
 explicitement réservée au jalon 2a — désormais traitée et retirée ci-dessous. Aucun de ces
 points n'était bloquant ; tous avaient été constatés et arbitrés pendant la revue du
 jalon 1.
+
+**Équilibrage du chapitre 1 — recalibré au jalon 2.5, le 2026-08-27.** Le jalon 2.5 a réparé
+la cause racine du plafond de vitesse (il annulait le recul d'un choc avant que la toupie ne
+l'ait parcouru d'un seul pixel) et ouvert un second robinet de butin (un coffre par salle
+vidée, plus l'achat). Mesuré au harnais `npm run calibrate` avec une politique d'autopilote
+qui utilise le terrain (pousser la cible vers la brèche la plus proche d'elle, disputer
+l'éclat), 5 graines, en deux passes séparées — combat puis économie, jamais les deux à la
+fois : `arena.shard.everyTicks` 90 → 72 (l'éclat n'apparaissait quasiment jamais avant la
+salle 4, ratant l'apprentissage précoce du déni par percussion), puis `econ.rewardBase`
+70 → 86.
+
+| | Avant (jalon 2a) | Après (jalon 2.5) |
+|---|---|---|
+| Chapitre 1 validé | 2,08 h, 23 runs | **0,35 h, 10 runs** |
+| Premier coffre ouvert | 2,92 h | **0,00 h** |
+| Salle 10 (boss) | 183 s, 8 morts | **87,1 s, 20 morts** |
+| Politique passive | — (non mesurée à ce protocole) | jamais (plafond du harnais : 20 h) |
+
+La cible du cahier des charges (~0,25 h, ~4 runs) n'est **pas atteinte** — la valeur retenue
+est 0,35 h / 10 runs. Ce n'est pas un manque de réglage : plus de 150 combinaisons ont été
+mesurées (`econ.rewardBase`, `rewardGrowth`, `upgradeGrowth`, et `upgradeBase` en bouton
+secondaire), et chaque point qui s'approche de la cible déplace la concentration des morts de
+la salle 10 vers la salle 6 ou 7 — une tension structurelle reproductible, pas du bruit.
+Tranché en faveur du pilier « le boss est le mur » plutôt que de la vitesse : dix runs de
+~2 min avec un coffre à chaque salle sert d'ailleurs un idle mobile au moins aussi bien que
+quatre runs de 5 minutes. Le boss lui-même reste au-dessus de sa cible de combat (87,1 s
+contre 60 s visés) malgré la chute depuis les 183 s de départ — voir « Dette connue
+(jalon 2.5) » ci-dessous. Détail du balayage, tableaux complets et diagnostic des trois
+remarques de test à l'origine du jalon : `docs/ameliorations.md`.
 
 **Équilibrage du chapitre 1 — tranché au jalon 1.5, recalibré le 2026-08-25.**
 `ECON.rewardBase` est passé de 120 à 70 en contrepartie du partage de charge ajouté au
@@ -265,3 +326,32 @@ la majorité des vrais coups. Refaite sur la bonne grandeur avant d'être retenu
 - `meta.test.ts` intitule « a son propre flux de RNG » un test qui ne vérifie que la
   normalisation de la graine ; la séparation des flux est garantie structurellement, par la
   signature de `tick`.
+
+## Dette connue (jalon 2.5)
+
+Constatée et arbitrée pendant l'exécution du plan du jalon 2.5. Aucun de ces points n'est
+bloquant.
+
+**Équilibrage**
+- `combat.damageK` (1,3, réglé à la Task 8b) et `econ.rewardBase` (86, réglé à la Task 14)
+  vivent tous les deux dans une zone chaotique du harnais de calibration : une variation de
+  ±1 à ±2 peut faire basculer le garde-fou « la salle 10 reste la plus meurtrière » ou
+  changer la mesure de plusieurs dixièmes d'heure. Les deux valeurs retenues sont dans un
+  palier, pas sur un pic isolé, mais l'un comme l'autre **doivent être remesurés au harnais**
+  si la physique de collision, le contenu de la salle 10, ou le jeu de graines du harnais
+  changent — ne pas supposer qu'ils restent stables.
+- Le boss reste à **87,1 s**, au-dessus de sa cible de 60 s (spec § 3.1) — loin des 183 s de
+  départ, mais la cible n'est pas tenue. Voir « Équilibrage du chapitre 1 » ci-dessus pour
+  l'arbitrage complet : la vitesse a été sacrifiée au pilier « le boss est le mur ».
+
+**Tests**
+- `ticksToFirstChest` (`scripts/calibrate.mjs`) n'a pas de test automatisé. C'est la mesure
+  qui prouve la promesse phare du jalon (« un coffre ouvert en moins de deux minutes »), et
+  elle ne vit que dans un script de calibration, jamais exercée par `npm run test`.
+- Le champ `ejected` de `takeSnapshot` (`src/render/snapshot.ts`) n'a pas de test :
+  `observer.test.ts` fabrique ses propres littéraux de `Snapshot` et ne passe jamais par
+  `takeSnapshot`, donc une régression sur ce champ précis serait invisible à `npm run test`.
+- `boss.mass` et `shard.radius` n'ont pas de test de forme dans `config.test.ts`, à la
+  différence du reste de `arena` — lacune du plan d'implémentation, pas de l'exécution. Les
+  deux valeurs sont consommées et donc exercées indirectement par les tests de combat et de
+  rendu, mais rien ne verrouille leur domaine de valeur.
