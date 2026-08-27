@@ -1,11 +1,11 @@
 // Autopilote de calibration. Conservé volontairement : le jalon 3 en redemandera.
 // La simulation étant pure et sans DOM, aucun navigateur n'est nécessaire.
 import { createRun, syncRunStats, tick } from '../src/sim/sim.ts';
-import { applyRunReward, createInitialMeta } from '../src/sim/meta.ts';
+import { addPiece, applyRunReward, createInitialMeta, setActiveToupie } from '../src/sim/meta.ts';
 import { tryUpgrade, upgradeCost } from '../src/sim/economy.ts';
 import { canOpen, openChest } from '../src/sim/chest.ts';
-import { addPiece } from '../src/sim/meta.ts';
 import { TICK_S, SALLES_PER_CHAPTER, CHESTS } from '../src/sim/config.ts';
+import { TOUPIES } from '../src/content/toupies.ts';
 
 const SEEDS = [1, 7, 42, 1337, 90210];
 const MAX_TICKS = 60 * 60 * 20 / TICK_S; // garde-fou : 20 h de jeu simulé
@@ -37,8 +37,18 @@ function spend(meta) {
   }
 }
 
-function simulate(seed, { buyChests }) {
+/**
+ * `toupieId` est optionnel et absent de l'appel de la mesure principale : quand
+ * il est omis, `meta` garde le châssis de départ (Brasier Solaire) posé par
+ * `createInitialMeta`, donc ce garde-fou de non-régression reste au mot près
+ * ce qu'il mesurait avant le comparatif de châssis ajouté pour la Task 11.
+ */
+function simulate(seed, { buyChests, toupieId }) {
   const meta = createInitialMeta(seed);
+  if (toupieId) {
+    meta.toupies.unlocked = [toupieId];
+    setActiveToupie(meta, toupieId);
+  }
   let run = createRun(meta, seed);
   let ticks = 0;
   let runs = 1;
@@ -104,3 +114,30 @@ console.log('Runs jusqu’à validation  : médiane %s', fmt(median(results.map(
 console.log('Prix d’un Arène          : %d gemmes', CHESTS.arene.price);
 console.log('Salle la plus meurtrière : %j', results[0].deadliestSalle);
 console.log('Salles par chapitre      : %d', SALLES_PER_CHAPTER);
+
+// Comparatif des quatre châssis, chapitre 1. Même autopilote (foncer sur le bot
+// le plus proche), mêmes graines : seul le châssis actif change d'une série à
+// l'autre. N'affecte pas la mesure principale ci-dessus (fonction `simulate`
+// appelée sans `toupieId` plus haut).
+const chassisResults = TOUPIES.map((toupie) => {
+  const runsFor = SEEDS.map((seed) => simulate(seed, { buyChests: true, toupieId: toupie.id }));
+  return {
+    id: toupie.id,
+    label: toupie.label,
+    type: toupie.type,
+    runs: median(runsFor.map((r) => r.runs)),
+    hours: median(runsFor.map((r) => r.hoursToValidate)),
+    deadliestSalle: runsFor[0].deadliestSalle,
+  };
+});
+
+console.log('\n=== Comparatif châssis — chapitre 1 (%d graines) ===', SEEDS.length);
+for (const c of chassisResults) {
+  console.log('%s (%s) : %s runs · %s h · salle la plus meurtrière %j',
+    c.label.padEnd(18), c.type.padEnd(10), fmt(c.runs), fmt(c.hours), c.deadliestSalle);
+}
+const runCounts = chassisResults.map((c) => c.runs).filter((r) => r !== null);
+const best = Math.min(...runCounts);
+const worst = Math.max(...runCounts);
+console.log('Écart meilleur/pire (runs) : %s/%s = ×%s (cible : < ×2)',
+  worst, best, (worst / best).toFixed(2));

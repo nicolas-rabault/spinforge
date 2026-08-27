@@ -31,7 +31,7 @@
   },
   "chassis": {
     "brasier-solaire": {},
-    "typhon-primal": { "accel": 1.25, "maxSpeed": 1.1, "spinMax": 0.85 },
+    "typhon-primal": { "accel": 1.25, "maxSpeed": 1.1, "spinMax": 0.95 },
     "carapace-abyssale": { "mass": 1.4, "defense": 1.2, "spinMax": 1.15, "accel": 0.8 },
     "tigre-foudre": { "spinDecay": 0.75, "maxSpeed": 1.05, "attack": 0.9 }
   },

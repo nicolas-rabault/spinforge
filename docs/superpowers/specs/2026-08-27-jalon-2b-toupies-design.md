@@ -260,7 +260,7 @@ la place pour différencier sans inventer de machinerie.
 | Toupie | Type | Profil | Ce qu'on doit ressentir |
 |---|---|---|---|
 | **Brasier Solaire** | Équilibre | **×1 partout** | la référence, la toupie de départ |
-| **Typhon Primal** | Attaque | accél. ×1,25 · vitesse ×1,10 · spin max ×0,85 | vif, nerveux, fragile |
+| **Typhon Primal** | Attaque | accél. ×1,25 · vitesse ×1,10 · spin max ×0,95 | vif, nerveux, fragile |
 | **Carapace Abyssale** | Défense | masse ×1,40 · défense ×1,20 · spin max ×1,15 · accél. ×0,80 | lourde, lente à lancer, encaisse |
 | **Tigre Foudre** | Endurance | décroissance ×0,75 · vitesse ×1,05 · attaque ×0,90 | dure longtemps, frappe peu |
 
@@ -394,6 +394,60 @@ coffre d'Arène à 2,92 h cumulées, salles les plus meurtrières `[10, 8]`.
   contre-pioche **paie** — Carapace Abyssale doit franchir le boss plus souvent que Typhon
   Primal — sans qu'aucun châssis ne devienne l'unique bonne réponse.
 - Pire cas d'empilement du § 3.2, sur une panoplie Légende contre-piochée.
+
+### 6.3 Mesures
+
+**Avant le jalon** (sur `main`, mesuré le 2026-08-27) : 23 runs · 2,08 h · premier coffre
+d'Arène à 2,92 h cumulées · salle la plus meurtrière `[10, 8]`.
+
+**Après le triangle, `rewardBase` encore à 70** : 20 runs · 1,66 h — raccourcissement de
+20 %, l'effet **prédit** par le § 6.1 (Brasier Solaire est Équilibre : +10 % de dégâts sur
+chaque coup, sans jamais encaisser le +25 % en retour).
+
+**Balayage de `rewardBase`** (5 graines) :
+
+| `rewardBase` | Runs | Heures |
+|---|---|---|
+| 70 | 20 | 1,66 |
+| 60 | 23 | 1,91 |
+| 55 | 25 | 2,03 |
+| 45 | 30 | 2,47 |
+
+**Retenu : 60.** Il retrouve les 23 runs de la référence à l'identique. 55 viserait mieux les
+heures (2,03) mais pousserait à 25 runs, hors de la cible 21-23 ; `docs/ameliorations.md`
+documente déjà que les heures varient d'une passe à l'autre là où les runs sont la mesure
+stable.
+
+**Mesure finale à `rewardBase = 60`** : 23 runs · 1,91 h · premier coffre d'Arène à 2,69 h
+cumulées, soit **0,78 h après validation** (cible : dans l'heure ✓) · salle la plus
+meurtrière `[10, 9]` → le pilier « le boss est le mur » tient. Le prix de boutique
+(`toupieShop.priceGems = 900`) ne déplace pas cette cible : pas d'ajustement nécessaire.
+
+**Comparatif des quatre châssis, chapitre 1** (5 graines, même autopilote — foncer sur le bot
+le plus proche —, toujours Brasier Solaire pour la mesure principale, aucun achat de
+toupie) :
+
+| Châssis | Type | Runs | Heures | Salle la plus meurtrière |
+|---|---|---|---|---|
+| Brasier Solaire | Équilibre | 23 | 1,91 | [10, 9] |
+| Typhon Primal | Attaque | 30 | 2,11 | [10, 10] |
+| Carapace Abyssale | Défense | 17 | 1,66 | [10, 6] |
+| Tigre Foudre | Endurance | 26 | 2,64 | [10, 12] |
+
+Les deux moitiés du critère du § 6.2 tiennent :
+- **La contre-pioche paie** : Carapace Abyssale (17 runs) valide **avant** Typhon Primal
+  (30 runs). Elle domine le type Attaque des salles 7-10 — le mur du boss, celui qui compte
+  le plus — alors que Typhon (aussi Attaque) n'y gagne rien (même type, neutre) et se fait
+  au contraire contrer par les bots Défense des salles 4-6 (Défense domine Attaque).
+- **Aucun châssis n'est l'unique bonne réponse** : l'écart meilleur/pire reste sous le
+  facteur 2 — 30 / 17 = **×1,76**.
+
+**Ajustement nécessaire pour y arriver** : à profil initial (`typhon-primal.spinMax ×0,85`),
+l'écart mesurait ×2,24 (38 runs contre 17), au-delà de la cible — Typhon cumulait sa propre
+fragilité de profil (moins de spin max) et le contre du triangle aux salles 4-6, une double
+peine. Remonté à `spinMax ×0,95` (§ 4.2), l'écart retombe à ×1,76 sans toucher au triangle
+(`types.dominantBonus` = 0,25 et `types.equilibreBonus` = 0,10 inchangées) ni à
+`econ.rewardBase`. `chassis.brasier-solaire` reste `{}` — le garde-fou structurel du jalon.
 
 ## 7. Tests
 
