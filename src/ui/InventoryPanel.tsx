@@ -3,6 +3,8 @@ import { equipFromStack } from '../sim/meta';
 import { canFuse, fusionRecipe, tryFuse } from '../sim/fusion';
 import { rankLabel, type Slot } from '../sim/piece';
 import { modelById } from '../content/pieces';
+import { MODELS_PROFILE } from '../sim/config';
+import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
 import { rankColor } from './rank';
 import type { MetaState } from '../sim/types';
 
@@ -61,6 +63,10 @@ export function InventoryPanel({
         const model = modelById(stack.model);
         const recipe = fusionRecipe(stack.rank);
         const fusable = canFuse(meta, stack.model, stack.rank);
+        // Lames et Noyaux n'ont pas de profil : `MODELS_PROFILE` ne les liste pas,
+        // `axes` reste vide et rien n'est affiché — cohérent, pas trompeur.
+        const modelProfile = MODELS_PROFILE[stack.model] ?? {};
+        const axes = AXIS_ORDER.filter((a) => modelProfile[a] !== undefined);
         return (
           <div
             key={`${stack.model}:${stack.rank}`}
@@ -78,6 +84,18 @@ export function InventoryPanel({
                 {rankLabel(stack.rank)}
               </span>
             </div>
+            {axes.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {axes.map((a) => (
+                  <span
+                    key={a}
+                    style={{ fontSize: 11.5, color: isGain(a, modelProfile[a]!) ? 'var(--ember)' : 'var(--muted)' }}
+                  >
+                    {axisLine(a, modelProfile[a]!)}
+                  </span>
+                ))}
+              </div>
+            ) : null}
             <div style={{ display: 'flex', gap: 7 }}>
               <button
                 onClick={() => { if (equipFromStack(metaRef.current, stack.model, stack.rank)) onChanged(); }}

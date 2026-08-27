@@ -3,42 +3,23 @@ import {
   activeToupie, buyToupie, canClaimFounderGift, claimFounderGift, setActiveToupie,
 } from '../sim/meta';
 import { botTypeFor } from '../sim/salle';
-import { CHASSIS, SALLES_PER_CHAPTER, TOUPIE_SHOP } from '../sim/config';
-import type { ProfileAxis } from '../sim/profile';
+import { CHASSIS, SALLES_PER_CHAPTER, TOUPIE_SHOP, TYPES } from '../sim/config';
 import { syncRunStats } from '../sim/sim';
 import { formatCredits } from './format';
+import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
+import { TYPE_LABELS } from './typeLabels';
 import type { MetaState, RunState } from '../sim/types';
 
-const TYPE_LABELS: Record<TopType, string> = {
-  attaque: 'Attaque',
-  endurance: 'Endurance',
-  defense: 'Défense',
-  equilibre: 'Équilibre',
-};
-
-const AXIS_LABELS: Record<ProfileAxis, string> = {
-  attack: 'Attaque',
-  defense: 'Défense',
-  maxSpeed: 'Vitesse max',
-  spinMax: 'Spin max',
-  accel: 'Accélération',
-  mass: 'Masse',
-  spinDecay: 'Décroissance',
-};
-
-const AXIS_ORDER: ProfileAxis[] = ['attack', 'defense', 'maxSpeed', 'spinMax', 'accel', 'mass', 'spinDecay'];
-
-/** > 1 est un gain pour six axes sur sept. `spinDecay` est une perte de spin par
- *  seconde (voir `profile.ts`) : là, c'est < 1 qui est le gain. Piège de sens à ne
- *  pas reproduire ici — la couleur suit cette règle, pas le signe du pourcentage. */
-function isGain(axis: ProfileAxis, value: number): boolean {
-  return axis === 'spinDecay' ? value < 1 : value > 1;
-}
-
-function axisLine(axis: ProfileAxis, value: number): string {
-  const pct = Math.round((value - 1) * 100);
-  const sign = pct > 0 ? '+' : '';
-  return `${AXIS_LABELS[axis]} ${sign}${pct} %`;
+/** Ce que le triangle donne réellement, en toutes lettres — sinon les deux
+ *  grandeurs qui gouvernent chaque combat (`TYPES.dominantBonus`,
+ *  `TYPES.equilibreBonus`) ne sont écrites nulle part dans le jeu. */
+function typeBonusLine(type: TopType): string {
+  if (type === 'equilibre') {
+    const pct = Math.round(TYPES.equilibreBonus * 100);
+    return `Équilibre : +${pct} % de dégâts sur chaque coup, jamais subis en retour.`;
+  }
+  const pct = Math.round(TYPES.dominantBonus * 100);
+  return `+${pct} % de dégâts contre son type dominé, +${pct} % subis face à qui la domine.`;
 }
 
 interface SalleGroup {
@@ -114,7 +95,10 @@ export function ToupiesScreen({
           Chapitre 1 — composition
         </p>
         <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
-          Attaque bat Endurance, qui bat Défense, qui bat Attaque. Équilibre ne domine ni n'est dominé.
+          Attaque bat Endurance, qui bat Défense, qui bat Attaque : +{Math.round(TYPES.dominantBonus * 100)} %
+          de dégâts infligés au type battu, subis en retour face au type qui bat. Équilibre ne domine ni
+          n'est dominé : +{Math.round(TYPES.equilibreBonus * 100)} % de dégâts sur chaque coup, jamais subis
+          en retour.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {groups.map((g) => (
@@ -167,7 +151,7 @@ export function ToupiesScreen({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {axes.length === 0 ? (
                 <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                  Profil de référence — aucun bonus ni malus.
+                  Profil de châssis neutre — aucun bonus ni malus de stats.
                 </span>
               ) : axes.map((a) => (
                 <span
@@ -177,6 +161,9 @@ export function ToupiesScreen({
                   {axisLine(a, profile[a]!)}
                 </span>
               ))}
+              <span style={{ fontSize: 12, color: `var(--type-${t.type})` }}>
+                {typeBonusLine(t.type)}
+              </span>
             </div>
 
             {owned && isActive ? null : owned ? (

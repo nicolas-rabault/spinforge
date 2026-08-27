@@ -4,6 +4,8 @@ import { syncRunStats } from '../sim/sim';
 import { rankLabel, type Slot } from '../sim/piece';
 import { modelById } from '../content/pieces';
 import { talentsOf, TALENT_LABELS } from '../sim/talents';
+import { MODELS_PROFILE } from '../sim/config';
+import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
 import { InventoryPanel } from './InventoryPanel';
 import type { MetaState, RunState, Stats } from '../sim/types';
 
@@ -46,6 +48,10 @@ export function ForgeScreen({
         );
         const affordable = meta.credits >= cost;
         const talents = talentsOf(row.key, piece.rank);
+        // Lames et Noyaux n'ont pas de profil (`MODELS_PROFILE` ne les liste pas) :
+        // leur différenciation passe par le talent signature, pas par ces sept axes.
+        const modelProfile = MODELS_PROFILE[piece.model] ?? {};
+        const axes = AXIS_ORDER.filter((a) => modelProfile[a] !== undefined);
         return (
           <button
             key={row.key}
@@ -73,6 +79,14 @@ export function ForgeScreen({
               <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
                 {row.stat} {row.read(before).toFixed(0)} → {after.toFixed(0)}
               </span>
+              {axes.map((a) => (
+                <span
+                  key={a}
+                  style={{ fontSize: 11.5, color: isGain(a, modelProfile[a]!) ? 'var(--ember)' : 'var(--muted)' }}
+                >
+                  {axisLine(a, modelProfile[a]!)}
+                </span>
+              ))}
               {talents.length > 0 ? (
                 <span style={{ fontSize: 12.5, color: 'var(--ember)' }}>
                   {talents.map((id) => TALENT_LABELS[id]).join(' · ')}

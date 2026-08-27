@@ -13,12 +13,15 @@ export type ProfileAxis =
 
 export type StatProfile = Partial<Record<ProfileAxis, number>>;
 
-const AXES: ProfileAxis[] = [
+/** Ordre stable des sept axes — source unique. L'affichage (`ui/profileAxes.ts`)
+ *  et la validation de `balance.json` (`config.test.ts`) le réutilisent tel quel
+ *  plutôt que de retenir chacun leur propre liste. */
+export const PROFILE_AXES: ProfileAxis[] = [
   'attack', 'defense', 'maxSpeed', 'spinMax', 'accel', 'mass', 'spinDecay',
 ];
 
 export const NEUTRAL_PROFILE: Record<ProfileAxis, number> = Object.fromEntries(
-  AXES.map((a) => [a, 1]),
+  PROFILE_AXES.map((a) => [a, 1]),
 ) as Record<ProfileAxis, number>;
 
 /** Produit des profils qui pèsent sur la toupie : le châssis, le modèle de
@@ -37,7 +40,7 @@ export function resolveProfile(meta: MetaState): Record<ProfileAxis, number> {
   ];
   for (const source of sources) {
     if (!source) continue;
-    for (const axis of AXES) {
+    for (const axis of PROFILE_AXES) {
       const v = source[axis];
       if (v !== undefined) out[axis] *= v;
     }
