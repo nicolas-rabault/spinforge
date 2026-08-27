@@ -436,11 +436,29 @@ toupie) :
 
 Les deux moitiés du critère du § 6.2 tiennent :
 - **La contre-pioche paie** : Carapace Abyssale (17 runs) valide **avant** Typhon Primal
-  (30 runs). Elle domine le type Attaque des salles 7-10 — le mur du boss, celui qui compte
-  le plus — alors que Typhon (aussi Attaque) n'y gagne rien (même type, neutre) et se fait
-  au contraire contrer par les bots Défense des salles 4-6 (Défense domine Attaque).
+  (30 runs).
 - **Aucun châssis n'est l'unique bonne réponse** : l'écart meilleur/pire reste sous le
   facteur 2 — 30 / 17 = **×1,76**.
+
+**Correction (revue de branche, 2026-08-27) — la cause n'est pas celle qu'écrivait cette
+section.** La version précédente attribuait l'écart Carapace/Typhon au triangle des forces
+(« elle domine le type Attaque des salles 7-10 »). C'est faux, et vérifié par mutation : en
+neutralisant les quatre profils de châssis (`chassis.*` mis à `{}`, le type devenant alors la
+seule différence entre les toupies), le chapitre 1 s'étale ainsi :
+
+| Châssis | Type | Runs | Heures |
+|---|---|---|---|
+| Brasier Solaire | Équilibre | 23 | 1,91 |
+| Carapace Abyssale | Défense | 23 | 1,74 |
+| Typhon Primal | Attaque | 27 | 2,30 |
+| Tigre Foudre | Endurance | 31 | 3,01 |
+
+Le type **seul** étale le chapitre 1 de 23 à 31 runs (**×1,35**) — c'est la vraie mesure du
+triangle, et la preuve propre du critère. Sur les 13 runs d'écart entre Carapace (17) et
+Typhon (30) mesurés plus haut avec les profils de châssis en jeu, ~9 viennent des profils de
+stats (`mass ×1,40` / `defense ×1,20` / `spinMax ×1,15` de Carapace contre `spinMax ×0,95` de
+Typhon) et ~4 seulement du triangle. Le critère du § 6.2 tient bel et bien — mais par la
+combinaison des profils et du triangle, pas par le triangle isolément.
 
 **Ajustement nécessaire pour y arriver** : à profil initial (`typhon-primal.spinMax ×0,85`),
 l'écart mesurait ×2,24 (38 runs contre 17), au-delà de la cible — Typhon cumulait sa propre
