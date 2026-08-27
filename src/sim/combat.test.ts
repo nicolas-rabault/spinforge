@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decayPerTick, decaySpin, drainPerTick, resolveCollision } from './combat';
-import { TALENTS, TICK_S } from './config';
+import { DAMAGE_K, TALENTS, TICK_S } from './config';
 import { NEUTRAL_ZONE, type ZoneMods } from './terrain';
 import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
@@ -110,7 +110,7 @@ describe('resolveCollision', () => {
     resolveCollision(a, b);
     expect(a.spin).toBeCloseTo(b.spin, 9);
     // Les deux poids somment à 2 : le total infligé est celui d’avant le partage.
-    expect(1000 - a.spin).toBeCloseTo((100 * 10) / 20 * 0.35, 9);
+    expect(1000 - a.spin).toBeCloseTo((100 * 10) / 20 * DAMAGE_K, 9);
   });
 
   it('ignore des toupies qui s’éloignent déjà', () => {
