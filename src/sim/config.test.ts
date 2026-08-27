@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { BALANCE, BOTS_PER_SALLE, CHESTS, FUSION, RARITY, SALLES_PER_CHAPTER, TALENTS } from './config';
+import {
+  BALANCE, BOTS_PER_SALLE, CHESTS, FUSION, RARITY, SALLES_PER_CHAPTER, TALENTS, TOUPIE_SHOP, TYPES,
+} from './config';
+import { PROFILE_AXES } from './profile';
 import { TOUPIES } from '../content/toupies';
+import { MODELS } from '../content/pieces';
 
 const SLOTS = ['lame', 'disque', 'pointe', 'noyau'];
 
@@ -65,15 +69,49 @@ describe('balance.json', () => {
     expect(BALANCE.chassis['brasier-solaire']).toEqual({});
   });
 
+  // Sans ce test, une clé de `chassis` orpheline (toupie retirée, id renommé)
+  // survivrait indéfiniment sans jamais être lue par `resolveProfile`.
+  it('n’a aucune entrée de châssis orpheline : exactement les quatre toupies', () => {
+    expect(Object.keys(BALANCE.chassis).sort()).toEqual(TOUPIES.map((t) => t.id).sort());
+  });
+
   it('laisse l’équipement de départ strictement neutre', () => {
     expect(BALANCE.models['disque.lourd']).toEqual({});
     expect(BALANCE.models['pointe.plate']).toEqual({});
   });
 
-  it('n’a que des multiplicateurs strictement positifs', () => {
+  // Ce test est celui qui aurait attrapé une faute de frappe sur une clé de
+  // `models` (ex. `disque.eventail` → `disque.eventaille`) : sans lui, le modèle
+  // fautif perd tout son profil en silence — `resolveProfile` fait
+  // `if (!source) continue` — et les trois autres tests de ce bloc ne le voient
+  // jamais, puisqu'ils ne lisent que les clés qu'ils connaissent déjà. Seules les
+  // Lames et les Noyaux sont hors périmètre : ils n'ont pas de profil, leur
+  // différenciation passe par le talent signature de leur rang (`profile.ts`).
+  it('couvre exactement les modèles de Disque et de Pointe, sans orphelin', () => {
+    const expectedIds = MODELS
+      .filter((m) => m.slot === 'disque' || m.slot === 'pointe')
+      .map((m) => m.id)
+      .sort();
+    expect(Object.keys(BALANCE.models).sort()).toEqual(expectedIds);
+  });
+
+  it('n’a que des multiplicateurs strictement positifs, sur des axes connus', () => {
     for (const p of [...Object.values(BALANCE.chassis), ...Object.values(BALANCE.models)]) {
-      for (const v of Object.values(p)) expect(v).toBeGreaterThan(0);
+      for (const [axis, v] of Object.entries(p)) {
+        expect(PROFILE_AXES, axis).toContain(axis);
+        expect(v).toBeGreaterThan(0);
+      }
     }
+  });
+
+  it('les deux grandeurs du triangle sont des nombres positifs', () => {
+    expect(TYPES.dominantBonus).toBeGreaterThan(0);
+    expect(TYPES.equilibreBonus).toBeGreaterThan(0);
+  });
+
+  it('le prix de la boutique de toupies est un nombre positif', () => {
+    expect(Number.isFinite(TOUPIE_SHOP.priceGems)).toBe(true);
+    expect(TOUPIE_SHOP.priceGems).toBeGreaterThan(0);
   });
 });
 
