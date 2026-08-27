@@ -4,11 +4,18 @@ import { useGameLoop } from './useGameLoop';
 import { chapterOf } from '../content/chapters';
 import { SALLES_PER_CHAPTER } from '../sim/config';
 import { resetRun } from '../sim/sim';
+import { botTypeFor } from '../sim/salle';
+import { TYPE_LABELS } from './typeLabels';
 import type { MetaState, RunState, Vec } from '../sim/types';
 import type { Audio } from '../audio/audio';
 
 const DEAD_ZONE_PX = 8;
 const ONBOARDED_KEY = 'spinforge.onboarded';
+
+interface Banner {
+  text: string;
+  tint: string;
+}
 
 export function CombatScreen({
   runRef, metaRef, running, onTick, onMetaChanged, audio,
@@ -25,12 +32,10 @@ export function CombatScreen({
   const pointerRef = useRef<number | null>(null);
   const arenaRef = useRef<Awaited<ReturnType<typeof createArena>> | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
-  const [banner, setBanner] = useState<string | null>(null);
+  const [banner, setBanner] = useState<Banner | null>(null);
   // Le premier lancement explique ce qu'aucun repère à l'écran ne peut dire seul :
   // laquelle est la tienne, et que foncer vaut mieux qu'attendre le choc.
   const [hint, setHint] = useState(() => localStorage.getItem(ONBOARDED_KEY) !== '1');
-  // Sans ce garde-fou, le bandeau se rejouerait à chaque tick passé en salle 10.
-  const bannerDoneRef = useRef(false);
 
   useEffect(() => {
     let disposed = false;
@@ -64,17 +69,22 @@ export function CombatScreen({
           // Les frôlements entre bots ne méritent pas un son ; les tiens, toujours.
           for (const hit of events.hits) if (hit.id === 'player' || hit.power > 0.25) audio.hit(hit.power);
           if (events.deaths.some((d) => d.isPlayer)) audio.death();
-          if (events.salleChanged) audio.door();
+          if (events.salleChanged) {
+            audio.door();
+            // Le triangle ne se lit en combat que par la teinte d'un point sur le
+            // bot (§ 5.4) : sans ce texte, rien ne dit ce que cette teinte veut
+            // dire. La salle boss garde son annonce dédiée, plus utile qu'un type.
+            const isBoss = run.salle === SALLES_PER_CHAPTER;
+            setBanner(
+              isBoss
+                ? { text: chapterOf(run.chapter).boss, tint: 'var(--boss)' }
+                : { text: `Salle ${run.salle} · ${TYPE_LABELS[botTypeFor(run.chapter, run.salle)]}`, tint: `var(--type-${botTypeFor(run.chapter, run.salle)})` },
+            );
+            window.setTimeout(() => setBanner(null), 2100);
+          }
           // Le rotor se tait à la mort : sans ce `null`, l'oscillateur tenait sa
           // dernière fréquence par-dessus l'écran de défaite.
           audio.setSpin(run.phase === 'dead' ? null : run.player.spin / run.player.spinMax);
-        }
-        if (run.salle !== SALLES_PER_CHAPTER) {
-          bannerDoneRef.current = false;
-        } else if (!bannerDoneRef.current) {
-          bannerDoneRef.current = true;
-          setBanner(chapterOf(run.chapter).boss);
-          window.setTimeout(() => setBanner(null), 2100);
         }
         onTick();
       },
@@ -157,12 +167,12 @@ export function CombatScreen({
             <div
               style={{
                 position: 'absolute', left: 0, right: 0, top: '50%', transform: 'translateY(-50%)',
-                background: 'rgba(8,10,15,.82)', borderTop: '2px solid var(--boss)', borderBottom: '2px solid var(--boss)',
+                background: 'rgba(8,10,15,.82)', borderTop: `2px solid ${banner.tint}`, borderBottom: `2px solid ${banner.tint}`,
                 padding: '10px 0', textAlign: 'center', pointerEvents: 'none',
                 font: '600 17px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.06em', textTransform: 'uppercase',
               }}
             >
-              {banner}
+              {banner.text}
             </div>
           ) : null}
         </div>

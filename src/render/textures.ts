@@ -140,7 +140,10 @@ function caretTexture(): Texture {
 }
 
 /** Point de repère de type : disque plein, contour sombre pour rester net une
- *  fois teinté par-dessus n'importe quelle usure du corps. */
+ *  fois teinté par-dessus n'importe quelle usure du corps. Contour renforcé
+ *  (épaisseur et opacité) pour que le rouge d'Attaque se détache mieux du corps
+ *  orange des bots (`PALETTE.bot`) — la teinte elle-même reste inchangée, c'est
+ *  une décision de direction artistique qui n'appartient pas à ce correctif. */
 function typeMarkTexture(): Texture {
   const size = 64;
   const { el, ctx } = canvas(size);
@@ -149,8 +152,8 @@ function typeMarkTexture(): Texture {
   ctx.arc(c, c, c * 0.8, 0, Math.PI * 2);
   ctx.fillStyle = '#ffffff';
   ctx.fill();
-  ctx.lineWidth = size * 0.09;
-  ctx.strokeStyle = 'rgba(10,13,18,.55)';
+  ctx.lineWidth = size * 0.15;
+  ctx.strokeStyle = 'rgba(10,13,18,.72)';
   ctx.stroke();
   return Texture.from(el);
 }
