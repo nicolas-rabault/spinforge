@@ -158,10 +158,11 @@ c'est elle qui pose un vrai arbitrage (« ce coffre ou ce niveau de Lame ? »).
 | Premier coffre ouvert | 2,92 h | **0,00 h** |
 
 Un coffre s'ouvre désormais dans les toutes premières secondes du premier run — la promesse
-« un coffre ouvert dans les deux premières minutes » est largement tenue. À 10 coffres par
-run en moyenne, les doublons arrivent en quelques minutes : la fusion devient jouable dans la
-première session, donc les rangs, donc les talents — les trois axes d'optimisation du
-jalon 2a deviennent visibles d'un coup, sans une ligne de contenu supplémentaire.
+« un coffre ouvert dans les deux premières minutes » est largement tenue. Un run complet
+rapporte 10 coffres au minimum, 17 au maximum, ~11 en moyenne (table ci-dessus) : les
+doublons arrivent en quelques minutes, la fusion devient jouable dans la première session,
+donc les rangs, donc les talents — les trois axes d'optimisation du jalon 2a deviennent
+visibles d'un coup, sans une ligne de contenu supplémentaire.
 
 ### Constat honnête sur la cible
 
