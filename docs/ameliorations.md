@@ -100,11 +100,18 @@ Le boss à lui seul prenait plus de temps que les neuf salles précédentes réu
 
 **Correctif.** Trois leviers combinés : la répulsion réparée ci-dessus rend chaque choc plus
 décisif (recul réellement subi, brèches au bord à partir de la salle 3 — être poussé dedans
-élimine la toupie, le boss compris, quoique lourd à y pousser — masse ×3) ; les zones au sol
-(accélérateur, pointes, plaque glissante) et l'éclat de Gyre donnent des raisons de bouger ;
-`combat.damageK` est monté de 0,35 à 1,3, réglé au harnais pour que la salle 10 reste sous
-60 s sans cesser d'être la plus meurtrière. Détail des trois types de zone et de la règle
-d'éjection : `docs/game-design.md` § Combat & pilotage.
+élimine la toupie ; la règle est uniforme et n'exempte pas le boss, mais à masse ×3 il est en
+pratique **hors de portée d'une charge normalement pilotée** aux valeurs retenues — voir
+« Constat honnête sur la cible » ci-dessous et la dette du jalon 2.5 dans `docs/roadmap.md`) ;
+les zones au sol (accélérateur, pointes, plaque glissante) et l'éclat de Gyre donnent des
+raisons de bouger ; `combat.damageK` est monté de 0,35 à 1,3, réglé au harnais pour que la
+salle 10 reste sous 60 s sans cesser d'être la plus meurtrière — **au moment de ce réglage
+isolé** (58,6 s, passe combat seule, Task 8b). Le tableau ci-dessous mesure après la passe
+économie qui a suivi (`econ.rewardBase`, Task 14) : elle a rephasé les tirages RNG en aval
+(la durée d'un combat en consomme un nombre variable) et fait remonter le combat de boss à
+87,10 s sans qu'aucun bouton de combat n'ait bougé — l'intention « sous 60 s » tenait au
+moment où elle a été prise, la passe économie l'a ensuite défaite. Détail des trois types de
+zone et de la règle d'éjection : `docs/game-design.md` § Combat & pilotage.
 
 Mesure finale (`npm run calibrate`, verbatim, après la calibration complète — Task 14) :
 
