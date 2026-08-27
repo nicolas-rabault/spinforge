@@ -28,6 +28,11 @@ const runTicks = (seed: number, n: number) => play(seed, n, null);
 // Force la salle à se vider régulièrement : sans ça, 300 ticks se jouent
 // entièrement dans la salle 1 et le déterminisme n'est testé que sur la physique.
 const runTicksThroughSalles = (seed: number, n: number) => play(seed, n, 25, true);
+// Même scénario, mais sans nettoyer `run.arena.breaches` : les brèches restent en
+// place (elles apparaissent dès la salle 3) et le chemin d'éjection est donc
+// réellement traversé — sans ce scénario, plus aucun test ne garde le déterminisme
+// à travers une éjection, alors que c'est le risque central du jalon 2.5.
+const runTicksThroughBreaches = (seed: number, n: number) => play(seed, n, 25);
 
 describe('createRun', () => {
   it('démarre chapitre 1, salle 1, phase fighting, avec les bots de la salle 1', () => {
@@ -63,6 +68,12 @@ describe('déterminisme', () => {
     // plus rien de plus que le test précédent — d'où l'exigence de la validation
     // du chapitre entier (les dix salles), pas seulement d'une salle vidée.
     expect(JSON.parse(a).meta.chapterValidated).toBe(true);
+  });
+
+  it('reste déterministe à travers les brèches (bord létal non nettoyé)', () => {
+    const a = runTicksThroughBreaches(42, 300);
+    expect(a).toBe(runTicksThroughBreaches(42, 300));
+    expect(a).not.toBe(runTicksThroughBreaches(7, 300));
   });
 
   it('ouvrir des coffres entre deux salles ne change pas l’issue du run', () => {

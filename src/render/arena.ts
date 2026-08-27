@@ -319,8 +319,12 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       views.clear();
       if (floor.texture !== Texture.EMPTY) floor.texture.destroy(true);
       effects.destroy();
-      destroyTextures(tex);
+      // Après app.destroy(true, ...) : ce dernier détruit toute la scène, y
+      // compris le sprite `shard` et les enfants de `zoneLayer` qui référencent
+      // encore les textures de `tex` — les détruire avant les laisserait
+      // pointer sur des textures déjà libérées.
       app.destroy(true, { children: true });
+      destroyTextures(tex);
     },
   };
 }

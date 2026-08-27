@@ -85,6 +85,20 @@ describe('takeSnapshot', () => {
     const player = snap.tops.find((t) => t.isPlayer)!;
     expect(player.decayPerTick).toBeCloseTo(decayPerTick(run.player) + ZONES.pointes.spinDrain, 10);
   });
+
+  // observer.ts s'en sert pour distinguer une sortie de piste d'une mort par
+  // épuisement (docs/game-design.md § Brèches et éjection) : sans ce test,
+  // observer.test.ts fabrique ses propres littéraux de Snapshot et ne passe
+  // jamais par takeSnapshot, donc une régression sur ce champ précis serait
+  // invisible à `npm run test`.
+  it('reprend le tableau ejected de run.ejected', () => {
+    const meta = createInitialMeta(1);
+    const run = createRun(meta, 1);
+    run.ejected = ['bot-1'];
+
+    const snap = takeSnapshot(run);
+    expect(snap.ejected).toBe(run.ejected);
+  });
 });
 
 describe('snapshotById', () => {

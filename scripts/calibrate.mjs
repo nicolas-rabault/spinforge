@@ -186,5 +186,6 @@ for (let salle = 1; salle <= SALLES_PER_CHAPTER; salle++) {
   console.log('  salle %d : %s s  (vidée %d fois, morts %d)',
     salle, all.length === 0 ? 'jamais vidée' : fmt(median(all) * TICK_S), all.length, dead);
 }
-console.log('Garde-fou passivité      : %s h — doit rester très au-dessus de la référence',
-  fmt(medianOf(passive, 'hoursToValidate')));
+const passivite = medianOf(passive, 'hoursToValidate');
+console.log('Garde-fou passivité      : %s — doit rester très au-dessus de la référence',
+  passivite === null ? 'jamais' : fmt(passivite) + ' h');

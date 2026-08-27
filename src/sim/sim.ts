@@ -144,6 +144,12 @@ export function tick(run: RunState, input: Input): RunReward | null {
   clampToArena(run.player);
   for (const bot of run.bots) clampToArena(bot);
   run.rngState = updateShard(run.arena, run.rngState);
+  // Id du preneur ignoré ici : aucun appelant de production n'en a besoin,
+  // l'effet de bord (gain de spin) suffit. Non retiré : terrain.test.ts teste
+  // l'identité du preneur sur cette valeur de retour, et une version `void`
+  // forcerait ces tests à déduire le preneur par effet de bord — plus faible
+  // que l'assertion directe actuelle. Même précédent que `applyReward` en
+  // dette du jalon 2a.
   takeShard(run.arena, [run.player, ...run.bots]);
   decaySpin(run.player, playerZone);
   // `run.bots` n'est filtré qu'après : les index restent alignés sur `botZones`.
