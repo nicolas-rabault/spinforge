@@ -1,8 +1,30 @@
 {
-  "version": 2,
+  "version": 3,
   "tickSeconds": 0.1,
-  "arena": { "radius": 150, "friction": 0.94, "wallRestitution": 0.8, "restitution": 0.8 },
-  "combat": { "damageK": 0.35, "chargeBonus": 0.3, "healBetweenSalles": 0.2 },
+  "arena": {
+    "radius": 150, "friction": 0.94, "wallRestitution": 0.8, "restitution": 1.6,
+    "overspeedDamping": 0.9,
+    "spawnClearance": 30,
+    "breach": { "count": 2, "halfWidthDeg": 34, "ejectSpeed": 400, "fromSalle": 3 },
+    "shard": {
+      "everyTicks": 72, "lifeTicks": 60, "radius": 14, "spinGain": 0.18,
+      "minRadius": 0.15, "maxRadius": 0.7
+    },
+    "zones": {
+      "accelerateur": { "radius": 34, "speedMult": 1.6, "accelMult": 1.6, "friction": 0, "spinDrain": 0 },
+      "pointes": { "radius": 28, "speedMult": 1, "accelMult": 1, "friction": 0, "spinDrain": 55 },
+      "glisse": { "radius": 40, "speedMult": 1, "accelMult": 1, "friction": 0.99, "spinDrain": 0 }
+    },
+    "layouts": [
+      { "fromSalle": 1, "zones": ["accelerateur"] },
+      { "fromSalle": 3, "zones": ["accelerateur", "pointes"] },
+      { "fromSalle": 4, "zones": ["accelerateur", "pointes", "pointes"] },
+      { "fromSalle": 6, "zones": ["accelerateur", "accelerateur", "pointes", "pointes"] },
+      { "fromSalle": 8, "zones": ["accelerateur", "pointes", "pointes", "glisse"] },
+      { "fromSalle": 10, "zones": ["accelerateur", "pointes", "pointes", "pointes"] }
+    ]
+  },
+  "combat": { "damageK": 1.3, "chargeBonus": 0.3, "healBetweenSalles": 0.2 },
   "types": { "dominantBonus": 0.25, "equilibreBonus": 0.1 },
   "chapter": { "sallesPerChapter": 10, "botsPerSalle": [1, 1, 1, 2, 2, 2, 3, 3, 3, 1] },
   "botTypes": {
@@ -18,13 +40,17 @@
     "spawnRing": 0.6,
     "ai": { "retargetEveryTicks": 10, "aimJitter": 1.2 }
   },
-  "boss": { "spinMult": 4, "attackMult": 1.5, "radius": 18 },
+  "boss": { "spinMult": 4, "attackMult": 1.5, "radius": 18, "mass": 3 },
   "econ": {
     "upgradeBase": 100, "upgradeGrowth": 1.08,
-    "rewardBase": 60, "rewardGrowth": 1.13, "bossRewardMult": 10,
+    "rewardBase": 86, "rewardGrowth": 1.13, "bossRewardMult": 10,
     "bossGems": 60
   },
   "toupieShop": { "priceGems": 900 },
+  "loot": {
+    "bySalle": { "chest": "bronze", "extra": "arene", "extraChance": 0.2, "fromSalle": 4 },
+    "boss": { "chest": "arene", "extra": "mythique", "extraChance": 0.15 }
+  },
   "pieceEffect": {
     "lameAttack": 0.1, "disqueDefense": 0.1,
     "pointeSpeed": 0.04, "pointeDecay": 0.05, "noyauSpin": 0.08
@@ -72,7 +98,7 @@
   ],
   "chests": {
     "bronze": {
-      "currency": "credits", "price": 2000, "price10": 18000,
+      "currency": "credits", "price": 250, "price10": 2250,
       "slots": ["disque", "pointe"],
       "ranks": [{ "rank": 1, "p": 0.75 }, { "rank": 2, "p": 0.22 }, { "rank": 3, "p": 0.03 }],
       "pityThreshold": 0, "pityRank": 0

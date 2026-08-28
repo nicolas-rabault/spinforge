@@ -1,4 +1,5 @@
-import { ARENA_RADIUS, TICK_S, WALL_RESTITUTION } from './config';
+import { ARENA, ARENA_RADIUS, TICK_S, WALL_RESTITUTION } from './config';
+import { inBreach, type ArenaLayout, type ZoneMods } from './terrain';
 import type { Top, Vec } from './types';
 
 /** Vitesse maximale effective. Toupie folle la relève à mesure que le spin
@@ -10,40 +11,72 @@ function effectiveMaxSpeed(top: Top): number {
   return top.maxSpeed * (1 + top.talents.toupieFolle * lost);
 }
 
-export function applySteering(top: Top, steer: Vec | null): void {
+export function applySteering(top: Top, steer: Vec | null, zone: ZoneMods): void {
+  const max = effectiveMaxSpeed(top) * zone.speedMult;
+  // Plafond de CE tick, lu AVANT que le pilotage n'ait rien ajouté : l'ordinaire,
+  // ou la surcharge déjà présente — donc héritée d'un choc — amortie. Seul un choc
+  // peut lever le plafond ; le doigt du joueur, jamais.
+  //
+  // Amortir après coup toute vitesse supérieure au plafond laisserait au contraire
+  // le pilotage lui-même dépasser : chaque tick ajoute accel × TICK_S et n'en
+  // retire que 10 %. Point fixe v = 0,9 × (v + 90) = 810 px/s — trois fois et
+  // demie la vitesse de Pointe du joueur, rien qu'en tenant son doigt, et la
+  // Pointe cesserait d'être une stat.
+  const ceiling = Math.max(max, Math.hypot(top.vel.x, top.vel.y) * ARENA.overspeedDamping);
+
   if (steer) {
     const len = Math.hypot(steer.x, steer.y) || 1;
-    top.vel.x += (steer.x / len) * top.accel * TICK_S;
-    top.vel.y += (steer.y / len) * top.accel * TICK_S;
+    const accel = top.accel * zone.accelMult;
+    top.vel.x += (steer.x / len) * accel * TICK_S;
+    top.vel.y += (steer.y / len) * accel * TICK_S;
   } else {
-    top.vel.x *= top.talents.friction;
-    top.vel.y *= top.talents.friction;
+    // Une zone ne peut que rendre plus glissant : à friction de zone neutre (0),
+    // le `max` laisse celle du talent intacte.
+    const friction = Math.max(top.talents.friction, zone.friction);
+    top.vel.x *= friction;
+    top.vel.y *= friction;
   }
-  const max = effectiveMaxSpeed(top);
+
   const speed = Math.hypot(top.vel.x, top.vel.y);
-  if (speed > max) {
-    const k = max / speed;
+  if (speed > ceiling) {
+    // Tronquer au plafond ORDINAIRE annulait le recul d'une collision avant que
+    // `moveAndBounce` ne l'ait parcouru d'un seul pixel — la répulsion n'existait
+    // tout simplement pas.
+    const k = ceiling / speed;
     top.vel.x *= k;
     top.vel.y *= k;
   }
 }
 
-export function moveAndBounce(top: Top): void {
+/**
+ * Avance la toupie d'un tick et la garde dans l'anneau. Retourne `true` si elle
+ * vient d'être **éjectée** — franchissement du bord, dans un secteur de brèche,
+ * à une vitesse sortante suffisante. L'appelant met alors son spin à zéro : pour
+ * la simulation, une éjection est une mort comme une autre.
+ */
+export function moveAndBounce(top: Top, layout: ArenaLayout): boolean {
   top.pos.x += top.vel.x * TICK_S;
   top.pos.y += top.vel.y * TICK_S;
   const d = Math.hypot(top.pos.x, top.pos.y);
   const limit = ARENA_RADIUS - top.radius;
-  if (d > limit && d > 0) {
-    const nx = top.pos.x / d;
-    const ny = top.pos.y / d;
-    top.pos.x = nx * limit;
-    top.pos.y = ny * limit;
-    const dot = top.vel.x * nx + top.vel.y * ny;
-    if (dot > 0) {
-      top.vel.x -= (1 + WALL_RESTITUTION) * dot * nx;
-      top.vel.y -= (1 + WALL_RESTITUTION) * dot * ny;
-    }
+  if (d <= limit || d === 0) return false;
+  const nx = top.pos.x / d;
+  const ny = top.pos.y / d;
+  const out = top.vel.x * nx + top.vel.y * ny;
+  top.pos.x = nx * limit;
+  top.pos.y = ny * limit;
+  if (out >= ARENA.breach.ejectSpeed && inBreach(layout, Math.atan2(ny, nx))) {
+    // Arrêtée net : le sursis de Second souffle ressusciterait sinon le joueur au
+    // bord, toujours sortant, pour le faire éjecter au tick suivant.
+    top.vel.x = 0;
+    top.vel.y = 0;
+    return true;
   }
+  if (out > 0) {
+    top.vel.x -= (1 + WALL_RESTITUTION) * out * nx;
+    top.vel.y -= (1 + WALL_RESTITUTION) * out * ny;
+  }
+  return false;
 }
 
 /**

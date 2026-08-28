@@ -1,4 +1,5 @@
 import { CHARGE_BONUS, DAMAGE_K, RESTITUTION, TICK_S } from './config';
+import type { ZoneMods } from './terrain';
 import { typeMult } from './typeChart';
 import type { Top } from './types';
 
@@ -11,12 +12,20 @@ export function decayPerTick(top: Top): number {
   return top.spinDecay * top.talents.spinDecayMult;
 }
 
-export function decaySpin(top: Top): void {
-  if (top.decayPauseTicks > 0) {
-    top.decayPauseTicks--;
-    return;
-  }
-  top.spin -= decayPerTick(top) * TICK_S;
+/** Spin perdu par seconde, terrain compris. `snapshot.ts` s'en sert pour prédire
+ *  le tick à venir : sans la perte de zone, `observer.ts` prendrait les pointes
+ *  pour un choc et couvrirait l'arène d'étincelles sans contact. */
+export function drainPerTick(top: Top, zone: ZoneMods): number {
+  return decayPerTick(top) + zone.spinDrain;
+}
+
+export function decaySpin(top: Top, zone: ZoneMods): void {
+  // Lu AVANT le décrément : lu après, le dernier tick d'une pause de Relance
+  // reprendrait la décroissance naturelle un tick trop tôt.
+  const drain = drainPerTick(top, zone);
+  // Relance suspend l'endurance, jamais les pointes — celles-ci sont des dégâts.
+  if (top.decayPauseTicks > 0) top.decayPauseTicks--;
+  top.spin -= drain * TICK_S;
 }
 
 function clamp01(v: number): number {

@@ -3,27 +3,90 @@
 import { createRun, syncRunStats, tick } from '../src/sim/sim.ts';
 import { addPiece, applyRunReward, createInitialMeta, setActiveToupie } from '../src/sim/meta.ts';
 import { tryUpgrade, upgradeCost } from '../src/sim/economy.ts';
-import { canOpen, openChest } from '../src/sim/chest.ts';
-import { TICK_S, SALLES_PER_CHAPTER, CHESTS } from '../src/sim/config.ts';
+import { canOpen, grantChest, openChest } from '../src/sim/chest.ts';
+import { ARENA_RADIUS, TICK_S, SALLES_PER_CHAPTER } from '../src/sim/config.ts';
 import { TOUPIES } from '../src/content/toupies.ts';
 
 const SEEDS = [1, 7, 42, 1337, 90210];
 const MAX_TICKS = 60 * 60 * 20 / TICK_S; // garde-fou : 20 h de jeu simulé
+// Ordre fixe, jamais celui d'un `Object.keys` : la file de butin doit se vider
+// pareil à chaque exécution du même seed, même si ce script n'est pas couvert
+// par le test de déterminisme de la simulation.
+const CHEST_KINDS = ['bronze', 'arene', 'mythique'];
 
-/** Politique : foncer sur le bot le plus proche. Même autopilote qu'au jalon 1.5. */
-function steerTowardNearest(run) {
+/** Brèche dont le centre est angulairement le plus proche de ce point. Retourne
+ *  `null` avant la salle où les brèches apparaissent. */
+function nearestBreach(arena, pos) {
+  const angle = Math.atan2(pos.y, pos.x);
   let best = null;
-  let bestD = Infinity;
-  for (const bot of run.bots) {
-    const d = Math.hypot(bot.pos.x - run.player.pos.x, bot.pos.y - run.player.pos.y);
-    if (d < bestD) { bestD = d; best = bot; }
+  let bestGap = Infinity;
+  for (const breach of arena.breaches) {
+    // Écart signé replié dans [-π, π], comme `inBreach` : sans ce repli, 6,2 rad
+    // et 0,05 rad — le même endroit à 2π près — sembleraient opposés.
+    const raw = angle - breach.angle;
+    const gap = Math.abs(Math.atan2(Math.sin(raw), Math.cos(raw)));
+    if (gap < bestGap) { bestGap = gap; best = breach; }
   }
-  if (!best) return null;
-  return { x: best.pos.x - run.player.pos.x, y: best.pos.y - run.player.pos.y };
+  return best;
 }
 
-/** Achats gloutons : on améliore l'emplacement le moins cher tant qu'on peut. */
-function spend(meta) {
+/** Politique « terrain » : pousser la cible vers la brèche la plus proche d'elle,
+ *  et couper vers l'éclat quand on en est le plus près. Sans elle, l'autopilote
+ *  mesurerait un jeu que personne ne joue. */
+function steerWithTerrain(run) {
+  const me = run.player.pos;
+  const shard = run.arena.shard;
+  if (shard) {
+    const mine = Math.hypot(shard.x - me.x, shard.y - me.y);
+    const contested = run.bots.some((b) => Math.hypot(shard.x - b.pos.x, shard.y - b.pos.y) < mine);
+    if (!contested) return { x: shard.x - me.x, y: shard.y - me.y };
+  }
+  let target = null;
+  let best = Infinity;
+  for (const bot of run.bots) {
+    const d = Math.hypot(bot.pos.x - me.x, bot.pos.y - me.y);
+    if (d < best) { best = d; target = bot; }
+  }
+  if (!target) return null;
+  const breach = nearestBreach(run.arena, target.pos);
+  if (!breach) return { x: target.pos.x - me.x, y: target.pos.y - me.y };
+  // Se placer sur la ligne brèche → cible, du côté opposé à la brèche, pour que
+  // le choc pousse la cible dehors.
+  const bx = Math.cos(breach.angle) * ARENA_RADIUS;
+  const by = Math.sin(breach.angle) * ARENA_RADIUS;
+  const dx = target.pos.x - bx;
+  const dy = target.pos.y - by;
+  const len = Math.hypot(dx, dy) || 1;
+  const spot = { x: target.pos.x + (dx / len) * 26, y: target.pos.y + (dy / len) * 26 };
+  const toSpot = Math.hypot(spot.x - me.x, spot.y - me.y);
+  return toSpot > 18
+    ? { x: spot.x - me.x, y: spot.y - me.y }
+    : { x: target.pos.x - me.x, y: target.pos.y - me.y };
+}
+
+/** Vide la file de butin (Task 10), comme un joueur qui ouvre ses coffres au fur
+ *  et à mesure. Retourne vrai si au moins un coffre en a été tiré. */
+function openLoot(meta) {
+  let opened = false;
+  for (const kind of CHEST_KINDS) {
+    while (meta.pending[kind] > 0) {
+      for (const piece of grantChest(meta, kind)) addPiece(meta, piece);
+      opened = true;
+    }
+  }
+  return opened;
+}
+
+/** Achats : un coffre Bronze par salle vidée quand il est abordable, puis
+ *  l'emplacement le moins cher tant qu'il reste des crédits. Un joueur réel
+ *  arbitre entre les deux ; ce partage est le plus simple qui mesure les deux.
+ *  Retourne vrai si un coffre vient d'être acheté et ouvert — une source parmi
+ *  deux : `openLoot` draine la file de butin séparément, avant cet appel. */
+function spend(meta, { buyChests }) {
+  const opened = buyChests && canOpen(meta, 'bronze', 1);
+  if (opened) {
+    for (const piece of openChest(meta, 'bronze', 1)) addPiece(meta, piece);
+  }
   const slots = ['lame', 'disque', 'pointe', 'noyau'];
   for (;;) {
     let cheapest = null;
@@ -32,7 +95,7 @@ function spend(meta) {
       const c = upgradeCost(meta.equipped[slot].level);
       if (c < cost) { cost = c; cheapest = slot; }
     }
-    if (meta.credits < cost) return;
+    if (meta.credits < cost) return opened;
     tryUpgrade(meta, cheapest);
   }
 }
@@ -40,10 +103,10 @@ function spend(meta) {
 /**
  * `toupieId` est optionnel et absent de l'appel de la mesure principale : quand
  * il est omis, `meta` garde le châssis de départ (Brasier Solaire) posé par
- * `createInitialMeta`, donc ce garde-fou de non-régression reste au mot près
- * ce qu'il mesurait avant le comparatif de châssis ajouté pour la Task 11.
+ * `createInitialMeta`, donc ce garde-fou de non-régression reste au mot près ce
+ * qu'il mesurait avant le comparatif de châssis.
  */
-function simulate(seed, { buyChests, toupieId }) {
+function simulate(seed, { buyChests, steer, toupieId }) {
   const meta = createInitialMeta(seed);
   if (toupieId) {
     meta.toupies.unlocked = [toupieId];
@@ -52,48 +115,51 @@ function simulate(seed, { buyChests, toupieId }) {
   let run = createRun(meta, seed);
   let ticks = 0;
   let runs = 1;
+  let salleTicks = 0;
   let ticksToValidate = null;
   let runsToValidate = null;
-  let ticksToFirstArene = null;
-  let arenesOpened = 0;
+  let ticksToFirstChest = null;
   const deathsBySalle = new Map();
+  const salleDurations = new Map();
 
-  while (ticks < MAX_TICKS && (ticksToValidate === null || ticksToFirstArene === null)) {
+  while (ticks < MAX_TICKS && ticksToValidate === null) {
     const salleBefore = run.salle;
-    const reward = tick(run, { steer: steerTowardNearest(run) });
+    const reward = tick(run, { steer: steer(run) });
     ticks++;
+    salleTicks++;
     if (reward) {
       applyRunReward(meta, reward, salleBefore);
-      spend(meta);
-      // Sans ce recopiage, une amélioration achetée en cours de run ne s'appliquerait
-      // qu'au run suivant — exactement ce que fait l'écran Forge après chaque achat
-      // (`ForgeScreen.tsx`). Sans lui, l'autopilote sous-mesure la vitesse de
-      // progression réelle du joueur.
+      if (!salleDurations.has(salleBefore)) salleDurations.set(salleBefore, []);
+      salleDurations.get(salleBefore).push(salleTicks);
+      salleTicks = 0;
+      // Le butin de salle (file `pending`) et l'achat sont deux sources de coffres
+      // distinctes ; le premier coffre mesuré est celui qui arrive en premier,
+      // peu importe laquelle des deux le fournit.
+      const lootOpened = openLoot(meta);
+      const purchaseOpened = spend(meta, { buyChests });
+      if ((lootOpened || purchaseOpened) && ticksToFirstChest === null) ticksToFirstChest = ticks;
+      // Sans ce recopiage, une amélioration achetée en cours de run ne prendrait
+      // effet qu'au run suivant — l'autopilote sous-mesurerait la progression.
       syncRunStats(run, meta);
       if (meta.chapterValidated && ticksToValidate === null) {
         ticksToValidate = ticks;
         runsToValidate = runs;
-      }
-      if (buyChests && canOpen(meta, 'arene', 1)) {
-        for (const piece of openChest(meta, 'arene', 1)) addPiece(meta, piece);
-        arenesOpened++;
-        if (ticksToFirstArene === null) ticksToFirstArene = ticks;
       }
     }
     if (run.phase === 'dead') {
       deathsBySalle.set(run.salle, (deathsBySalle.get(run.salle) ?? 0) + 1);
       runs++;
       run = createRun(meta, seed + runs);
+      salleTicks = 0;
     }
   }
 
   return {
     hoursToValidate: ticksToValidate === null ? null : (ticksToValidate * TICK_S) / 3600,
-    hoursToFirstArene: ticksToFirstArene === null ? null : (ticksToFirstArene * TICK_S) / 3600,
+    hoursToFirstChest: ticksToFirstChest === null ? null : (ticksToFirstChest * TICK_S) / 3600,
     runs: runsToValidate,
-    gems: meta.gems,
-    arenesOpened,
-    deadliestSalle: [...deathsBySalle.entries()].sort((a, b) => b[1] - a[1])[0] ?? null,
+    salleDurations,
+    deathsBySalle,
   };
 }
 
@@ -102,32 +168,56 @@ const median = (xs) => {
   return ok.length === 0 ? null : ok[ok.length >> 1];
 };
 
-const results = SEEDS.map((seed) => simulate(seed, { buyChests: true }));
+const results = SEEDS.map((seed) => simulate(seed, { buyChests: true, steer: steerWithTerrain }));
+// Garde-fou : ne jamais toucher l'écran doit rester très nettement plus lent.
+const passive = SEEDS.map((seed) => simulate(seed, { buyChests: true, steer: () => null }));
+
 const fmt = (x) => (x === null ? 'jamais' : x.toFixed(2));
+const medianOf = (rs, key) => median(rs.map((r) => r[key]));
+
+// Morts cumulées sur toutes les graines : sur une seule, le classement des salles
+// tient à une poignée de runs et changerait de bouton en bouton sans rien dire.
+const deaths = new Map();
+for (const r of results) {
+  for (const [salle, n] of r.deathsBySalle) deaths.set(salle, (deaths.get(salle) ?? 0) + n);
+}
+const deadliest = [...deaths.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
 
 console.log('=== Calibration — %d graines ===', SEEDS.length);
-console.log('Validation du chapitre 1 : médiane %s h (garde-fou de non-régression, cible ~2 h)',
-  fmt(median(results.map((r) => r.hoursToValidate))));
-console.log('Premier coffre Arène     : médiane %s h après le départ (cible : dans l’heure suivant la validation)',
-  fmt(median(results.map((r) => r.hoursToFirstArene))));
-console.log('Runs jusqu’à validation  : médiane %s', fmt(median(results.map((r) => r.runs))));
-console.log('Prix d’un Arène          : %d gemmes', CHESTS.arene.price);
-console.log('Salle la plus meurtrière : %j', results[0].deadliestSalle);
-console.log('Salles par chapitre      : %d', SALLES_PER_CHAPTER);
+console.log('Validation du chapitre 1 : médiane %s h', fmt(medianOf(results, 'hoursToValidate')));
+console.log('Premier coffre ouvert    : médiane %s h', fmt(medianOf(results, 'hoursToFirstChest')));
+console.log('Runs jusqu’à validation  : médiane %s', fmt(medianOf(results, 'runs')));
+console.log('Salle la plus meurtrière : %j', deadliest);
+console.log('Durée médiane par salle (cible : 1-3 ≈ 12 s, 4-9 ≈ 25 s, boss < 60 s) :');
+for (let salle = 1; salle <= SALLES_PER_CHAPTER; salle++) {
+  const all = results.flatMap((r) => r.salleDurations.get(salle) ?? []);
+  const dead = deaths.get(salle) ?? 0;
+  if (all.length === 0 && dead === 0) continue;
+  console.log('  salle %d : %s s  (vidée %d fois, morts %d)',
+    salle, all.length === 0 ? 'jamais vidée' : fmt(median(all) * TICK_S), all.length, dead);
+}
+const passivite = medianOf(passive, 'hoursToValidate');
+console.log('Garde-fou passivité      : %s — doit rester très au-dessus de la référence',
+  passivite === null ? 'jamais' : fmt(passivite) + ' h');
 
-// Comparatif des quatre châssis, chapitre 1. Même autopilote (foncer sur le bot
-// le plus proche), mêmes graines : seul le châssis actif change d'une série à
-// l'autre. N'affecte pas la mesure principale ci-dessus (fonction `simulate`
-// appelée sans `toupieId` plus haut).
+// Comparatif des quatre châssis, chapitre 1. Même autopilote « terrain », mêmes
+// graines : seul le châssis actif change d'une série à l'autre. N'affecte pas la
+// mesure principale ci-dessus (`simulate` appelée sans `toupieId`).
 const chassisResults = TOUPIES.map((toupie) => {
-  const runsFor = SEEDS.map((seed) => simulate(seed, { buyChests: true, toupieId: toupie.id }));
+  const runsFor = SEEDS.map((seed) =>
+    simulate(seed, { buyChests: true, steer: steerWithTerrain, toupieId: toupie.id }));
+  // Morts cumulées sur toutes les graines, comme la mesure principale : sur une
+  // seule, le classement des salles ne dit rien.
+  const d = new Map();
+  for (const r of runsFor) {
+    for (const [salle, n] of r.deathsBySalle) d.set(salle, (d.get(salle) ?? 0) + n);
+  }
   return {
-    id: toupie.id,
     label: toupie.label,
     type: toupie.type,
     runs: median(runsFor.map((r) => r.runs)),
     hours: median(runsFor.map((r) => r.hoursToValidate)),
-    deadliestSalle: runsFor[0].deadliestSalle,
+    deadliestSalle: [...d.entries()].sort((a, b) => b[1] - a[1])[0] ?? null,
   };
 });
 

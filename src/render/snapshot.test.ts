@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { lerp, snapshotById, takeSnapshot } from './snapshot';
 import { createInitialMeta } from '../sim/meta';
 import { createRun } from '../sim/sim';
+import { decayPerTick } from '../sim/combat';
+import { ZONES } from '../sim/config';
 
 describe('takeSnapshot', () => {
   it('reprend salle, phase, identité, position, spin et le drapeau joueur', () => {
@@ -76,6 +78,33 @@ describe('takeSnapshot', () => {
     const s = takeSnapshot(run);
     expect(s.tops[0].type).toBe('equilibre');
     expect(s.tops[1].type).toBe('endurance');
+  });
+
+  it('la décroissance annoncée inclut la perte de zone', () => {
+    // observer.ts déduit la puissance d'un choc du spin perdu MOINS cette valeur :
+    // sans la perte de zone, une toupie posée sur des pointes produirait des
+    // étincelles et une secousse en continu, sans qu'aucun contact ait eu lieu.
+    const run = createRun(createInitialMeta(1), 1);
+    run.arena.zones = [
+      { kind: 'pointes', x: run.player.pos.x, y: run.player.pos.y, radius: ZONES.pointes.radius },
+    ];
+    const snap = takeSnapshot(run);
+    const player = snap.tops.find((t) => t.isPlayer)!;
+    expect(player.decayPerTick).toBeCloseTo(decayPerTick(run.player) + ZONES.pointes.spinDrain, 10);
+  });
+
+  // observer.ts s'en sert pour distinguer une sortie de piste d'une mort par
+  // épuisement (docs/game-design.md § Brèches et éjection) : sans ce test,
+  // observer.test.ts fabrique ses propres littéraux de Snapshot et ne passe
+  // jamais par takeSnapshot, donc une régression sur ce champ précis serait
+  // invisible à `npm run test`.
+  it('reprend le tableau ejected de run.ejected', () => {
+    const meta = createInitialMeta(1);
+    const run = createRun(meta, 1);
+    run.ejected = ['bot-1'];
+
+    const snap = takeSnapshot(run);
+    expect(snap.ejected).toBe(run.ejected);
   });
 });
 

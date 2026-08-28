@@ -29,6 +29,7 @@ export function makeBot(chapter: number, salle: number, index: number, angle: nu
     pos: { x: Math.cos(angle) * dist, y: Math.sin(angle) * dist },
     vel: { x: 0, y: 0 },
     radius: boss ? BOSS.radius : BOT_BASE.radius,
+    mass: boss ? BOSS.mass : 1,
     spin: spinMax,
     spinMax,
     spinDecay: BOT_BASE.spinDecay,
@@ -39,7 +40,6 @@ export function makeBot(chapter: number, salle: number, index: number, angle: nu
     talents: NEUTRAL_TALENTS,
     decayPauseTicks: 0,
     type: botTypeFor(chapter, salle),
-    mass: 1,
   };
 }
 

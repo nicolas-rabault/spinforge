@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { canOpen, chestPrice, openChest } from '../sim/chest';
-import { addPiece } from '../sim/meta';
+import { canOpen, chestPrice, grantChest, openChest } from '../sim/chest';
+import { addPiece, pendingTotal } from '../sim/meta';
 import { rankLabel, type PieceInstance } from '../sim/piece';
 import { modelById } from '../content/pieces';
 import { CHESTS } from '../sim/config';
@@ -35,6 +35,15 @@ export function ChestScreen({
 
   const open = (kind: ChestKind, count: 1 | 10) => {
     const drawn = openChest(metaRef.current, kind, count);
+    if (!drawn) return;
+    for (const piece of drawn) addPiece(metaRef.current, piece);
+    setPulls(drawn);
+    setRevealed(0);
+    onChanged();
+  };
+
+  const openLoot = (kind: ChestKind) => {
+    const drawn = grantChest(metaRef.current, kind);
     if (!drawn) return;
     for (const piece of drawn) addPiece(metaRef.current, piece);
     setPulls(drawn);
@@ -91,6 +100,36 @@ export function ChestScreen({
       <h2 style={{ font: '600 20px Oswald, ui-sans-serif, sans-serif', margin: 0, letterSpacing: '.02em' }}>
         Coffres
       </h2>
+      {pendingTotal(meta) > 0 ? (
+        <section
+          style={{
+            border: '1px solid var(--ember)', background: 'var(--panel)', borderRadius: 11,
+            padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8,
+          }}
+        >
+          <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif', color: 'var(--ember)' }}>
+            Butin — {pendingTotal(meta)} coffre{pendingTotal(meta) > 1 ? 's' : ''}
+          </p>
+          {CHEST_LIST.filter(({ kind }) => meta.pending[kind] > 0).map(({ kind, name }) => (
+            <button
+              key={kind}
+              onClick={() => openLoot(kind)}
+              style={{
+                minHeight: 46, borderRadius: 10, cursor: 'pointer',
+                border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--text)',
+                font: '500 14px Oswald, ui-sans-serif, sans-serif',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '0 12px', gap: 10,
+              }}
+            >
+              <span>{name}</span>
+              <span style={{ color: 'var(--ember)', fontVariantNumeric: 'tabular-nums' }}>
+                ×{meta.pending[kind]}
+              </span>
+            </button>
+          ))}
+        </section>
+      ) : null}
       {CHEST_LIST.map(({ kind, name, blurb }) => {
         const def = CHESTS[kind];
         const unit = chestPrice(kind, 1);

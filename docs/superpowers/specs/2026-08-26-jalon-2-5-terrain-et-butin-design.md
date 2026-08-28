@@ -90,14 +90,21 @@ on part.
 **Correctif.** Au-dessus du plafond, on n'est plus piloté, on est projeté : on amortit au
 lieu de tronquer.
 
+Le plafond du tick se calcule **avant** que le pilotage n'ait rien ajouté. C'est ce qui
+sépare les deux sources de vitesse : seule celle déjà présente en début de tick — donc
+issue d'un choc — peut lever le plafond, et le doigt du joueur ne le lève jamais.
+
 ```ts
 const max = effectiveMaxSpeed(top) * zone.speedMult;
+const inherited = Math.hypot(top.vel.x, top.vel.y);
+// Plafond de ce tick : l'ordinaire, ou la surcharge héritée d'un choc, amortie.
+const ceiling = Math.max(max, inherited * ARENA.overspeedDamping);
+
+// … pilotage ou friction …
+
 const speed = Math.hypot(top.vel.x, top.vel.y);
-if (speed > max) {
-  // Au-delà du plafond, cette vitesse vient d'un choc, pas du doigt du joueur.
-  // On la laisse se résorber d'elle-même sans jamais descendre sous le plafond.
-  const target = Math.max(max, speed * ARENA.overspeedDamping);
-  const k = target / speed;
+if (speed > ceiling) {
+  const k = ceiling / speed;
   top.vel.x *= k;
   top.vel.y *= k;
 }
@@ -106,8 +113,16 @@ if (speed > max) {
 À `overspeedDamping = 0,90` et 10 ticks/s, une projection à 500 px/s retombe au plafond de
 240 en ~7 ticks, soit 0,7 s. C'est la durée d'un « envoyé valser » lisible.
 
-Le plafond continue de borner le **pilotage** — un joueur ne dépasse jamais sa vitesse de
-Pointe par son seul doigt. Il ne borne plus les **coups reçus**.
+**Piège identifié — le plafond doit se lire avant le pilotage.** Amortir simplement toute
+vitesse supérieure au plafond (`if (speed > max) speed × 0,9`) laisserait le pilotage
+lui-même dépasser : chaque tick ajoute `accel × TICK_S` puis n'en retire que 10 %. Le point
+fixe est `v = 0,9 × (v + 90)`, soit **810 px/s** — le joueur roulerait à trois fois et demie
+sa vitesse de Pointe rien qu'en tenant son doigt, et la Pointe cesserait d'être une stat.
+Le plafond lu avant le pilotage n'a pas ce défaut : le pilotage ne peut jamais que remplir
+un plafond qu'il n'a pas fixé.
+
+Le plafond continue donc de borner le **pilotage** — un joueur ne dépasse jamais sa vitesse
+de Pointe par son seul doigt. Il ne borne plus les **coups reçus**.
 
 ### 1.2 Répulsion violente
 
@@ -193,6 +208,19 @@ faire par la punition.
 **Le boss est éjectable.** C'est le remplacement direct des 183 s actuelles et le moment de
 bravoure du chapitre. Il n'est pas gratuit pour autant : le boss porte `mass` (voir § 1.6),
 donc la même impulsion le déplace bien moins.
+
+**Mesuré après coup — ce paragraphe ne s'est pas vérifié.** Aux valeurs shippées
+(`arena.breach.ejectSpeed` 400, `boss.mass` 3), éjecter le boss demande ~615 px/s de vitesse
+de charge même dans la géométrie la plus favorable qui soit (boss immobile, exactement au
+bord, charge parfaitement radiale) — hors de portée du plafond de pilotage du joueur (240,
+384 sous accélérateur). Mesuré : 71 combats de boss sur 20 graines, **zéro éjection**. La
+règle de brèche elle-même reste correcte et uniforme : elle fonctionne pour le joueur
+(environ une mort sur dix est une sortie de piste sur ce protocole) — c'est spécifiquement
+le boss qui n'est pas éjectable à ces valeurs. Ce qui a remplacé les 183 s n'est donc pas
+l'éjection mais `combat.damageK` (0,35 → 1,3), qui fait tomber le combat de boss à 87,1 s.
+Rendre le boss réellement éjectable, en rouvrant `ejectSpeed` et/ou `boss.mass`, est le
+ressort d'une future passe combat explicitement scopée — pas de ce jalon-ci. Détail :
+`docs/roadmap.md` § Dette connue (jalon 2.5), `docs/ameliorations.md`.
 
 ### 1.4 Les zones au sol
 

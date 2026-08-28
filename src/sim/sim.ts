@@ -4,9 +4,10 @@ import { decaySpin, resolveCollision } from './combat';
 import { applySteering, clampToArena, moveAndBounce } from './physics';
 import { nextRandom } from './rng';
 import { spawnSalle } from './salle';
+import { buildLayout, takeShard, updateShard, zoneModsAt } from './terrain';
 import { resolveTalents } from './talents';
 import { activeToupie } from './meta';
-import type { Input, MetaState, RunReward, RunState, Top } from './types';
+import type { Input, MetaState, RunReward, RunState, Top, Vec } from './types';
 
 function makePlayer(meta: MetaState): Top {
   const stats = playerStats(meta);
@@ -35,7 +36,11 @@ function makePlayer(meta: MetaState): Top {
 function startSalle(run: RunState): void {
   const spawned = spawnSalle(run.chapter, run.salle, run.rngState);
   run.bots = spawned.bots;
-  run.rngState = spawned.rngState;
+  // Bots d'abord, terrain ensuite : l'ordre de consommation du flux fait partie
+  // du contrat de déterminisme.
+  const built = buildLayout(run.salle, spawned.rngState);
+  run.arena = built.layout;
+  run.rngState = built.rngState;
   run.player.pos = { x: PLAYER_SPAWN.x, y: PLAYER_SPAWN.y };
   run.player.vel = { x: 0, y: 0 };
   run.player.decayPauseTicks = 0;
@@ -49,8 +54,12 @@ export function createRun(meta: MetaState, seed: number): RunState {
     salle: 1,
     player: makePlayer(meta),
     bots: [],
+    // Remplacé par startSalle juste après ; l'initialiser vide évite un état
+    // partiellement construit que le typage refuserait.
+    arena: { zones: [], breaches: [], shard: null, shardTimer: 0 },
     phase: 'fighting',
     secondSouffleUsed: false,
+    ejected: [],
   };
   startSalle(run);
   return run;
@@ -60,6 +69,7 @@ export function resetRun(run: RunState, meta: MetaState): void {
   run.salle = 1;
   run.phase = 'fighting';
   run.secondSouffleUsed = false;
+  run.ejected = [];
   run.player = makePlayer(meta);
   startSalle(run);
 }
@@ -88,13 +98,31 @@ export function syncRunStats(run: RunState, meta: MetaState): void {
 }
 
 function refreshBotAims(run: RunState): void {
+  const shard = run.arena.shard;
   for (const bot of run.bots) {
     const r = nextRandom(run.rngState);
     run.rngState = r.state;
     const jitter = (r.value - 0.5) * BOT_AI.aimJitter;
-    const angle = Math.atan2(run.player.pos.y - bot.pos.y, run.player.pos.x - bot.pos.x) + jitter;
+    // Le bot détourne vers l'éclat quand il en est plus près que du joueur. Deux
+    // effets, tous deux voulus : la course devient réelle, et un bot parti le
+    // chercher laisse au joueur une fenêtre — qu'il peut lui refuser en le
+    // percutant. Le tirage reste à un par bot : le flux ne bouge pas.
+    let target: Vec = run.player.pos;
+    if (shard) {
+      const toShard = Math.hypot(shard.x - bot.pos.x, shard.y - bot.pos.y);
+      const toPlayer = Math.hypot(run.player.pos.x - bot.pos.x, run.player.pos.y - bot.pos.y);
+      if (toShard < toPlayer) target = shard;
+    }
+    const angle = Math.atan2(target.y - bot.pos.y, target.x - bot.pos.x) + jitter;
     bot.aim = { x: Math.cos(angle), y: Math.sin(angle) };
   }
+}
+
+/** Avance une toupie et encaisse l'éjection s'il y a lieu. */
+function moveTop(run: RunState, top: Top): void {
+  if (!moveAndBounce(top, run.arena)) return;
+  top.spin = 0;
+  run.ejected.push(top.id);
 }
 
 /** Retourne la récompense de la salle qui vient d'être vidée, `null` sinon.
@@ -102,11 +130,18 @@ function refreshBotAims(run: RunState): void {
 export function tick(run: RunState, input: Input): RunReward | null {
   run.tick++;
   if (run.phase !== 'fighting') return null;
+  run.ejected = [];
   if (run.tick % BOT_AI.retargetEveryTicks === 1) refreshBotAims(run);
-  applySteering(run.player, input.steer);
-  for (const bot of run.bots) applySteering(bot, bot.aim);
-  moveAndBounce(run.player);
-  for (const bot of run.bots) moveAndBounce(bot);
+  // Le terrain est lu UNE fois par toupie et par tick, avant le pilotage, et la
+  // même valeur sert au pilotage et à la décroissance : une toupie qui traverse
+  // une zone pendant un tick est traitée selon sa position de départ. Cohérent,
+  // borné, et sans deux lectures divergentes dans le même tick.
+  const playerZone = zoneModsAt(run.arena, run.player.pos);
+  const botZones = run.bots.map((bot) => zoneModsAt(run.arena, bot.pos));
+  applySteering(run.player, input.steer, playerZone);
+  run.bots.forEach((bot, i) => applySteering(bot, bot.aim, botZones[i]));
+  moveTop(run, run.player);
+  for (const bot of run.bots) moveTop(run, bot);
   for (const bot of run.bots) resolveCollision(run.player, bot);
   for (let i = 0; i < run.bots.length; i++) {
     for (let j = i + 1; j < run.bots.length; j++) {
@@ -115,8 +150,17 @@ export function tick(run: RunState, input: Input): RunReward | null {
   }
   clampToArena(run.player);
   for (const bot of run.bots) clampToArena(bot);
-  decaySpin(run.player);
-  for (const bot of run.bots) decaySpin(bot);
+  run.rngState = updateShard(run.arena, run.rngState);
+  // Id du preneur ignoré ici : aucun appelant de production n'en a besoin,
+  // l'effet de bord (gain de spin) suffit. Non retiré : terrain.test.ts teste
+  // l'identité du preneur sur cette valeur de retour, et une version `void`
+  // forcerait ces tests à déduire le preneur par effet de bord — plus faible
+  // que l'assertion directe actuelle. Même précédent que `applyReward` en
+  // dette du jalon 2a.
+  takeShard(run.arena, [run.player, ...run.bots]);
+  decaySpin(run.player, playerZone);
+  // `run.bots` n'est filtré qu'après : les index restent alignés sur `botZones`.
+  run.bots.forEach((bot, i) => decaySpin(bot, botZones[i]));
   run.bots = run.bots.filter((b) => b.spin > 0);
   if (run.player.spin <= 0) {
     // Second souffle : un sursis par run, sinon la mort.
@@ -130,7 +174,8 @@ export function tick(run: RunState, input: Input): RunReward | null {
   }
   if (run.bots.length === 0) {
     const boss = run.salle === SALLES_PER_CHAPTER;
-    const reward = salleReward(run.salle, boss);
+    const rolled = salleReward(run.salle, boss, run.rngState);
+    run.rngState = rolled.rngState;
     if (boss) run.salle = 1;
     else run.salle++;
     run.player.spin = Math.min(
@@ -138,7 +183,7 @@ export function tick(run: RunState, input: Input): RunReward | null {
       run.player.spin + run.player.talents.healBetweenSalles * run.player.spinMax,
     );
     startSalle(run);
-    return reward;
+    return rolled.reward;
   }
   return null;
 }

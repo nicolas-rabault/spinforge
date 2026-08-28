@@ -18,6 +18,8 @@ export interface DeathEvent {
   x: number;
   y: number;
   isPlayer: boolean;
+  /** Ce qui l'a tuée. Une éjection se joue vers l'extérieur, pas sur place. */
+  cause: 'spin' | 'ringout';
 }
 
 export interface RenderEvents {
@@ -76,12 +78,20 @@ export function observe(before: Snapshot, after: Snapshot): RenderEvents {
   for (const top of before.tops) {
     // La simulation retire les bots morts de state.bots dès le tick où ils tombent.
     if (!top.isPlayer && !stillThere.has(top.id)) {
-      deaths.push({ id: top.id, x: top.x, y: top.y, isPlayer: false });
+      deaths.push({
+        id: top.id, x: top.x, y: top.y, isPlayer: false,
+        cause: after.ejected.includes(top.id) ? 'ringout' : 'spin',
+      });
     }
   }
   if (before.phase !== 'dead' && after.phase === 'dead') {
     const player = stillThere.get('player') ?? wasThere.get('player');
-    if (player) deaths.push({ id: player.id, x: player.x, y: player.y, isPlayer: true });
+    if (player) {
+      deaths.push({
+        id: player.id, x: player.x, y: player.y, isPlayer: true,
+        cause: after.ejected.includes(player.id) ? 'ringout' : 'spin',
+      });
+    }
   }
 
   return {

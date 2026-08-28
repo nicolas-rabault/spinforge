@@ -1,6 +1,7 @@
 import type { TopType } from '../content/toupies';
-import { decayPerTick } from '../sim/combat';
-import type { Phase, RunState } from '../sim/types';
+import { drainPerTick } from '../sim/combat';
+import { zoneModsAt, type ArenaLayout } from '../sim/terrain';
+import type { Phase, RunState, Top } from '../sim/types';
 
 /** Ce que le rendu retient d'une toupie entre deux ticks. */
 export interface TopSnapshot {
@@ -8,9 +9,10 @@ export interface TopSnapshot {
   x: number;
   y: number;
   spin: number;
-  /** Décroissance **effective** du tick à venir, talents compris. `observe()`
-   *  la retranche pour isoler ce qui vient d'un choc ; la valeur brute
-   *  `spinDecay` mentirait dès qu'un talent module l'endurance. */
+  /** Perte de spin **effective** du tick à venir : décroissance naturelle,
+   *  talents et terrain compris. `observe()` la retranche pour isoler ce qui
+   *  vient d'un choc — sans le terrain, une toupie posée sur des pointes
+   *  produirait des étincelles en continu sans qu'aucun contact ait eu lieu. */
   decayPerTick: number;
   isPlayer: boolean;
   /** Type du triangle des forces (Task 4) — constant pour une toupie donnée,
@@ -22,15 +24,17 @@ export interface Snapshot {
   salle: number;
   phase: Phase;
   tops: TopSnapshot[];
+  /** Ids éjectés pendant le tick que cet instantané clôt. */
+  ejected: string[];
 }
 
-function snap(top: RunState['player']): TopSnapshot {
+function snap(top: Top, layout: ArenaLayout): TopSnapshot {
   return {
     id: top.id,
     x: top.pos.x,
     y: top.pos.y,
     spin: top.spin,
-    decayPerTick: decayPerTick(top),
+    decayPerTick: drainPerTick(top, zoneModsAt(layout, top.pos)),
     isPlayer: top.isPlayer,
     type: top.type,
   };
@@ -40,7 +44,10 @@ export function takeSnapshot(run: RunState): Snapshot {
   return {
     salle: run.salle,
     phase: run.phase,
-    tops: [snap(run.player), ...run.bots.map(snap)],
+    tops: [snap(run.player, run.arena), ...run.bots.map((bot) => snap(bot, run.arena))],
+    // `tick()` réaffecte `run.ejected` à un tableau neuf : cet instantané garde
+    // donc bien celui de son propre tick, sans copie.
+    ejected: run.ejected,
   };
 }
 

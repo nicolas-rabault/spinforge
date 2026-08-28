@@ -1,5 +1,6 @@
 import type { ToupieId, TopType } from '../content/toupies';
 import type { PieceInstance, PieceStack, Slot } from './piece';
+import type { ArenaLayout } from './terrain';
 import type { TalentMods } from './talents';
 
 export interface Vec {
@@ -14,6 +15,11 @@ export interface Top {
   vel: Vec;
   aim: Vec | null; // direction IA (bots) — null pour le joueur
   radius: number;
+  /** Masse résolue pour le calcul d'impulsion. Quatre systèmes y contribuent :
+   *  châssis × modèle de Disque × talent Masse pour le joueur, masse propre pour
+   *  le boss. Vit sur la toupie et non dans `talents`, parce que `talents.mass`
+   *  n'en est plus que l'un des facteurs. */
+  mass: number;
   spin: number;
   spinMax: number;
   spinDecay: number;
@@ -28,10 +34,6 @@ export interface Top {
   /** Type du triangle des forces. Vient du châssis pour le joueur, de la table
    *  de chapitre pour les bots. */
   type: TopType;
-  /** Masse résolue pour le calcul d'impulsion : châssis × modèle de Disque ×
-   *  talent Masse. Vit sur la toupie et non dans `talents`, parce que trois
-   *  systèmes y contribuent — `talents.mass` n'est plus que l'un d'eux. */
-  mass: number;
 }
 
 export interface Stats {
@@ -59,6 +61,9 @@ export type ChestKind = 'bronze' | 'arene' | 'mythique';
 export interface RunReward {
   credits: number;
   gems: number;
+  /** Coffres lâchés par la salle. Le premier est garanti, le second est l'extra
+   *  quand il est tombé. */
+  chests: ChestKind[];
 }
 
 /** Ce qui vit à la cadence du tick. Jamais sauvegardé : fermer l'onglet en
@@ -70,8 +75,15 @@ export interface RunState {
   salle: number;
   player: Top;
   bots: Top[];
+  /** Le terrain de la salle en cours. Reconstruit à chaque entrée de salle
+   *  depuis `rngState` — donc jamais sauvegardé, et couvert par le test de
+   *  déterminisme sans qu'il ait à le connaître. */
+  arena: ArenaLayout;
   phase: Phase;
   secondSouffleUsed: boolean;
+  /** Ids éjectés pendant le dernier tick. Vidé en début de tick, lu par le rendu
+   *  seul — c'est ce qui distingue une éjection d'une mort par épuisement. */
+  ejected: string[];
 }
 
 /** Ce qui survit au run et à la fermeture de l'app. Seul état sauvegardé. */
@@ -82,6 +94,9 @@ export interface MetaState {
   equipped: Record<Slot, PieceInstance>;
   inventory: PieceStack[];
   pity: Record<ChestKind, number>;
+  /** Coffres gagnés et pas encore ouverts, par type. Un compteur plutôt qu'une
+   *  file : pas de plafond à inventer, donc jamais de butin jeté. */
+  pending: Record<ChestKind, number>;
   chapterValidated: boolean;
   /** Les toupies possédées et celle qu'on pilote. `unlocked` est une liste et
    *  non un `Set` : elle doit se sérialiser en JSON. */

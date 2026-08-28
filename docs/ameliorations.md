@@ -10,6 +10,203 @@ Statuts : ✅ corrigé · 🔧 en cours · 📋 à faire · 💭 à arbitrer
 
 ---
 
+## Session du 2026-08-26 — deuxième test joueur
+
+Trois remarques, sur trois sujets différents cette fois — le pilotage, le rythme des
+combats, la progression. Origine du jalon 2.5 (`docs/roadmap.md`), spec :
+`docs/superpowers/specs/2026-08-26-jalon-2-5-terrain-et-butin-design.md`.
+
+### ✅ 1. Piloter ne sert à rien
+
+> « Piloter ne sert à rien, on dirait. »
+
+**Ce n'était pas une impression : la répulsion existait dans le calcul, mais n'était jamais
+parcourue.** L'ordre d'un tick (`src/sim/sim.ts`) est `applySteering → moveAndBounce →
+resolveCollision`. Une collision au tick N fixe une vitesse de recul ; au tick N+1,
+`applySteering` (`src/sim/physics.ts`) la tronquait à `maxSpeed` **avant** que
+`moveAndBounce` ne s'en serve pour déplacer la toupie :
+
+```ts
+// physics.ts, avant correctif
+const max = effectiveMaxSpeed(top);
+const speed = Math.hypot(top.vel.x, top.vel.y);
+if (speed > max) {
+  const k = max / speed;
+  top.vel.x *= k;
+  top.vel.y *= k;
+}
+```
+
+**Le recul n'était jamais parcouru : il était annulé avant le premier pixel.**
+
+Chiffré sur un choc frontal joueur/bot, aux valeurs d'alors (`maxSpeed` 240 côté joueur et
+140 côté bot, `restitution` 0,8) : la vitesse de fermeture vaut 380, l'impulsion `j` vaut 342
+à masses égales. Le bot **repart à 202 px/s — tronqué à 140** au tick suivant, soit près d'un
+tiers du recul jeté. Le joueur, lui, repart à 102 px/s, sous son propre plafond de 240 : il
+garde le sien en entier. D'où la sensation exacte rapportée en test : on pousse l'adversaire,
+il ne bouge pas — le pilotage ne se voit pas.
+
+**Correctif.** Au-dessus du plafond, on n'est plus piloté, on est projeté : on amortit au
+lieu de tronquer, et le plafond du tick se lit **avant** que le pilotage n'ait rien ajouté :
+
+```ts
+// physics.ts, après correctif — extrait verbatim (commentaires abrégés, élision marquée)
+const max = effectiveMaxSpeed(top) * zone.speedMult;
+// Plafond de CE tick, lu AVANT que le pilotage n'ait rien ajouté : l'ordinaire,
+// ou la surcharge déjà présente — donc héritée d'un choc — amortie. Seul un choc
+// peut lever le plafond ; le doigt du joueur, jamais.
+const ceiling = Math.max(max, Math.hypot(top.vel.x, top.vel.y) * ARENA.overspeedDamping);
+
+// … pilotage ou friction, inchangés par ce correctif …
+
+const speed = Math.hypot(top.vel.x, top.vel.y);
+if (speed > ceiling) {
+  const k = ceiling / speed;
+  top.vel.x *= k;
+  top.vel.y *= k;
+}
+```
+
+Seule la vitesse déjà présente en **début** de tick — donc issue d'un choc — peut lever le
+plafond ; le doigt du joueur ne le lève jamais.
+
+**Piège rencontré — la réparation naïve aurait été pire.** Une première idée, amortir après
+coup toute vitesse au-dessus du plafond (`if (speed > max) speed × 0,9`, calculée **après**
+le pilotage comme avant), laisse le pilotage lui-même dépasser le plafond : chaque tick
+ajoute `accel × TICK_S = 90` et n'en retire que 10 %. Le point fixe est
+`v = 0,9 × (v + 90) = 810` px/s — le joueur roulerait à **trois fois et demie** sa vitesse de
+Pointe rien qu'en tenant son doigt, et la Pointe cesserait d'être une stat. Lire le plafond
+avant le pilotage évite ce défaut : le pilotage ne peut jamais que remplir un plafond qu'il
+n'a pas fixé lui-même.
+
+Au passage, `restitution` est montée de 0,8 à **1,6** : un choc rend désormais plus d'énergie
+qu'il n'en absorbe (voir `docs/game-design.md` § Combat & pilotage). Deux garde-fous bornent
+cette injection d'énergie : l'amortissement de surcharge ci-dessus, et la friction ordinaire
+une fois la surcharge résorbée.
+
+### ✅ 2. Les combats sont longs et fastidieux
+
+> « Les combats sont longs, c'est fastidieux. »
+
+**Diagnostic.** Mesuré au harnais (`npm run calibrate`, 5 graines) avant le jalon :
+
+| Salles | Durée |
+|---|---|
+| 1-3 | 20 à 24 s |
+| 4-9 | 41 à 67 s |
+| 10 (boss) | **183 s**, 8 morts |
+
+Le boss à lui seul prenait plus de temps que les neuf salles précédentes réunies.
+
+**Correctif.** Trois leviers combinés : la répulsion réparée ci-dessus rend chaque choc plus
+décisif (recul réellement subi, brèches au bord à partir de la salle 3 — être poussé dedans
+élimine la toupie ; la règle est uniforme et n'exempte pas le boss, mais à masse ×3 il est en
+pratique **hors de portée d'une charge normalement pilotée** aux valeurs retenues — voir
+« Constat honnête sur la cible » ci-dessous et la dette du jalon 2.5 dans `docs/roadmap.md`) ;
+les zones au sol (accélérateur, pointes, plaque glissante) et l'éclat de Gyre donnent des
+raisons de bouger ; `combat.damageK` est monté de 0,35 à 1,3, réglé au harnais pour que la
+salle 10 reste sous 60 s sans cesser d'être la plus meurtrière — **au moment de ce réglage
+isolé** (58,6 s, passe combat seule, Task 8b). Le tableau ci-dessous mesure après la passe
+économie qui a suivi (`econ.rewardBase`, Task 14) : elle a rephasé les tirages RNG en aval
+(la durée d'un combat en consomme un nombre variable) et fait remonter le combat de boss à
+87,10 s sans qu'aucun bouton de combat n'ait bougé — l'intention « sous 60 s » tenait au
+moment où elle a été prise, la passe économie l'a ensuite défaite. Détail des trois types de
+zone et de la règle d'éjection : `docs/game-design.md` § Combat & pilotage.
+
+Mesure finale (`npm run calibrate`, verbatim, après la calibration complète — Task 14) :
+
+| Salle | Avant | Après (durée médiane) | Après (morts) |
+|---|---|---|---|
+| 1 | 20-24 s | 6,70 s | 0 |
+| 2 | 20-24 s | 6,30 s | 0 |
+| 3 | 20-24 s | 10,20 s | 0 |
+| 4 | 41-67 s | 15,70 s | 1 |
+| 5 | 41-67 s | 19,50 s | 4 |
+| 6 | 41-67 s | 18,60 s | 8 |
+| 7 | 41-67 s | 22,60 s | 9 |
+| 8 | 41-67 s | 24,60 s | 6 |
+| 9 | 41-67 s | 26,40 s | 3 |
+| 10 (boss) | 183 s | **87,10 s** | 20 |
+
+Le boss reste au-dessus de sa cible de combat (60 s) mais chute de plus de moitié, et demeure
+de très loin la salle la plus meurtrière (20 morts contre 9 à la salle 7) — le pilier « le
+boss est le mur » tient. Voir « Constat honnête sur la cible » ci-dessous : c'est un choix
+délibéré, pas un manque de réglage.
+
+### ✅ 3. On est bloqué depuis le début, ça n'avance pas
+
+> « On est vraiment bloqué depuis le début, ça n'avance pas. »
+
+**Diagnostic.** Mesuré au même harnais :
+
+| | Mesure |
+|---|---|
+| Chapitre 1 validé | 23 runs, **2,08 h** |
+| Premier coffre Arène ouvert | **2,92 h** |
+
+Trois heures avant d'ouvrir quoi que ce soit, dans un jeu dont le design annonce que
+l'essentiel de l'intérêt est dans les coffres et la fusion. La cause : une seule voie
+d'ouverture, l'achat, et elle était fermée en pratique — Bronze à 2 000 crédits quand une
+salle en rapportait ~70, et ce sont les mêmes crédits que les améliorations, toujours plus
+urgentes. Le joueur n'ouvrait donc rien.
+
+**Correctif — deux robinets, pas un.** Chaque salle vidée lâche désormais un coffre, sans
+rien acheter :
+
+| Salle | Coffre lâché |
+|---|---|
+| 1 à 3 | Bronze |
+| 4 à 9 | Bronze, + 20 % de chance d'un Arène |
+| 10 (boss) | Arène garanti, + 15 % de chance d'un Mythique |
+
+Et le prix du Bronze — seul coffre acheté en crédits, donc seul en concurrence directe avec
+les améliorations — s'effondre de 2 000 à **250** crédits. L'achat reste la deuxième voie :
+c'est elle qui pose un vrai arbitrage (« ce coffre ou ce niveau de Lame ? »).
+
+| | Avant | Après |
+|---|---|---|
+| Chapitre 1 validé | 2,08 h, 23 runs | **0,35 h, 10 runs** |
+| Premier coffre ouvert | 2,92 h | **0,00 h** |
+
+Un coffre s'ouvre désormais dans les toutes premières secondes du premier run — la promesse
+« un coffre ouvert dans les deux premières minutes » est largement tenue. Un run complet
+rapporte 10 coffres au minimum, 17 au maximum, ~11 en moyenne (table ci-dessus) : les
+doublons arrivent en quelques minutes, la fusion devient jouable dans la première session,
+donc les rangs, donc les talents — les trois axes d'optimisation du jalon 2a deviennent
+visibles d'un coup, sans une ligne de contenu supplémentaire.
+
+### Constat honnête sur la cible
+
+La cible du cahier des charges pour le chapitre 1 était **~15 min (0,25 h), ~4 runs** ; le
+résultat retenu est **0,35 h (~21 min), 10 runs**. Ce n'est pas un choix de prudence par
+défaut : plus de 150 combinaisons ont été mesurées au harnais (`econ.rewardBase`,
+`rewardGrowth`, `upgradeGrowth`, et `upgradeBase` en bouton secondaire), et **chaque** point
+qui s'approche de 15 min déplace la concentration des morts de la salle 10 vers la salle 6 ou
+7 — le pilier « le boss est le mur » cède avant que la cible de vitesse ne soit atteinte.
+Une revue indépendante a reproduit cette tension (`econ.rewardBase = 93` fait passer la
+salle 7 devant la salle 10 en nombre de morts) : ce n'est pas une affirmation non vérifiée.
+
+Tranché en faveur du pilier : dix runs de ~2 min avec un coffre à chaque salle servent un idle
+mobile au moins aussi bien que quatre runs de 5 minutes. Le boss reste lui aussi au-dessus de
+sa cible (87,1 s contre 60 s visés), pour la même raison — voir « Dette connue (jalon 2.5) »
+dans `docs/roadmap.md`. Y sont aussi consignées les deux valeurs les plus sensibles issues de
+ce réglage (`combat.damageK`, `econ.rewardBase`) : toutes deux vivent dans une zone chaotique
+du harnais et devront être remesurées si la physique de collision, le contenu de la salle 10
+ou le jeu de graines changent.
+
+**Politique passive — le garde-fou définitif.** Le harnais compare toujours la politique
+« terrain » (celle des tableaux ci-dessus) à une politique qui ne touche jamais l'écran :
+
+```
+Garde-fou passivité : jamais
+```
+
+Un joueur qui ne pilote jamais **ne valide pas le chapitre 1** dans le plafond de 20 h du
+harnais — contre 0,35 h en jouant. C'est la forme la plus forte de la réponse à la remarque
+n° 1 : le pilotage ne se contente plus de « se voir », il **décide** désormais du jeu.
+
+---
+
 ## Session du 2026-08-25 — premier test joueur
 
 Trois remarques, toutes sur l'arène.

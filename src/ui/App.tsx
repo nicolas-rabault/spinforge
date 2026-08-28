@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createRun } from '../sim/sim';
+import { pendingTotal } from '../sim/meta';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
 import { createAudio } from '../audio/audio';
 import { formatCredits } from './format';
@@ -101,7 +102,7 @@ export function App() {
       {tab === 'coffres' ? <ChestScreen metaRef={metaRef} onChanged={metaChanged} /> : null}
       {tab === 'toupies' ? <ToupiesScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
 
-      <TabBar tab={tab} onChange={setTab} />
+      <TabBar tab={tab} onChange={setTab} pending={pendingTotal(metaRef.current)} />
     </div>
   );
 }

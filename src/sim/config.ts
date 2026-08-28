@@ -6,6 +6,37 @@ import type { ProfileAxis } from './profile';
  *  fichier est la racine des dépendances de la simulation, il n'importe rien d'elle. */
 export type SlotName = 'lame' | 'disque' | 'pointe' | 'noyau';
 
+/** Types de zone au sol. Répété ici comme `SlotName` : ce fichier est la racine
+ *  des dépendances de la simulation, il n'importe rien d'elle. */
+export type ZoneKind = 'accelerateur' | 'pointes' | 'glisse';
+
+/** Répété ici pour la même raison que `SlotName` — `ChestKind` vit dans `types.ts`. */
+export type ChestName = 'bronze' | 'arene' | 'mythique';
+
+export interface ZoneDef {
+  radius: number;
+  /** Facteur sur la vitesse maximale. 1 = sans effet. */
+  speedMult: number;
+  /** Facteur sur l'accélération. 1 = sans effet. */
+  accelMult: number;
+  /** Friction *plancher* de la zone. 0 = sans effet. */
+  friction: number;
+  /** Spin perdu par seconde. 0 = sans effet. */
+  spinDrain: number;
+}
+
+/** Palier de gabarit : s'applique à partir de `fromSalle` jusqu'au palier suivant. */
+export interface LayoutDef {
+  fromSalle: number;
+  zones: ZoneKind[];
+}
+
+export interface LootRule {
+  chest: ChestName;
+  extra: ChestName;
+  extraChance: number;
+}
+
 export interface RankOdds { rank: number; p: number }
 
 export interface ChestDef {
@@ -29,7 +60,18 @@ export interface FusionRule {
 export interface Balance {
   version: number;
   tickSeconds: number;
-  arena: { radius: number; friction: number; wallRestitution: number; restitution: number };
+  arena: {
+    radius: number; friction: number; wallRestitution: number; restitution: number;
+    overspeedDamping: number;
+    spawnClearance: number;
+    breach: { count: number; halfWidthDeg: number; ejectSpeed: number; fromSalle: number };
+    shard: {
+      everyTicks: number; lifeTicks: number; radius: number; spinGain: number;
+      minRadius: number; maxRadius: number;
+    };
+    zones: Record<ZoneKind, ZoneDef>;
+    layouts: LayoutDef[];
+  };
   combat: { damageK: number; chargeBonus: number; healBetweenSalles: number };
   types: { dominantBonus: number; equilibreBonus: number };
   chapter: { sallesPerChapter: number; botsPerSalle: number[] };
@@ -46,13 +88,14 @@ export interface Balance {
     spawnRing: number;
     ai: { retargetEveryTicks: number; aimJitter: number };
   };
-  boss: { spinMult: number; attackMult: number; radius: number };
+  boss: { spinMult: number; attackMult: number; radius: number; mass: number };
   econ: {
     upgradeBase: number; upgradeGrowth: number;
     rewardBase: number; rewardGrowth: number; bossRewardMult: number;
     bossGems: number;
   };
   toupieShop: { priceGems: number };
+  loot: { bySalle: LootRule & { fromSalle: number }; boss: LootRule };
   pieceEffect: { lameAttack: number; disqueDefense: number; pointeSpeed: number; pointeDecay: number; noyauSpin: number };
   chassis: Record<string, Partial<Record<ProfileAxis, number>>>;
   models: Record<string, Partial<Record<ProfileAxis, number>>>;
@@ -115,3 +158,9 @@ export const RARITY = BALANCE.rarity;
 export const TALENTS = BALANCE.talents;
 export const FUSION = BALANCE.fusion;
 export const CHESTS = BALANCE.chests;
+export const ARENA = BALANCE.arena;
+export const BREACH = BALANCE.arena.breach;
+export const SHARD = BALANCE.arena.shard;
+export const ZONES = BALANCE.arena.zones;
+export const LAYOUTS = BALANCE.arena.layouts;
+export const LOOT = BALANCE.loot;

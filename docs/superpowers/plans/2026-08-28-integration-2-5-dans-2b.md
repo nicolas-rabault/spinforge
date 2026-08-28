@@ -1456,9 +1456,13 @@ en une passe. 22 fichiers en conflit résolus selon
 docs/superpowers/specs/2026-08-28-integration-2-5-dans-2b-design.md.
 
 Décisions sémantiques :
-- SAVE_SCHEMA = 4, sans migration : les deux jalons ont livré un schéma 3 aux
-  champs disjoints, aucun blob v3 n'est un méta valide du build fusionné.
-  MetaState porte les trois champs (toupies, founderGiftClaimed, pending).
+- SAVE_SCHEMA = 4 : les deux jalons ont livré un schéma 3 aux champs disjoints.
+  MetaState porte désormais les trois (toupies, founderGiftClaimed, pending).
+  Aucune migration à écrire : un blob v3 échappe à la garde `env.v === SAVE_SCHEMA`
+  et se fait compléter par hydrate — le joueur garde crédits, gemmes, équipement,
+  inventaire et pity, seuls les champs dialectaux manquants repartent de leur
+  valeur initiale. La spec d'intégration annonçait un rejet ; c'est une erreur de
+  la spec, et le comportement réel est le meilleur des deux.
   founderGiftClaimed reste hors de isComplete, comme chapterValidated : un
   booléen manquant n'est pas une corruption.
 - Borne de migration corrigée en `env.v < 2` : comparée au schéma courant, la
@@ -1766,6 +1770,11 @@ retenue en T14 :
 > le triangle changent tous deux l'impact. L'économie commande la durée, le
 > combat commande la forme de la difficulté : c'est pourquoi seule cette constante
 > bouge. Historique complet : `docs/roadmap.md`.)
+
+**c bis. La persistance.** Si `game-design.md` ou `roadmap.md` décrit le passage
+au schéma 4 comme un rejet des sauvegardes v3, corriger : elles sont **complétées**,
+pas rejetées. Le joueur garde sa progression ; seuls les champs que son dialecte
+ne connaissait pas repartent de leur valeur initiale.
 
 **c. La ligne « Coffres » et le tableau de butin.** Garder le tableau de butin de
 salle de la branche **et** la mention des doublons signature de `main`. Y ajouter

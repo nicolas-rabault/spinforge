@@ -8,6 +8,7 @@ import {
   claimFounderGift,
   createInitialMeta,
   equipFromStack,
+  pendingTotal,
   setActiveToupie,
   stackOf,
   takePiece,
@@ -23,6 +24,12 @@ describe('createInitialMeta', () => {
     expect(Object.keys(meta.equipped).sort()).toEqual(['disque', 'lame', 'noyau', 'pointe']);
     expect(meta.pity).toEqual({ bronze: 0, arene: 0, mythique: 0 });
     expect(meta.chapterValidated).toBe(false);
+  });
+
+  it('démarre avec une file de butin vide', () => {
+    const meta = createInitialMeta(1);
+    expect(meta.pending).toEqual({ bronze: 0, arene: 0, mythique: 0 });
+    expect(pendingTotal(meta)).toBe(0);
   });
 
   it('ne partage aucun objet avec le modèle d’équipement de départ', () => {
@@ -41,23 +48,30 @@ describe('createInitialMeta', () => {
 describe('applyReward', () => {
   it('ajoute crédits et gemmes', () => {
     const meta = createInitialMeta(1);
-    applyReward(meta, { credits: 120, gems: 0 });
-    applyReward(meta, { credits: 30, gems: 40 });
+    applyReward(meta, { credits: 120, gems: 0, chests: [] });
+    applyReward(meta, { credits: 30, gems: 40, chests: [] });
     expect(meta.credits).toBe(150);
     expect(meta.gems).toBe(40);
+  });
+
+  it('le butin d’une récompense rejoint la file', () => {
+    const meta = createInitialMeta(1);
+    applyReward(meta, { credits: 0, gems: 0, chests: ['bronze', 'arene'] });
+    expect(meta.pending.bronze).toBe(1);
+    expect(meta.pending.arene).toBe(1);
   });
 });
 
 describe('applyRunReward', () => {
   it('ne valide pas le chapitre sur une salle ordinaire', () => {
     const meta = createInitialMeta(1);
-    applyRunReward(meta, { credits: 120, gems: 0 }, 3);
+    applyRunReward(meta, { credits: 120, gems: 0, chests: [] }, 3);
     expect(meta.chapterValidated).toBe(false);
   });
 
   it('valide le chapitre quand la salle vidée était la dernière', () => {
     const meta = createInitialMeta(1);
-    applyRunReward(meta, { credits: 1, gems: 40 }, SALLES_PER_CHAPTER);
+    applyRunReward(meta, { credits: 1, gems: 40, chests: [] }, SALLES_PER_CHAPTER);
     expect(meta.chapterValidated).toBe(true);
     expect(meta.gems).toBe(40);
   });
@@ -172,5 +186,15 @@ describe('toupies du méta', () => {
     meta.chapterValidated = true;
     expect(claimFounderGift(meta, 'brasier-solaire')).toBe(false);
     expect(meta.founderGiftClaimed).toBe(false);
+  });
+});
+
+describe('pendingTotal', () => {
+  it('somme les trois types', () => {
+    const meta = createInitialMeta(1);
+    meta.pending.bronze = 3;
+    meta.pending.arene = 2;
+    meta.pending.mythique = 1;
+    expect(pendingTotal(meta)).toBe(6);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canOpen, chestPrice, openChest } from './chest';
+import { canOpen, chestPrice, grantChest, openChest } from './chest';
 import { createInitialMeta } from './meta';
 import { CHESTS } from './config';
 import { modelById } from '../content/pieces';
@@ -228,5 +228,50 @@ describe('doublons signature', () => {
       for (const piece of openChest(meta, 'bronze', 10)!) seen.add(piece.model);
     }
     expect(seen.size).toBeGreaterThan(6);
+  });
+});
+
+describe('grantChest', () => {
+  it('rend null quand la file est vide', () => {
+    const meta = createInitialMeta(1);
+    expect(grantChest(meta, 'bronze')).toBeNull();
+  });
+
+  it('consomme un coffre de la file et rend une pièce', () => {
+    const meta = createInitialMeta(1);
+    meta.pending.bronze = 2;
+    const pulls = grantChest(meta, 'bronze');
+    expect(pulls).toHaveLength(1);
+    expect(meta.pending.bronze).toBe(1);
+  });
+
+  it('ne débite aucune monnaie', () => {
+    const meta = createInitialMeta(1);
+    meta.pending.bronze = 1;
+    meta.credits = 5000;
+    grantChest(meta, 'bronze');
+    expect(meta.credits).toBe(5000);
+  });
+
+  it('tire exactement comme un achat — même flux, même pièce', () => {
+    // Le drop et l'achat doivent partager le tirage : sinon deux tables de
+    // probabilité vivraient côte à côte et dériveraient.
+    const bought = createInitialMeta(42);
+    bought.gems = 100000;
+    const granted = createInitialMeta(42);
+    granted.pending.arene = 1;
+    expect(grantChest(granted, 'arene')).toEqual(openChest(bought, 'arene', 1));
+  });
+
+  it('fait avancer le même compteur de pity que l’achat', () => {
+    // Un joueur qui ne ferait que du butin doit atteindre sa garantie.
+    const meta = createInitialMeta(7);
+    meta.pending.arene = CHESTS.arene.pityThreshold;
+    let best = 0;
+    for (let i = 0; i < CHESTS.arene.pityThreshold; i++) {
+      const pulls = grantChest(meta, 'arene')!;
+      best = Math.max(best, pulls[0].rank);
+    }
+    expect(best).toBeGreaterThanOrEqual(CHESTS.arene.pityRank);
   });
 });

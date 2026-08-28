@@ -10,14 +10,19 @@
 import { chromium } from 'playwright';
 import { mkdir } from 'node:fs/promises';
 
-const URL = 'http://localhost:5173/spinforge/';
+// Le port de Vite varie : 5173 est souvent pris par un autre projet sur cette
+// machine. Lire le port affiché par `npm run dev` et le passer en variable
+// d'environnement — une capture prise sur le mauvais port a déjà fait croire à
+// une régression.
+const PORT = process.env.SPINFORGE_PORT ?? '5173';
+const URL = `http://localhost:${PORT}/spinforge/`;
 const OUT = '.shots';
 const SAVE_KEY = 'spinforge.save';
 // Sauvegarde de départ : de quoi ouvrir un coffre de chaque monnaie, un inventaire
 // déjà varié (plusieurs rangs, une pile fusionnable), et une Lame Légende équipée —
 // ses trois talents (Estoc, Riposte, Percée) sont donc actifs en même temps.
 const SEED_SAVE = {
-  v: 2,
+  v: 4,
   meta: {
     rngState: 987654321,
     credits: 50000,
@@ -37,7 +42,10 @@ const SEED_SAVE = {
       { model: 'lame.couronne-solaire', rank: 7, levels: [2] },
     ],
     pity: { bronze: 0, arene: 3, mythique: 12 },
+    pending: { bronze: 2, arene: 1, mythique: 0 },
     chapterValidated: false,
+    toupies: { unlocked: ['brasier-solaire', 'typhon-primal'], active: 'brasier-solaire' },
+    founderGiftClaimed: true,
   },
 };
 // Seuils décroissants : le premier se déclenche presque tout de suite (spin plein au

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { botCountFor, botTypeFor, makeBot, spawnSalle } from './salle';
-import { BOSS, BOT_BASE } from './config';
+import { BOSS, BOT_BASE, SALLES_PER_CHAPTER } from './config';
 
 describe('botCountFor', () => {
   it('suit la table de la spec : 1-3→1, 4-6→2, 7-9→3, 10→1 boss', () => {
@@ -25,6 +25,11 @@ describe('makeBot', () => {
     const boss = makeBot(1, 10, 0, 0);
     expect(boss.radius).toBe(BOSS.radius);
     expect(boss.spinMax).toBeGreaterThan(makeBot(1, 9, 0, 0).spinMax * 2);
+  });
+
+  it('le boss est lourd, le bot ordinaire ne l’est pas', () => {
+    expect(makeBot(1, SALLES_PER_CHAPTER, 0, 0).mass).toBe(BOSS.mass);
+    expect(makeBot(1, 1, 0, 0).mass).toBe(1);
   });
 });
 

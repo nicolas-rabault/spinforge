@@ -86,6 +86,16 @@ describe('migration', () => {
   // mettant le meilleur niveau connu en tête et en complétant le reste à 0 —
   // exactement l'hypothèse que l'ancien `takePiece` faisait à chaque retrait,
   // appliquée ici une seule fois à la lecture.
+  it('charge une sauvegarde de schéma 2 avec une file de butin vide', () => {
+    const meta = createInitialMeta(3);
+    meta.credits = 1234;
+    const v2 = JSON.stringify({ v: 2, meta: { ...meta, pending: undefined } });
+    const loaded = deserializeMeta(v2);
+    expect(loaded).not.toBeNull();
+    expect(loaded!.credits).toBe(1234);
+    expect(loaded!.pending).toEqual({ bronze: 0, arene: 0, mythique: 0 });
+  });
+
   it('migre un blob v1 réaliste : les piles `{ count, bestLevel }` deviennent `{ levels }`', () => {
     const v1 = {
       v: 1,
@@ -168,9 +178,17 @@ describe('isComplete renforcée', () => {
     const meta = { ...filled(), pity: {} };
     expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
   });
+
+  it('refuse une sauvegarde du schéma courant amputée de sa file de butin', () => {
+    // Schéma courant : un champ manquant est un blob corrompu, pas une version
+    // antérieure — le compléter en silence masquerait le problème.
+    const meta = createInitialMeta(3) as unknown as Record<string, unknown>;
+    delete meta.pending;
+    expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
+  });
 });
 
-describe('migration schéma 2 → 3', () => {
+describe('schéma courant et migrations', () => {
   it('donne la toupie de départ et un cadeau en attente à une sauvegarde v2', () => {
     const v2 = createInitialMeta(9);
     delete (v2 as unknown as Record<string, unknown>).toupies;
@@ -179,25 +197,46 @@ describe('migration schéma 2 → 3', () => {
     expect(restored).not.toBeNull();
     expect(restored!.toupies).toEqual({ unlocked: ['brasier-solaire'], active: 'brasier-solaire' });
     expect(restored!.founderGiftClaimed).toBe(false);
+    expect(restored!.pending).toEqual({ bronze: 0, arene: 0, mythique: 0 });
   });
 
   it('retombe sur la toupie de départ si l’active n’est pas débloquée', () => {
     const meta = createInitialMeta(9);
     meta.toupies = { unlocked: ['brasier-solaire'], active: 'tigre-foudre' };
-    const restored = deserializeMeta(JSON.stringify({ v: 3, meta }));
+    const restored = deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }));
     expect(restored!.toupies.active).toBe('brasier-solaire');
   });
 
   it('rejette un blob au schéma courant privé de ses toupies', () => {
     const meta = createInitialMeta(9);
     delete (meta as unknown as Record<string, unknown>).toupies;
-    expect(deserializeMeta(JSON.stringify({ v: 3, meta }))).toBeNull();
+    expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }))).toBeNull();
   });
 
   it('écarte un identifiant de toupie inconnu au lieu de le propager', () => {
     const meta = createInitialMeta(9);
     meta.toupies = { unlocked: ['brasier-solaire', 'nawak' as never], active: 'brasier-solaire' };
-    const restored = deserializeMeta(JSON.stringify({ v: 3, meta }));
+    const restored = deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta }));
     expect(restored!.toupies.unlocked).toEqual(['brasier-solaire']);
+  });
+
+  it('complète les deux dialectes du schéma 3 livrés en parallèle', () => {
+    // Le dialecte 2b : toupies mais pas pending. Le dialecte 2.5 : l'inverse.
+    // Ni l'un ni l'autre n'est rejeté : au schéma 4, un blob v3 est antérieur, il
+    // échappe à la garde du schéma courant et passe par `hydrate`. Le joueur garde
+    // sa progression ; seuls les champs que son dialecte ignorait repartent de leur
+    // valeur initiale.
+    const dialecte2b = createInitialMeta(9);
+    delete (dialecte2b as unknown as Record<string, unknown>).pending;
+    const dialecte25 = createInitialMeta(9);
+    delete (dialecte25 as unknown as Record<string, unknown>).toupies;
+    delete (dialecte25 as unknown as Record<string, unknown>).founderGiftClaimed;
+    expect(deserializeMeta(JSON.stringify({ v: 3, meta: dialecte2b }))).not.toBeNull();
+    expect(deserializeMeta(JSON.stringify({ v: 3, meta: dialecte25 }))).not.toBeNull();
+    // …mais complétés par hydrate, pas propagés tels quels :
+    expect(deserializeMeta(JSON.stringify({ v: 3, meta: dialecte2b }))!.pending)
+      .toEqual({ bronze: 0, arene: 0, mythique: 0 });
+    expect(deserializeMeta(JSON.stringify({ v: 3, meta: dialecte25 }))!.toupies.active)
+      .toBe('brasier-solaire');
   });
 });

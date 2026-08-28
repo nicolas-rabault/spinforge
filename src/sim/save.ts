@@ -3,10 +3,13 @@ import { createInitialMeta } from './meta';
 import type { MetaState } from './types';
 import type { PieceInstance, PieceStack } from './piece';
 
-/** Numéro de schéma du méta sérialisé. Deux migrations vivent ci-dessous :
- *  1 → 2 (inventaire `{count, bestLevel}` devenu `{levels}`) et 2 → 3
- *  (ajout du bloc `toupies` et de `founderGiftClaimed`). */
-export const SAVE_SCHEMA = 3;
+/** Numéro de schéma du méta sérialisé. Trois migrations ont existé ci-dessous ;
+ *  seule celle du schéma 1 vers le 2 subsiste (inventaire `{count, bestLevel}`
+ *  devenu `{levels}`). Le passage au schéma 4 fusionne deux dialectes du schéma 3
+ *  livrés en parallèle — `toupies`/`founderGiftClaimed` d'un côté, `pending` de
+ *  l'autre. Aucun chemin de migration : le jeu n'est pas sorti, les blobs v3 des
+ *  deux dialectes repartent à zéro. */
+export const SAVE_SCHEMA = 4;
 
 interface Envelope {
   v: number;
@@ -80,6 +83,7 @@ function hydrate(partial: Record<string, unknown>): MetaState {
     equipped: (partial.equipped as MetaState['equipped']) ?? base.equipped,
     inventory: (partial.inventory as MetaState['inventory']) ?? base.inventory,
     pity: (partial.pity as MetaState['pity']) ?? base.pity,
+    pending: (partial.pending as MetaState['pending']) ?? base.pending,
     chapterValidated: partial.chapterValidated === true,
     toupies: hydrateToupies(partial.toupies),
     founderGiftClaimed: partial.founderGiftClaimed === true,
@@ -129,6 +133,7 @@ function isComplete(m: Record<string, unknown>): boolean {
   const chestKinds = ['bronze', 'arene', 'mythique'];
   const equipped = m.equipped as Record<string, unknown> | null | undefined;
   const pity = m.pity as Record<string, unknown> | null | undefined;
+  const pending = m.pending as Record<string, unknown> | null | undefined;
   return (
     typeof m.rngState === 'number' &&
     typeof m.credits === 'number' &&
@@ -136,6 +141,8 @@ function isComplete(m: Record<string, unknown>): boolean {
     Array.isArray(m.inventory) && m.inventory.every(isValidStack) &&
     typeof pity === 'object' && pity !== null &&
     chestKinds.every((k) => typeof pity[k] === 'number') &&
+    typeof pending === 'object' && pending !== null &&
+    chestKinds.every((k) => typeof pending[k] === 'number') &&
     typeof equipped === 'object' && equipped !== null &&
     slots.every((s) => isValidPiece(equipped[s])) &&
     typeof m.toupies === 'object' && m.toupies !== null &&
@@ -162,7 +169,11 @@ export function deserializeMeta(json: string): MetaState | null {
     // de tenter de le compléter. Schéma antérieur : migration puis complétion —
     // c'est le mécanisme même de l'évolution de schéma.
     if (env.v === SAVE_SCHEMA && !isComplete(raw)) return null;
-    if (env.v < SAVE_SCHEMA) raw.inventory = migrateInventoryV1(raw.inventory);
+    // Borne explicite : cette migration est celle du schéma 1 vers le 2, et elle
+    // seule. La comparer au schéma courant la ferait tourner sur tout blob plus
+    // ancien que le courant — donc sur des blobs v2 et v3 depuis que SAVE_SCHEMA
+    // vaut 4.
+    if (env.v < 2) raw.inventory = migrateInventoryV1(raw.inventory);
     const meta = hydrate(raw);
     // Filet appliqué au résultat final, quelle que soit la version d'origine :
     // la migration ci-dessus ne passe par aucune des deux gardes précédentes

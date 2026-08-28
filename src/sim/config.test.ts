@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BALANCE, BOTS_PER_SALLE, CHESTS, FUSION, RARITY, SALLES_PER_CHAPTER, TALENTS, TOUPIE_SHOP, TYPES,
+  ARENA, BALANCE, BOTS_PER_SALLE, BREACH, CHESTS, FUSION, LAYOUTS, LOOT, PLAYER_SPAWN,
+  RARITY, SALLES_PER_CHAPTER, SHARD, TALENTS, TOUPIE_SHOP, TYPES, ZONES,
 } from './config';
 import { PROFILE_AXES } from './profile';
 import { TOUPIES } from '../content/toupies';
@@ -112,6 +113,88 @@ describe('balance.json', () => {
   it('le prix de la boutique de toupies est un nombre positif', () => {
     expect(Number.isFinite(TOUPIE_SHOP.priceGems)).toBe(true);
     expect(TOUPIE_SHOP.priceGems).toBeGreaterThan(0);
+  });
+
+  it('donne au boss une masse propre et à l’éclat un rayon', () => {
+    expect(BALANCE.boss.mass).toBeGreaterThan(0);
+    expect(BALANCE.arena.shard.radius).toBeGreaterThan(0);
+  });
+
+  it('les zones portent des modificateurs de valeurs neutres plausibles', () => {
+    const kinds = Object.keys(ZONES);
+    expect(kinds.length).toBeGreaterThan(0);
+    for (const [name, zone] of Object.entries(ZONES)) {
+      expect(zone.radius, `zone ${name}`).toBeGreaterThan(0);
+      // Une zone ne peut pas ralentir : les malus passent par spinDrain ou par la
+      // friction, jamais par un plafond de vitesse rabaissé — sans quoi une zone
+      // pourrait tronquer un recul, exactement le défaut que ce jalon corrige.
+      expect(zone.speedMult, `zone ${name}`).toBeGreaterThanOrEqual(1);
+      expect(zone.accelMult, `zone ${name}`).toBeGreaterThanOrEqual(1);
+      // friction 0 = neutre ; sinon c'est un plancher strictement inférieur à 1.
+      expect(zone.friction, `zone ${name}`).toBeGreaterThanOrEqual(0);
+      expect(zone.friction, `zone ${name}`).toBeLessThan(1);
+      expect(zone.spinDrain, `zone ${name}`).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('les gabarits couvrent toutes les salles et ne citent que des zones connues', () => {
+    expect(LAYOUTS[0].fromSalle).toBe(1);
+    for (let i = 1; i < LAYOUTS.length; i++) {
+      expect(LAYOUTS[i].fromSalle).toBeGreaterThan(LAYOUTS[i - 1].fromSalle);
+    }
+    expect(LAYOUTS[LAYOUTS.length - 1].fromSalle).toBeLessThanOrEqual(SALLES_PER_CHAPTER);
+    for (const entry of LAYOUTS) {
+      for (const kind of entry.zones) expect(Object.keys(ZONES)).toContain(kind);
+    }
+  });
+
+  it("la salle 1 n'a aucune zone punitive", () => {
+    // Le premier objet de terrain rencontré doit être un bonus. Spec § 3.4.
+    for (const kind of LAYOUTS[0].zones) expect(ZONES[kind].spinDrain).toBe(0);
+  });
+
+  it("les brèches n'apparaissent pas avant que le pilotage soit compris", () => {
+    expect(BREACH.fromSalle).toBeGreaterThanOrEqual(2);
+    expect(BREACH.count).toBeGreaterThanOrEqual(1);
+    // Les secteurs mortels doivent laisser plus de bord plein que de trou : à
+    // count brèches régulièrement réparties, chacune occupe 2 × halfWidth du
+    // tour, et 360 / count est l'écart entre deux centres.
+    expect(BREACH.halfWidthDeg * 2).toBeLessThan(360 / BREACH.count / 2);
+    expect(BREACH.ejectSpeed).toBeGreaterThan(0);
+  });
+
+  it("l'éclat reste dans l'anneau et rend une part bornée du spin", () => {
+    expect(SHARD.minRadius).toBeGreaterThan(0);
+    expect(SHARD.maxRadius).toBeLessThan(1);
+    expect(SHARD.maxRadius).toBeGreaterThan(SHARD.minRadius);
+    expect(SHARD.spinGain).toBeGreaterThan(0);
+    expect(SHARD.spinGain).toBeLessThan(1);
+    expect(SHARD.everyTicks).toBeGreaterThan(SHARD.lifeTicks);
+  });
+
+  it("l'amortissement de surcharge résorbe sans jamais figer", () => {
+    expect(ARENA.overspeedDamping).toBeGreaterThan(0);
+    expect(ARENA.overspeedDamping).toBeLessThan(1);
+  });
+
+  it('le repli de placement reste géométriquement possible', () => {
+    // buildLayout replie une zone diamétralement opposée au point d'apparition
+    // quand douze tirages n'ont rien trouvé. Ce repli n'existe que si l'anneau
+    // est assez large pour la plus grosse zone.
+    const d = Math.hypot(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
+    for (const [name, zone] of Object.entries(ZONES)) {
+      expect(d + ARENA.radius - zone.radius, `zone ${name}`)
+        .toBeGreaterThanOrEqual(zone.radius + ARENA.spawnClearance);
+    }
+  });
+
+  it('le butin ne cite que des coffres existants', () => {
+    for (const rule of [LOOT.bySalle, LOOT.boss]) {
+      expect(Object.keys(CHESTS)).toContain(rule.chest);
+      expect(Object.keys(CHESTS)).toContain(rule.extra);
+      expect(rule.extraChance).toBeGreaterThan(0);
+      expect(rule.extraChance).toBeLessThan(1);
+    }
   });
 });
 

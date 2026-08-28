@@ -3,10 +3,10 @@ import { createRun, resetRun, syncRunStats, tick } from './sim';
 import { applyRunReward, createInitialMeta, setActiveToupie } from './meta';
 import { salleReward } from './economy';
 import { spawnSalle, botCountFor } from './salle';
-import { CHASSIS, MODELS_PROFILE, PLAYER_BASE, SALLES_PER_CHAPTER, TALENTS } from './config';
+import { ARENA_RADIUS, CHASSIS, MODELS_PROFILE, PLAYER_BASE, SALLES_PER_CHAPTER, TALENTS } from './config';
 import { openChest } from './chest';
 
-function play(seed: number, n: number, clearEvery: number | null): string {
+function play(seed: number, n: number, clearEvery: number | null, clearBreaches = false): string {
   const meta = createInitialMeta(seed);
   const run = createRun(meta, seed);
   for (let i = 0; i < n; i++) {
@@ -14,6 +14,12 @@ function play(seed: number, n: number, clearEvery: number | null): string {
     const salleBefore = run.salle;
     const reward = tick(run, { steer: i % 20 < 10 ? { x: 1, y: 0.5 } : null });
     if (reward) applyRunReward(meta, reward, salleBefore);
+    // `run.arena` n'est reconstruit que dans `startSalle`, appelé depuis `tick` :
+    // le nettoyer ici après coup suffit à retirer le bord létal de ce scénario.
+    // Ce scénario sert à couvrir le déterminisme des transitions de salle et la
+    // validation du chapitre, pas le bord — sans ce nettoyage la toupie finirait
+    // éjectée en cours de route et le scénario ne couvrirait plus la salle 10.
+    if (clearBreaches) run.arena.breaches = [];
   }
   return JSON.stringify({ run, meta });
 }
@@ -21,7 +27,12 @@ function play(seed: number, n: number, clearEvery: number | null): string {
 const runTicks = (seed: number, n: number) => play(seed, n, null);
 // Force la salle à se vider régulièrement : sans ça, 300 ticks se jouent
 // entièrement dans la salle 1 et le déterminisme n'est testé que sur la physique.
-const runTicksThroughSalles = (seed: number, n: number) => play(seed, n, 25);
+const runTicksThroughSalles = (seed: number, n: number) => play(seed, n, 25, true);
+// Même scénario, mais sans nettoyer `run.arena.breaches` : les brèches restent en
+// place (elles apparaissent dès la salle 3) et le chemin d'éjection est donc
+// réellement traversé — sans ce scénario, plus aucun test ne garde le déterminisme
+// à travers une éjection, alors que c'est le risque central du jalon 2.5.
+const runTicksThroughBreaches = (seed: number, n: number) => play(seed, n, 25);
 
 describe('createRun', () => {
   it('démarre chapitre 1, salle 1, phase fighting, avec les bots de la salle 1', () => {
@@ -31,6 +42,12 @@ describe('createRun', () => {
     expect(run.phase).toBe('fighting');
     expect(run.bots).toHaveLength(botCountFor(1));
     expect(run.player.spin).toBe(run.player.spinMax);
+  });
+
+  it('chaque salle reçoit son gabarit d’arène', () => {
+    const run = createRun(createInitialMeta(1), 1);
+    expect(run.arena.zones.length).toBeGreaterThan(0);
+    expect(run.arena.shard).toBeNull();
   });
 });
 
@@ -48,8 +65,25 @@ describe('déterminisme', () => {
     expect(a).toBe(runTicksThroughSalles(42, 300));
     expect(a).not.toBe(runTicksThroughSalles(7, 300));
     // Garde-fou : si ce scénario cessait de franchir des salles, il ne testerait
-    // plus rien de plus que le test précédent.
+    // plus rien de plus que le test précédent — d'où l'exigence de la validation
+    // du chapitre entier (les dix salles), pas seulement d'une salle vidée.
     expect(JSON.parse(a).meta.chapterValidated).toBe(true);
+  });
+
+  // Graines 95 et 132 choisies exprès, pas au hasard : sous ce pilotage à direction
+  // fixe ({x:1, y:0.5} un tick sur deux), une éjection reste rare — un balayage des
+  // graines 1 à 200 n'en a trouvé que trois (95, 132, 150). Vérifié par
+  // instrumentation, pas supposé : les deux graines retenues éjectent réellement
+  // au moins une toupie pendant le scénario. Sans cette vérification, ce test
+  // attesterait un chemin qu'il ne parcourt jamais — c'était le cas des graines
+  // 42/7 d'une version précédente. Si le pilotage, le gabarit d'arène ou les
+  // valeurs de brèche changent, ces graines perdent leur garantie et un nouveau
+  // balayage est nécessaire — ne pas les remettre à 42 « pour faire simple », ça
+  // rouvrirait le trou en silence.
+  it('reste déterministe à travers les brèches (bord létal non nettoyé)', () => {
+    const a = runTicksThroughBreaches(95, 300);
+    expect(a).toBe(runTicksThroughBreaches(95, 300));
+    expect(a).not.toBe(runTicksThroughBreaches(132, 300));
   });
 
   it('ouvrir des coffres entre deux salles ne change pas l’issue du run', () => {
@@ -79,11 +113,21 @@ describe('progression', () => {
     const run = createRun(meta, 1);
     for (const b of run.bots) b.spin = 0.0001; // le decay du prochain tick les achève
     const reward = tick(run, { steer: null });
-    expect(reward?.credits).toBeCloseTo(salleReward(1, false).credits, 5);
+    expect(reward?.credits).toBeCloseTo(salleReward(1, false, 1).reward.credits, 5);
     expect(run.salle).toBe(2);
     expect(run.bots).toHaveLength(botCountFor(2));
     // tick() n'a rien appliqué : le méta est hors de sa portée.
     expect(meta.credits).toBe(0);
+  });
+
+  it('vider une salle rapporte au moins un coffre', () => {
+    const run = createRun(createInitialMeta(1), 1);
+    let reward = null;
+    for (let i = 0; i < 6000 && reward === null; i++) {
+      reward = tick(run, { steer: run.bots[0] ? { x: run.bots[0].pos.x - run.player.pos.x, y: run.bots[0].pos.y - run.player.pos.y } : null });
+    }
+    expect(reward).not.toBeNull();
+    expect(reward!.chests.length).toBeGreaterThanOrEqual(1);
   });
 
   it('l’entrée dans une nouvelle salle remet à zéro la suspension de décroissance du joueur', () => {
@@ -109,8 +153,8 @@ describe('progression', () => {
     applyRunReward(meta, reward, SALLES_PER_CHAPTER);
     expect(meta.chapterValidated).toBe(true);
     expect(run.salle).toBe(1);
-    expect(meta.credits).toBeCloseTo(salleReward(SALLES_PER_CHAPTER, true).credits, 5);
-    expect(meta.gems).toBe(salleReward(SALLES_PER_CHAPTER, true).gems);
+    expect(meta.credits).toBeCloseTo(salleReward(SALLES_PER_CHAPTER, true, 1).reward.credits, 5);
+    expect(meta.gems).toBe(salleReward(SALLES_PER_CHAPTER, true, 1).reward.gems);
   });
 
   it('spin à zéro ⇒ mort ; resetRun repart salle 1 en gardant les crédits', () => {
@@ -272,5 +316,45 @@ describe('talent Réserve', () => {
     tick(run, { steer: null });
     // 0,35 du spin max au lieu de 0,20.
     expect(run.player.spin).toBeGreaterThan(100 + 0.3 * run.player.spinMax);
+  });
+});
+
+describe('éjection', () => {
+  it('une éjection met le spin à zéro et se signale au rendu', () => {
+    const run = createRun(createInitialMeta(1), 1);
+    run.arena.breaches = [{ angle: 0, halfWidth: 0.6 }];
+    const bot = run.bots[0];
+    bot.pos = { x: ARENA_RADIUS - bot.radius - 1, y: 0 };
+    bot.vel = { x: 600, y: 0 };
+    bot.aim = { x: 1, y: 0 };
+    tick(run, { steer: null });
+    expect(run.ejected).toContain(bot.id);
+    // Le bot éjecté est retiré par le filtre habituel : une éjection est une mort
+    // comme une autre pour la simulation.
+    expect(run.bots.some((b) => b.id === bot.id)).toBe(false);
+  });
+
+  it('vide la liste des éjectés à chaque tick', () => {
+    const run = createRun(createInitialMeta(1), 1);
+    run.ejected = ['fantome'];
+    tick(run, { steer: null });
+    expect(run.ejected).not.toContain('fantome');
+  });
+});
+
+describe('éclat', () => {
+  it('un bot plus proche de l’éclat que du joueur va le chercher', () => {
+    const run = createRun(createInitialMeta(1), 1);
+    const bot = run.bots[0];
+    // Éclat à gauche, joueur à droite : le signe de aim.x tranche entre les deux.
+    bot.pos = { x: 0, y: 0 };
+    run.player.pos = { x: 140, y: 0 };
+    run.arena.shard = { x: -60, y: 0, ttl: 30 };
+    // Le retarget a lieu au tick dont le numéro vaut 1 modulo 10.
+    run.tick = 0;
+    tick(run, { steer: null });
+    // Il vise la gauche (l'éclat, à 60) et non la droite (le joueur, à 140). Le
+    // jitter d'IA ne dépasse jamais ±0,6 rad, donc le signe de aim.x est décidé.
+    expect(bot.aim!.x).toBeLessThan(0);
   });
 });

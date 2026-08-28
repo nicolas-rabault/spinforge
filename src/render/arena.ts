@@ -1,8 +1,9 @@
 import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import type { TopType } from '../content/toupies';
-import { ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
+import { ARENA, ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
 import { PALETTE, spinTint } from '../theme';
 import type { RunState } from '../sim/types';
+import type { Zone } from '../sim/terrain';
 import { createTextures, destroyTextures, floorTexture, FLOOR_EDGE, FLOOR_OVERSCAN, type Shape } from './textures';
 import { FEEL } from './feel';
 import { createTopView, type TopView } from './topView';
@@ -73,6 +74,44 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   // La porte du haut, qui s'allume pendant la transition de salle.
   const door = new Graphics();
   floorLayer.addChild(door);
+
+  // L'éclat de Gyre : un sprite unique, positionné et mis à l'échelle par
+  // image — pas de géométrie retracée, seulement une transform.
+  const shard = new Sprite(tex.shard);
+  shard.anchor.set(0.5);
+  shard.blendMode = 'add';
+  shard.visible = false;
+  floorLayer.addChild(shard);
+
+  // Même réserve que la porte (dette 1.5) : retracé par image parce que
+  // l'ouverture pulse. Deux arcs par brèche, sans effet mesuré sur la cadence.
+  const breachEdges = new Graphics();
+  floorLayer.addChild(breachEdges);
+
+  // Les zones vivent sous les toupies et au-dessus du sol. Recréées à chaque
+  // changement de gabarit, jamais retracées par image.
+  const zoneLayer = new Container();
+  floorLayer.addChild(zoneLayer);
+  let lastZones: Zone[] | null = null;
+
+  function syncZones(state: RunState): void {
+    // `state.arena` est remplacé en bloc par startSalle() à chaque entrée de
+    // salle, et rien ne mute `zones` en place ensuite (buildLayout() le
+    // construit une fois pour toute la salle) : la référence du tableau est
+    // donc un identifiant fiable du gabarit, sans reconstruire une signature
+    // par image pour ne conclure « rien à faire » quasiment à chaque fois.
+    if (state.arena.zones === lastZones) return;
+    lastZones = state.arena.zones;
+    zoneLayer.removeChildren().forEach((child) => child.destroy());
+    for (const zone of state.arena.zones) {
+      const sprite = new Sprite(tex.zone[zone.kind]);
+      sprite.anchor.set(0.5);
+      sprite.width = sprite.height = zone.radius * 2;
+      sprite.x = zone.x;
+      sprite.y = zone.y;
+      zoneLayer.addChild(sprite);
+    }
+  }
 
   // Même rayon que dim, à dessein : un second rayon dupliqué aurait fini par
   // déborder du disque du sol, exactement le défaut que dim a déjà corrigé.
@@ -146,7 +185,15 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       for (const death of events.deaths) {
         const view = views.get(death.id);
         view?.kill();
-        effects.wave(death.x, death.y, FEEL.waveRadius, 0xffd9a0);
+        if (death.cause === 'ringout') {
+          // L'éjection part vers l'extérieur : l'onde s'ouvre plus large et la
+          // secousse est franche. C'est le retour qui apprend la règle sans texte.
+          effects.wave(death.x, death.y, FEEL.waveRadius * 2.2, PALETTE.zoneSpike);
+          const d = Math.hypot(death.x, death.y) || 1;
+          effects.hit(death.x, death.y, death.x / d, death.y / d, 1, PALETTE.zoneSpike);
+        } else {
+          effects.wave(death.x, death.y, FEEL.waveRadius, 0xffd9a0);
+        }
       }
       if (events.bossEntered) {
         bossEntry = FEEL.bossEntryLife;
@@ -178,6 +225,20 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       const dt = Math.min((now - lastDraw) / 1000, 0.05);
       lastDraw = now;
       layout();
+      syncZones(state);
+
+      // L'éclat pulse et tourne pour ne jamais se confondre avec une toupie
+      // immobile — c'est ce mouvement continu qui signale « à prendre ».
+      const shardNow = state.arena.shard;
+      shard.visible = shardNow !== null;
+      if (shardNow) {
+        shard.x = shardNow.x;
+        shard.y = shardNow.y;
+        const bob = 1 + 0.16 * Math.sin(now / 150);
+        shard.width = shard.height = ARENA.shard.radius * 2 * bob;
+        shard.rotation = now / 900;
+      }
+
       effects.update(dt);
       if (bossEntry > 0) {
         bossEntry = Math.max(0, bossEntry - dt);
@@ -195,6 +256,19 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       door.clear();
       door.arc(0, 0, ARENA_RADIUS, -1.9, -1.24);
       door.stroke({ width: 3 + 4 * lit, color: PALETTE.ember, alpha: 0.22 + 0.7 * lit });
+
+      // Les brèches se dessinent comme une ABSENCE : l'anneau s'interrompt, et
+      // deux arêtes pulsent de part et d'autre. C'est la seule information dont
+      // dépend la survie du joueur : elle doit se lire à un demi-écran.
+      const pulse = 0.55 + 0.45 * Math.sin(now / 190);
+      breachEdges.clear();
+      for (const breach of state.arena.breaches) {
+        breachEdges.arc(0, 0, ARENA_RADIUS, breach.angle - breach.halfWidth, breach.angle + breach.halfWidth);
+        breachEdges.stroke({ width: 5, color: PALETTE.bg, alpha: 1 });
+        breachEdges.arc(0, 0, ARENA_RADIUS * 0.965, breach.angle - breach.halfWidth, breach.angle + breach.halfWidth);
+        breachEdges.stroke({ width: 2.5, color: PALETTE.zoneSpike, alpha: 0.35 + 0.5 * pulse });
+      }
+
       world.x = app.screen.width / 2 + effects.shake.x * world.scale.x;
       world.y = app.screen.height / 2 + effects.shake.y * world.scale.y;
 
@@ -246,8 +320,12 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       views.clear();
       if (floor.texture !== Texture.EMPTY) floor.texture.destroy(true);
       effects.destroy();
-      destroyTextures(tex);
+      // Après app.destroy(true, ...) : ce dernier détruit toute la scène, y
+      // compris le sprite `shard` et les enfants de `zoneLayer` qui référencent
+      // encore les textures de `tex` — les détruire avant les laisserait
+      // pointer sur des textures déjà libérées.
       app.destroy(true, { children: true });
+      destroyTextures(tex);
     },
   };
 }

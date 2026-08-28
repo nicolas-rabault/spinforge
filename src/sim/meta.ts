@@ -18,6 +18,7 @@ export function createInitialMeta(seed: number): MetaState {
     },
     inventory: [],
     pity: { bronze: 0, arene: 0, mythique: 0 },
+    pending: { bronze: 0, arene: 0, mythique: 0 },
     chapterValidated: false,
     toupies: { unlocked: [STARTER_TOUPIE], active: STARTER_TOUPIE },
     founderGiftClaimed: false,
@@ -27,6 +28,7 @@ export function createInitialMeta(seed: number): MetaState {
 export function applyReward(meta: MetaState, reward: RunReward): void {
   meta.credits += reward.credits;
   meta.gems += reward.gems;
+  for (const kind of reward.chests) meta.pending[kind]++;
 }
 
 /** Applique au méta ce qu'une salle vidée vient de produire. `salleJustCleared`
@@ -109,4 +111,9 @@ export function claimFounderGift(meta: MetaState, id: ToupieId): boolean {
   meta.toupies.unlocked.push(id);
   meta.founderGiftClaimed = true;
   return true;
+}
+
+/** Nombre total de coffres en attente — la pastille de l'onglet Coffres. */
+export function pendingTotal(meta: MetaState): number {
+  return meta.pending.bronze + meta.pending.arene + meta.pending.mythique;
 }
