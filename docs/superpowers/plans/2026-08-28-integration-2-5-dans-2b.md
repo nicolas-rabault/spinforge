@@ -56,7 +56,12 @@ Elles s'appliquent implicitement à **toutes** les tâches.
 - **IP :** aucun nom officiel Beyblade dans le code, les données ou l'UI.
 - **Langue :** textes joueur, commentaires et messages de commit en **français** ;
   code et identifiants en anglais (vocabulaire métier `salle`, `toupie` accepté).
-- **Pas de code mort**, pas de code « au cas où ».
+- **Pas de code mort**, pas de code « au cas où ». **Une exception nommée
+  (ruling R5, pré-vol) :** la valeur de retour ignorée de `takeShard` dans
+  `sim.ts` n'est pas du code mort. Le commentaire en place l'explique —
+  `terrain.test.ts` asserte l'identité du preneur sur cette valeur, et une
+  version `void` forcerait ces tests à la déduire par effet de bord. Ne pas la
+  supprimer, ne pas la signaler.
 
 ### Commandes
 
@@ -582,8 +587,15 @@ du tick, **avant** `startSalle` — donc avant `spawnSalle` et `buildLayout`.
 `updateShard` en consomme aussi et apparaît comme une étape ordinaire. Se tromper
 là décale tout le flux aval sans qu'aucun test de `main` ne bronche.
 
+**⚠ Correction du plan (ruling R1, pré-vol).** Le seul conflit de `sim.ts` est le
+**bloc d'import**. `tick()` et `startSalle()` se sont auto-fusionnés à l'ordre
+canonique **exact** ci-dessous — `spawnSalle(run.chapter, …)` de `main` fusionné
+avec `buildLayout` de la branche compris. Cette tâche **audite** ; elle ne
+réécrit rien qui soit déjà juste. Réécrire à la main un `tick()` correct, c'est
+risquer de déplacer un tirage de RNG sans nécessité.
+
 **Fichiers :**
-- Modifier : `src/sim/sim.ts` (1 hunk ; le doublon `mass` est déjà réglé en T2)
+- Modifier : `src/sim/sim.ts` (1 hunk : les imports ; le doublon `mass` est déjà réglé en T2)
 
 **Interfaces :**
 - Consomme : `decaySpin(top, zone)` et `drainPerTick` (T3) ; `zoneModsAt`,
@@ -593,7 +605,19 @@ là décale tout le flux aval sans qu'aucun test de `main` ne bronche.
 - Produit : `tick(run: RunState, input: Input): RunReward | null`
 - Produit : `createRun`, `resetRun`, `syncRunStats` inchangés dans leur signature.
 
-- [ ] **Étape 1 : l'ordre exact, à respecter à la ligne près**
+- [ ] **Étape 1 : résoudre l'union des imports**
+
+Le hunk en conflit porte sur deux lignes. Union :
+
+```ts
+import { activeToupie } from './meta';
+import type { Input, MetaState, RunReward, RunState, Top, Vec } from './types';
+```
+
+`activeToupie` vient de `main` (type du joueur), `Vec` de la branche
+(`refreshBotAims` cible l'éclat).
+
+- [ ] **Étape 2 : auditer le tick auto-fusionné contre l'ordre exact**
 
 ```
 run.tick++
@@ -623,7 +647,9 @@ si bots vides :
   return rolled.reward
 ```
 
-Trois invariants que la relecture du 2.5 a payés :
+Le tick auto-fusionné **doit déjà** correspondre à cet ordre. Le comparer ligne
+par ligne et ne corriger qu'une déviation réelle. Trois invariants que la
+relecture du 2.5 a payés :
 
 1. **Phase par phase.** Toutes les toupies traversent une étape avant la
    suivante. C'est ce qui rend le déterminisme lisible.
@@ -633,7 +659,7 @@ Trois invariants que la relecture du 2.5 a payés :
 3. **`run.bots` n'est filtré qu'après les `decaySpin`** : sinon les index se
    désalignent de `botZones`.
 
-- [ ] **Étape 2 : conserver `moveTop` et `refreshBotAims` de la branche**
+- [ ] **Étape 3 : conserver `moveTop` et `refreshBotAims` de la branche**
 
 ```ts
 /** Avance une toupie et encaisse l'éjection s'il y a lieu. */
@@ -648,7 +674,7 @@ function moveTop(run: RunState, top: Top): void {
 joueur, **à un tirage par bot** — le flux ne bouge pas. Garder le commentaire qui
 l'explique.
 
-- [ ] **Étape 3 : conserver le typage des bots de `main` dans `startSalle`**
+- [ ] **Étape 4 : conserver le typage des bots de `main` dans `startSalle`**
 
 ```ts
 function startSalle(run: RunState): void {
@@ -665,13 +691,13 @@ function startSalle(run: RunState): void {
 
 `run.chapter` de `main` **et** `buildLayout` de la branche, dans cet ordre.
 
-- [ ] **Étape 4 : conserver `arena` et `ejected` dans `createRun` / `resetRun`**
+- [ ] **Étape 5 : conserver `arena` et `ejected` dans `createRun` / `resetRun`**
 
 `createRun` initialise `arena: { zones: [], breaches: [], shard: null, shardTimer: 0 }`
 (remplacé par `startSalle` juste après) et `ejected: []`. `resetRun` remet
 `run.ejected = []`.
 
-- [ ] **Étape 5 : vérifier**
+- [ ] **Étape 6 : vérifier**
 
 ```bash
 cd /Users/nicolasrabault/Projects/B-Blades_versus-integration
@@ -682,7 +708,7 @@ grep -n "updateShard\|salleReward\|startSalle(run)\|run.bots.filter" src/sim/sim
 Attendu : `0` marqueur, et dans `tick()` l'ordre `updateShard` → `run.bots.filter`
 → `salleReward` → `startSalle`.
 
-- [ ] **Étape 6 : mettre en index**
+- [ ] **Étape 7 : mettre en index**
 
 ```bash
 cd /Users/nicolasrabault/Projects/B-Blades_versus-integration
@@ -1347,20 +1373,48 @@ git diff --name-only --diff-filter=U
 grep -rn '^<<<<<<<\|^>>>>>>>' src/ scripts/ docs/ 2>/dev/null
 ```
 
-Attendu : **aucune sortie** pour les deux. (Les docs restent en conflit jusqu'en
-T16 — s'ils apparaissent ici, résoudre `docs/game-design.md`, `docs/roadmap.md`
-et la spec 2b en add/add **au minimum** en union brute maintenant, et affiner les
-chiffres en T16 ; la fusion ne peut pas se commiter avec des marqueurs.)
-
-Pour l'add/add `docs/superpowers/specs/2026-08-27-jalon-2b-toupies-design.md` :
-**la version de `main` gagne** (506 lignes contre 434 — c'est la plus récente,
-territoire du 2b).
+**⚠ Correction du plan (ruling R2, pré-vol).** Attendu **pour `src/` et
+`scripts/` : aucune sortie**. Trois documents sont encore en conflit à ce
+stade — c'est normal, T2 à T11 ne touchent pas aux docs — mais **une fusion ne
+se commite pas avec des marqueurs**. Les résoudre ici, sommairement ; T16 les
+affine avec les chiffres de calibration.
 
 ```bash
 cd /Users/nicolasrabault/Projects/B-Blades_versus-integration
+git diff --name-only --diff-filter=U
+```
+
+Attendu : exactement ces trois lignes.
+
+```
+docs/game-design.md
+docs/roadmap.md
+docs/superpowers/specs/2026-08-27-jalon-2b-toupies-design.md
+```
+
+**a. La spec 2b (add/add) : `main` gagne** — 506 lignes contre 434, c'est la plus
+récente, et c'est le territoire du 2b (§ 2.2 de la spec d'intégration).
+
+```bash
 git checkout --ours docs/superpowers/specs/2026-08-27-jalon-2b-toupies-design.md
 git add docs/superpowers/specs/2026-08-27-jalon-2b-toupies-design.md
 ```
+
+**b. `game-design.md` et `roadmap.md` : union brute.** Retirer les marqueurs en
+gardant **les deux** versions de chaque hunk, l'une après l'autre, sans rien
+supprimer ni arbitrer de chiffre. Les contradictions (60 contre 86, 2 000 contre
+250) restent visibles dans le texte : T16 les tranche avec les valeurs mesurées.
+Ne pas chercher à bien rédiger ici — c'est un état de transit d'une tâche.
+
+- [ ] **Étape 1 bis : plus un seul marqueur nulle part**
+
+```bash
+cd /Users/nicolasrabault/Projects/B-Blades_versus-integration
+git diff --name-only --diff-filter=U
+grep -rn '^<<<<<<<\|^>>>>>>>' src/ scripts/ docs/ 2>/dev/null
+```
+
+Attendu : **aucune sortie** pour les deux.
 
 - [ ] **Étape 2 : la suite complète**
 
@@ -1492,9 +1546,16 @@ de l'étape 1 dépasse un facteur 2 sur `runs`, élargir à dix graines
 mesuré sur les valeurs inchangées**, avant tout balayage. Sinon les mesures
 d'avant et d'après ne sont pas comparables.
 
+**⚠ Correction du plan (ruling R3, pré-vol) :** ce commit ne porte **que**
+`scripts/calibrate.mjs`. Le journal est commité à l'étape 4 — le mettre dans les
+deux ferait échouer la seconde sur « nothing to commit ». Relancer
+`npm run calibrate` après l'élargissement et consigner la nouvelle référence à
+dix graines dans le journal, sans la commiter ici.
+
 ```bash
 cd /Users/nicolasrabault/Projects/B-Blades_versus-integration
-git add scripts/calibrate.mjs docs/superpowers/plans/2026-08-28-calibration-integration.md
+npm run calibrate 2>&1 | tee /tmp/calib-reference-10graines.txt | tail -25
+git add scripts/calibrate.mjs
 git commit -m "test(calibrate): élargit le jeu de graines à dix, mesure inchangée
 
 La médiane du boss ne portait que sur cinq validations, une par graine : un
@@ -1525,6 +1586,12 @@ réglé le combat et l'économie ensemble. **Un seul commit, un seul domaine.**
 **Fichiers :**
 - Modifier : `src/content/balance.json` (bloc `econ` et `chests` uniquement)
 - Modifier : `docs/superpowers/plans/2026-08-28-calibration-integration.md`
+
+**⚠ Ruling R4 (pré-vol).** Les `<chevrons>` des messages de commit de T14 et T15
+sont des emplacements pour des **valeurs mesurées**, pas du texte à commiter.
+**Un message de commit contenant `<` est un défaut** : dans ce dépôt les mesures
+d'équilibrage vivent dans les messages de commit et servent de référence à la
+passe suivante.
 
 **Boutons ouverts :** `econ.rewardBase`, `econ.rewardGrowth`, `econ.upgradeGrowth`,
 et les prix de coffre.
