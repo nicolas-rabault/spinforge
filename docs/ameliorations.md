@@ -141,18 +141,35 @@ durée, les trois boutons sont `MIX.whirrGain`, `MIX.whirrFreqHigh` et `MIX.subG
 > on peut donc changer de châssis à chaque salle pour être toujours du bon côté du
 > triangle. »
 
-**Mesuré à l'autopilote, 5 graines, chapitre 1 jusqu'à validation :**
+**Mesuré à l'autopilote, 5 graines, chapitre 1 joué jusqu'à validation.** Toutes
+ces séries possèdent les quatre toupies ; le nombre de toupies débloquées ne change
+aucun résultat, vérifié séparément sur les quatre châssis.
 
 | Politique de châssis | Runs | Durée |
 |---|---|---|
-| **contre-pioche à chaque salle** | **17** | **1,42 h** |
-| contre-pioche au départ de la descente | 30 | 2,11 h |
-| Brasier Solaire, jamais changée (référence) | 23 | 1,91 h |
+| **contre-pioche à chaque salle** (le contournement) | 17 | **1,42 h** |
+| **Carapace Abyssale, tenue du début à la fin** (le témoin) | 17 | **1,66 h** |
+| Typhon Primal, tenue du début à la fin | 30 | 2,11 h |
+| Brasier Solaire, la toupie de départ | 23 | 1,91 h |
 
-Le contournement pesait donc plus lourd que le triangle lui-même (dont l'écart
-meilleur/pire châssis est de ×1,76), et il vidait de son sens la décision centrale
-du jalon 2b : contre-piocher n'était plus un pari sur la composition d'un chapitre,
-c'était une routine sans coût.
+**Le bon témoin est Carapace Abyssale, pas Brasier Solaire.** Un joueur qui possède
+quatre toupies et ne triche pas ne reste pas sur celle de départ : il prend la
+meilleure et la garde. Le contournement lui fait donc gagner **0,24 h, soit ~14 %
+de temps à nombre de runs égal** — et non les 23 → 17 qu'une comparaison à la toupie
+de départ laisserait croire. Cette comparaison-là confondrait deux effets : posséder
+un meilleur châssis, et tricher avec.
+
+**Ce n'est pas la taille du gain qui a tranché, c'est ce qu'il détruit.** Le triangle
+des forces a été ajouté au jalon 2b pour qu'on parie sur la composition d'un chapitre
+avant d'y descendre. Une contre-pioche gratuite et instantanée supprime le pari :
+il n'y a plus de mauvais choix, seulement un geste à répéter à chaque salle.
+
+**Fenêtre où le problème existe.** Il faut au moins deux toupies pour contre-piocher,
+et avant la validation du chapitre 1 on n'en a qu'une : les gemmes ne tombent que du
+boss (`econ.bossGems` = 60), une toupie en coûte 900, et le cadeau du Fondateur exige
+`chapterValidated`. Le contournement est donc un problème d'**après** le premier mur —
+c'est-à-dire du jalon 3, quand le farm tournera en continu. Les mesures ci-dessus se
+lisent comme un baromètre d'efficacité de combat, pas comme un parcours jouable.
 
 **Correctif — le châssis est figé pour la descente.** `RunState` porte désormais
 `toupie`, posé au départ du run et relu par `syncRunStats` à la place de
@@ -169,11 +186,15 @@ sur « Équiper » ne change rien à l'arène — sans ce texte, le verrou se li
 bug. Sur la carte pilotée, le bouton devient « Annuler le changement » : c'est ce
 qu'il fait réellement.
 
-**Garde-fou.** `npm run calibrate` joue désormais les deux politiques de
-contre-pioche côte à côte : le châssis étant verrouillé, elles doivent donner le même
-résultat au centième près. Vérifié par mutation — en rendant `syncRunStats` relisant
-`meta.toupies.active`, la ligne « par salle » retombe exactement à 17 runs / 1,42 h
-et le harnais affiche « VERROU ROMPU ».
+**Garde-fou.** `npm run calibrate` joue désormais deux séries côte à côte, identiques
+en tout sauf le moment du choix : rebasculer à chaque salle, ou tenir le même châssis
+jusqu'au boss. Le verrou en place, elles doivent donner le même résultat au centième
+près. Vérifié par mutation dans les deux directions : `syncRunStats` relisant
+`meta.toupies.active` d'une part, `equipPendingToupie` appelée à chaque salle au lieu
+du seul boss d'autre part — les deux ramènent la première série à 17 runs / 1,42 h et
+font afficher « VERROU ROMPU ». La seconde mutation compte autant que la première :
+appeler l'adoption *trop souvent* rouvre exactement le même trou que ne pas la
+verrouiller.
 
 Aucun chiffre de la mesure principale ne bouge : 23 runs / 1,91 h, premier coffre
 d'Arène 0,78 h après validation, salle 10 la plus meurtrière.
@@ -220,4 +241,7 @@ entier se rejoue en quelques millisecondes hors navigateur.
   trentaine de secondes. La simulation avançant par pas fixes de 100 ms,
   **ce qu'elle calcule est rigoureusement inchangé** — seule la cadence
   d'observation bouge. Sauvegarde de départ injectée dans `localStorage` avant le
-  premier chargement, pièces au rang 11, pour que les salles tombent vite.
+  premier chargement, pièces au rang 11, pour que les salles tombent vite ; une
+  toupie nue et zéro pilotage donnent l'inverse, la mort en quelques secondes.
+  `scripts/verrou.mjs` (`npm run verrou`, avec `npm run dev` en marche) fait les deux
+  et sert de modèle.

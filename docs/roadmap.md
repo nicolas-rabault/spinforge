@@ -328,25 +328,32 @@ Suite directe du jalon 2b : changer de toupie était gratuit et immédiat, donc 
 contre-piochait salle par salle. Mesures, correctif et garde-fou :
 `docs/ameliorations.md`, session du 2026-08-28.
 
-**Le câblage de la frontière n'a pas de test automatisé.**
-`equipPendingToupie` est couverte unitairement (`src/sim/sim.test.ts`), mais son appel
-depuis la boucle de jeu (`src/ui/useGameLoop.ts:60`, quand le boss est vidé) ne l'est
-par rien. Le garde-fou de `npm run calibrate` ne l'atteint pas non plus, et ce n'est
-pas un oubli : dans la série de contre-pioche, le châssis en attente au moment du
-boss est **déjà** celui piloté, donc `equipPendingToupie` sort par son early-return —
-retirer l'appel du harnais ne déplace aucun chiffre (vérifié). Le câblage a donc été
-vérifié en navigateur, et cette vérification-là attrape bien la mutation : l'appel
-retiré de `useGameLoop`, la toupie en attente ne prend jamais le relais après le boss.
-Méthode reproductible dans `docs/ameliorations.md` § « Comment mesurer ». À couvrir
-pour de bon quand le jalon 3 donnera à la boucle de jeu une frontière de run explicite
-(le farm AUTO devra en avoir une de toute façon).
+**Une seule des deux directions du verrou est couverte automatiquement.**
+`npm run calibrate` attrape bien le trou dans ses deux formes : `syncRunStats` qui
+relirait `meta.toupies.active`, **et** `equipPendingToupie` appelée trop souvent (à
+chaque salle au lieu du seul boss) — les deux ramènent la série de contre-pioche à
+17 runs / 1,42 h et font crier le verdict. Ce que rien n'attrape, c'est l'appel
+*manquant* : si `src/ui/useGameLoop.ts:60` disparaissait, le châssis en attente ne
+monterait jamais après le boss et aucun test ne rougirait — le harnais de calibration
+n'a aucune série qui change de châssis entre deux descentes, donc il ne franchit
+jamais cette frontière. C'est ce que couvre `npm run verrou` (`scripts/verrou.mjs`),
+en navigateur : il joue une descente entière et vérifie les deux frontières, la mort
+et le boss. Vérifié par mutation — l'appel retiré de `useGameLoop`, il rougit sur la
+seule assertion du boss. Il n'entre pas dans `npm run test` pour autant : il lui faut
+un `npm run dev` en marche et une minute de navigateur. À rendre automatique quand le
+jalon 3 donnera à la boucle de jeu une frontière de run explicite — le farm AUTO devra
+en avoir une de toute façon.
 
-**Deux appelants portent la même dérivation.**
-`salleBefore === SALLES_PER_CHAPTER` est écrit dans `useGameLoop` et dans
-`scripts/calibrate.mjs`. Factoriser exigerait de faire entrer `applyRunReward` — donc
-le méta — dans `sim.ts`, ce que la règle d'architecture n° 1 écarte : la simulation de
-combat n'a pas le méta à portée. Deux lignes en double coûtent moins que ce
-franchissement.
+**Trois sites dérivent « le boss vient de tomber ».**
+`salleJustCleared === SALLES_PER_CHAPTER` dans `applyRunReward` (`src/sim/meta.ts:35`),
+et `salleBefore === SALLES_PER_CHAPTER` dans `src/ui/useGameLoop.ts` et
+`scripts/calibrate.mjs`. La sortie propre existe et ne coûte presque rien : `RunReward`
+gagnerait `boss: boolean`, que `salleReward` connaît déjà (`src/sim/economy.ts:11`) ;
+les trois sites liraient `reward.boss`, et `applyRunReward` perdrait son troisième
+paramètre. Rien de tout cela ne fait entrer le méta dans `sim.ts` — la règle
+d'architecture n° 1 tient. Non fait ici : cela élargit le diff à `types.ts`, `meta.ts`,
+`economy.ts` et leurs tests, c'est-à-dire précisément les fichiers que la branche du
+jalon 2.5 réécrit en parallèle. À faire juste après la fusion des deux branches.
 
 **`chapterGroups(1)` code toujours le chapitre 1 en dur** (`src/ui/ToupiesScreen.tsx`) :
 inchangé par ce lot, déjà listé en dette du jalon 2b.

@@ -28,10 +28,14 @@ Piliers non négociables :
   interchangeables entre châssis. Le type des bots est fixé par chapitre et par salle.
   **Le châssis est figé pour la descente** : on le choisit avant de partir, et il ne
   change qu'à la mort ou au boss vaincu — une descente des dix salles = un run. Les
-  pièces, elles, continuent de prendre effet dans la seconde. Sans ce verrou, changer
-  de châssis à chaque salle pour être toujours du bon côté du triangle validait le
-  chapitre 1 en **17 runs / 1,42 h** contre 23 / 1,91 h : plus d'effet que le triangle
-  lui-même, et la contre-pioche cessait d'être une décision (`docs/ameliorations.md`).
+  pièces, elles, continuent de prendre effet dans la seconde. Sans ce verrou, un
+  joueur qui possède plusieurs toupies rebascule à chaque salle pour être toujours du
+  bon côté du triangle, et la contre-pioche cesse d'être un pari sur la composition
+  d'un chapitre : elle devient une routine sans coût. Le gain mesuré du contournement
+  est de **~14 % de temps** face au meilleur châssis tenu du début à la fin (1,42 h
+  contre 1,66 h à nombre de runs égal) — modeste en soi, mais il retire au triangle
+  toute la décision qui le justifie. Le cas n'apparaît qu'**après** la validation du
+  chapitre 1, faute d'une deuxième toupie avant. Détail : `docs/ameliorations.md`.
   Certaines Lames tournent à gauche (chocs frontaux amplifiés contre rotation droite) —
   Saison 1, jalon 4.
 
