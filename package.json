@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "shots": "node scripts/shots.mjs",
+    "verrou": "node scripts/verrou.mjs",
     "calibrate": "vite-node scripts/calibrate.mjs"
   },
   "dependencies": {
