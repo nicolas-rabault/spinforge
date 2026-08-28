@@ -209,6 +209,19 @@ faire par la punition.
 bravoure du chapitre. Il n'est pas gratuit pour autant : le boss porte `mass` (voir § 1.6),
 donc la même impulsion le déplace bien moins.
 
+**Mesuré après coup — ce paragraphe ne s'est pas vérifié.** Aux valeurs shippées
+(`arena.breach.ejectSpeed` 400, `boss.mass` 3), éjecter le boss demande ~615 px/s de vitesse
+de charge même dans la géométrie la plus favorable qui soit (boss immobile, exactement au
+bord, charge parfaitement radiale) — hors de portée du plafond de pilotage du joueur (240,
+384 sous accélérateur). Mesuré : 71 combats de boss sur 20 graines, **zéro éjection**. La
+règle de brèche elle-même reste correcte et uniforme : elle fonctionne pour le joueur
+(environ une mort sur dix est une sortie de piste sur ce protocole) — c'est spécifiquement
+le boss qui n'est pas éjectable à ces valeurs. Ce qui a remplacé les 183 s n'est donc pas
+l'éjection mais `combat.damageK` (0,35 → 1,3), qui fait tomber le combat de boss à 87,1 s.
+Rendre le boss réellement éjectable, en rouvrant `ejectSpeed` et/ou `boss.mass`, est le
+ressort d'une future passe combat explicitement scopée — pas de ce jalon-ci. Détail :
+`docs/roadmap.md` § Dette connue (jalon 2.5), `docs/ameliorations.md`.
+
 ### 1.4 Les zones au sol
 
 Trois types, tous des disques posés sur le sol.

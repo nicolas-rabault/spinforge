@@ -70,10 +70,20 @@ describe('déterminisme', () => {
     expect(JSON.parse(a).meta.chapterValidated).toBe(true);
   });
 
+  // Graines 95 et 132 choisies exprès, pas au hasard : sous ce pilotage à direction
+  // fixe ({x:1, y:0.5} un tick sur deux), une éjection reste rare — un balayage des
+  // graines 1 à 200 n'en a trouvé que trois (95, 132, 150). Vérifié par
+  // instrumentation, pas supposé : les deux graines retenues éjectent réellement
+  // au moins une toupie pendant le scénario. Sans cette vérification, ce test
+  // attesterait un chemin qu'il ne parcourt jamais — c'était le cas des graines
+  // 42/7 d'une version précédente. Si le pilotage, le gabarit d'arène ou les
+  // valeurs de brèche changent, ces graines perdent leur garantie et un nouveau
+  // balayage est nécessaire — ne pas les remettre à 42 « pour faire simple », ça
+  // rouvrirait le trou en silence.
   it('reste déterministe à travers les brèches (bord létal non nettoyé)', () => {
-    const a = runTicksThroughBreaches(42, 300);
-    expect(a).toBe(runTicksThroughBreaches(42, 300));
-    expect(a).not.toBe(runTicksThroughBreaches(7, 300));
+    const a = runTicksThroughBreaches(95, 300);
+    expect(a).toBe(runTicksThroughBreaches(95, 300));
+    expect(a).not.toBe(runTicksThroughBreaches(132, 300));
   });
 
   it('ouvrir des coffres entre deux salles ne change pas l’issue du run', () => {
