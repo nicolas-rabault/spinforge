@@ -79,9 +79,11 @@ export function activeToupie(meta: MetaState): Toupie {
   return toupieById(meta.toupies.active);
 }
 
-/** Bascule la toupie pilotée. Gratuit et réversible : aucune pièce ne bouge,
- *  toutes sont interchangeables. C'est ce qui fait de la contre-pioche une
- *  décision qu'on reprend avant chaque run, et non un engagement. */
+/** Choisit la toupie du **prochain** run. Ne touche pas au run en cours : celui-ci
+ *  pilote `run.toupie`, figé jusqu'à la mort ou au boss vaincu. Gratuit et
+ *  réversible — aucune pièce ne bouge, toutes sont interchangeables — c'est ce qui
+ *  fait de la contre-pioche une décision qu'on reprend avant chaque run, et non un
+ *  engagement. */
 export function setActiveToupie(meta: MetaState, id: ToupieId): boolean {
   if (!meta.toupies.unlocked.includes(id)) return false;
   meta.toupies.active = id;

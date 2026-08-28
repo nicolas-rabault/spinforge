@@ -31,9 +31,12 @@ export function ForgeScreen({
   onChanged: () => void;
 }) {
   const meta = metaRef.current;
-  // Le châssis piloté, jamais celui en attente : la Forge chiffre la toupie qui
-  // est dans l'arène, pas celle qui y montera au prochain run.
-  const toupie = runRef.current.toupie;
+  // La Forge chiffre la toupie sur laquelle l'achat va porter : celle de l'arène
+  // tant que le run vit, celle qui attend une fois la descente perdue — `resetRun`
+  // la montera au clic sur « Retenter », et c'est là qu'on fait ses courses.
+  const toupie = runRef.current.phase === 'dead'
+    ? metaRef.current.toupies.active
+    : runRef.current.toupie;
   const before = playerStats(meta, toupie);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>

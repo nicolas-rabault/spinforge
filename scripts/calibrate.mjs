@@ -1,6 +1,6 @@
 // Autopilote de calibration. Conservé volontairement : le jalon 3 en redemandera.
 // La simulation étant pure et sans DOM, aucun navigateur n'est nécessaire.
-import { createRun, equipPendingToupie, syncRunStats, tick } from '../src/sim/sim.ts';
+import { createRun, syncRunStats, tick } from '../src/sim/sim.ts';
 import { addPiece, applyRunReward, createInitialMeta, setActiveToupie } from '../src/sim/meta.ts';
 import { tryUpgrade, upgradeCost } from '../src/sim/economy.ts';
 import { canOpen, openChest } from '../src/sim/chest.ts';
@@ -61,9 +61,13 @@ function spend(meta) {
  * `createInitialMeta`, donc ce garde-fou de non-régression reste au mot près
  * ce qu'il mesurait avant le comparatif de châssis ajouté pour la Task 11.
  *
- * `counterPick` fait jouer un contre-pioqueur qui possède les quatre toupies :
- * `'salle'` rebascule à chaque salle, `'descente'` seulement au départ de chaque
- * descente. Les deux mesurent la même chose tant que le châssis est verrouillé.
+ * `counterPick` fait jouer un contre-pioqueur qui possède les quatre toupies.
+ * `'salle'` rebascule à chaque salle ; `'descente'` ne choisit qu'au départ de la
+ * descente — et comme seul le chapitre 1 existe, sa salle 1 est toujours du même
+ * type, donc cette série revient à tenir un châssis fixe (Typhon Primal). C'est
+ * volontaire : c'est le témoin apparié du verrou, identique en tout sauf le
+ * MOMENT du choix. La vraie alternative d'un joueur qui ne triche pas est
+ * ailleurs — le meilleur châssis fixe du tableau ci-dessus.
  */
 function simulate(seed, { buyChests, toupieId, counterPick }) {
   const meta = createInitialMeta(seed);
@@ -103,7 +107,6 @@ function simulate(seed, { buyChests, toupieId, counterPick }) {
         setActiveToupie(meta, counterFor(run.chapter, run.salle));
         syncRunStats(run, meta);
       }
-      if (salleBefore === SALLES_PER_CHAPTER) equipPendingToupie(run, meta);
       if (meta.chapterValidated && ticksToValidate === null) {
         ticksToValidate = ticks;
         runsToValidate = runs;
@@ -178,20 +181,29 @@ console.log('Écart meilleur/pire (runs) : %s/%s = ×%s (cible : < ×2)',
   worst, best, (worst / best).toFixed(2));
 
 // Garde-fou du verrou de châssis. Les deux séries jouent le même autopilote,
-// possèdent les quatre toupies et contre-piochent le même triangle ; elles ne
-// diffèrent que par le MOMENT du choix. Le châssis étant figé pour la descente,
-// changer d'avis salle par salle ne peut plus rien rapporter : les deux lignes
-// doivent être identiques. Vérifié par mutation — en rendant `syncRunStats`
-// relisant `meta.toupies.active`, « par salle » retombe à 17 runs / 1,42 h face
-// aux 30 / 2,11 h de « par descente », et la ligne de verdict crie.
+// possèdent les quatre toupies et partent du même châssis ; elles ne diffèrent
+// que par le MOMENT du choix. Le châssis étant figé pour la descente, changer
+// d'avis salle par salle ne peut plus rien rapporter : les deux lignes doivent
+// être identiques.
+//
+// Vérifié par mutation, dans les deux directions. (1) `syncRunStats` relisant
+// `meta.toupies.active` : « à chaque salle » retombe à 17 runs / 1,42 h contre
+// 30 / 2,11 h. (2) `equipPendingToupie` appelée à chaque salle au lieu du seul
+// boss : mêmes 17 / 1,42 h. Les deux font crier la ligne de verdict.
+//
+// Attention en lisant l'écart : le témoin ci-dessous n'est PAS ce que ferait un
+// joueur honnête à quatre toupies — celui-là prendrait le meilleur châssis fixe,
+// Carapace Abyssale, dans le tableau ci-dessus. C'est de ce chiffre-là qu'il faut
+// mesurer le gain réel du contournement, pas de celui-ci.
 const pickSeries = ['salle', 'descente'].map((when) => {
   const rs = SEEDS.map((seed) => simulate(seed, { buyChests: true, counterPick: when }));
   return { when, runs: median(rs.map((r) => r.runs)), hours: median(rs.map((r) => r.hoursToValidate)) };
 });
 
 console.log('\n=== Verrou du châssis — contre-pioche du triangle (%d graines) ===', SEEDS.length);
+const SERIES_LABEL = { salle: 'rebascule à chaque salle', descente: 'même choix, tenu jusqu’au boss' };
 for (const p of pickSeries) {
-  console.log('contre-pioche par %s : %s runs · %s h', p.when.padEnd(9), fmt(p.runs), fmt(p.hours));
+  console.log('%s : %s runs · %s h', SERIES_LABEL[p.when].padEnd(31), fmt(p.runs), fmt(p.hours));
 }
 const [parSalle, parDescente] = pickSeries;
 const locked = parSalle.runs === parDescente.runs && parSalle.hours === parDescente.hours;

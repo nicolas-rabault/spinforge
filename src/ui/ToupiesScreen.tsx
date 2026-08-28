@@ -1,8 +1,7 @@
-import { TOUPIES, type ToupieId, type TopType } from '../content/toupies';
+import { TOUPIES, toupieById, type ToupieId, type TopType } from '../content/toupies';
 import {
   activeToupie, buyToupie, canClaimFounderGift, claimFounderGift, setActiveToupie,
 } from '../sim/meta';
-import { toupieById } from '../content/toupies';
 import { botTypeFor } from '../sim/salle';
 import { CHASSIS, SALLES_PER_CHAPTER, TOUPIE_SHOP, TYPES } from '../sim/config';
 import { formatCredits } from './format';
@@ -76,6 +75,7 @@ export function ToupiesScreen({
   // toupie pilotée, il attend la mort ou le boss. Sans ce texte, « Équiper » ne
   // changerait rien à l'écran et se lirait comme un bug.
   const waiting = pending.id !== piloted.id;
+  const dead = runRef.current.phase === 'dead';
   const giftAvailable = canClaimFounderGift(meta);
   const groups = chapterGroups(1);
 
@@ -93,9 +93,18 @@ export function ToupiesScreen({
 
       {waiting ? (
         <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)' }}>
-          Tu pilotes <span style={{ color: 'var(--ember)' }}>{piloted.label}</span> jusqu'au bout de
-          la descente. <span style={{ color: 'var(--text)' }}>{pending.label}</span> prend le relais
-          à la mort ou au boss vaincu.
+          {dead ? (
+            <>
+              <span style={{ color: 'var(--text)' }}>{pending.label}</span> monte sur le ring dès que
+              tu relances la descente.
+            </>
+          ) : (
+            <>
+              Tu pilotes <span style={{ color: 'var(--ember)' }}>{piloted.label}</span> jusqu'au bout
+              de la descente. <span style={{ color: 'var(--text)' }}>{pending.label}</span> prend le
+              relais à la mort ou au boss vaincu.
+            </>
+          )}
         </p>
       ) : null}
 

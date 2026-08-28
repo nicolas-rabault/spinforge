@@ -223,6 +223,12 @@ describe('type et masse du joueur', () => {
     // Améliorée dans le même appel : sans cette moitié, le test passerait encore
     // si `syncRunStats` ne faisait plus rien du tout.
     meta.equipped.lame.level = 5;
+    // Perturbés d'abord : sans ça, les trois assertions ci-dessous porteraient sur
+    // les valeurs que `createRun` a déjà écrites, et passeraient encore si
+    // `syncRunStats` cessait purement et simplement d'écrire ces champs.
+    run.player.type = 'attaque';
+    run.player.accel = 0;
+    run.player.mass = 0;
     syncRunStats(run, meta);
 
     expect(run.player.type).toBe('equilibre');
@@ -267,19 +273,24 @@ describe('equipPendingToupie', () => {
     expect(run.player.mass).toBeCloseTo(CHASSIS['carapace-abyssale'].mass! * TALENTS.masse.mass, 6);
   });
 
-  it('ne soigne pas : changer de châssis au boss ne rend pas de spin', () => {
+  it('ne soigne pas : passer à un châssis plus endurant ne remplit pas la barre', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
-    run.player.spin = 42;
-    // Tigre Foudre porte spinMax ×1,15 : sans la borne vers le bas de
-    // `syncRunStats`, adopter un châssis plus endurant serait un soin gratuit.
-    meta.toupies.unlocked.push('tigre-foudre');
-    setActiveToupie(meta, 'tigre-foudre');
+    const run = createRun(meta, 1); // Brasier Solaire, spinMax neutre
+    const spinMaxAvant = run.player.spinMax;
+    run.player.spin = spinMaxAvant; // barre pleine sur l'ancien châssis
+
+    // Carapace Abyssale est le seul châssis qui monte le spin max (×1,15) : la
+    // barre grandit donc sous la toupie. Sans la borne vers le bas de
+    // `syncRunStats`, ou avec un soin à la place, le spin suivrait le nouveau
+    // plafond et l'adoption au boss serait une potion gratuite.
+    meta.toupies.unlocked.push('carapace-abyssale');
+    setActiveToupie(meta, 'carapace-abyssale');
 
     equipPendingToupie(run, meta);
 
-    expect(run.player.spinMax).toBeGreaterThan(run.player.spin);
-    expect(run.player.spin).toBe(42);
+    expect(run.player.spinMax).toBeCloseTo(spinMaxAvant * CHASSIS['carapace-abyssale'].spinMax!, 6);
+    expect(run.player.spin).toBe(spinMaxAvant);
+    expect(run.player.spin).toBeLessThan(run.player.spinMax);
   });
 });
 
