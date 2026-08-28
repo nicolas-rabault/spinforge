@@ -7,7 +7,7 @@ import { canOpen, grantChest, openChest } from '../src/sim/chest.ts';
 import { ARENA_RADIUS, TICK_S, SALLES_PER_CHAPTER } from '../src/sim/config.ts';
 import { TOUPIES } from '../src/content/toupies.ts';
 
-const SEEDS = [1, 7, 42, 1337, 90210];
+const SEEDS = [1, 7, 42, 1337, 90210, 2, 13, 271, 4242, 65535];
 const MAX_TICKS = 60 * 60 * 20 / TICK_S; // garde-fou : 20 h de jeu simulé
 // Ordre fixe, jamais celui d'un `Object.keys` : la file de butin doit se vider
 // pareil à chaque exécution du même seed, même si ce script n'est pas couvert
