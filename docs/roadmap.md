@@ -321,3 +321,32 @@ correctif.
 - L'observation de lisibilité sur le rouge d'Attaque (constatée pendant l'exécution du plan,
   Task 9) n'a été consignée que dans le registre SDD, jamais dans `docs/ameliorations.md`, le
   registre que `CLAUDE.md` désigne pour les retours de jeu.
+
+## Dette connue (verrou du châssis, 2026-08-28)
+
+Suite directe du jalon 2b : changer de toupie était gratuit et immédiat, donc on
+contre-piochait salle par salle. Mesures, correctif et garde-fou :
+`docs/ameliorations.md`, session du 2026-08-28.
+
+**Le câblage de la frontière n'a pas de test automatisé.**
+`equipPendingToupie` est couverte unitairement (`src/sim/sim.test.ts`), mais son appel
+depuis la boucle de jeu (`src/ui/useGameLoop.ts:60`, quand le boss est vidé) ne l'est
+par rien. Le garde-fou de `npm run calibrate` ne l'atteint pas non plus, et ce n'est
+pas un oubli : dans la série de contre-pioche, le châssis en attente au moment du
+boss est **déjà** celui piloté, donc `equipPendingToupie` sort par son early-return —
+retirer l'appel du harnais ne déplace aucun chiffre (vérifié). Le câblage a donc été
+vérifié en navigateur, et cette vérification-là attrape bien la mutation : l'appel
+retiré de `useGameLoop`, la toupie en attente ne prend jamais le relais après le boss.
+Méthode reproductible dans `docs/ameliorations.md` § « Comment mesurer ». À couvrir
+pour de bon quand le jalon 3 donnera à la boucle de jeu une frontière de run explicite
+(le farm AUTO devra en avoir une de toute façon).
+
+**Deux appelants portent la même dérivation.**
+`salleBefore === SALLES_PER_CHAPTER` est écrit dans `useGameLoop` et dans
+`scripts/calibrate.mjs`. Factoriser exigerait de faire entrer `applyRunReward` — donc
+le méta — dans `sim.ts`, ce que la règle d'architecture n° 1 écarte : la simulation de
+combat n'a pas le méta à portée. Deux lignes en double coûtent moins que ce
+franchissement.
+
+**`chapterGroups(1)` code toujours le chapitre 1 en dur** (`src/ui/ToupiesScreen.tsx`) :
+inchangé par ce lot, déjà listé en dette du jalon 2b.

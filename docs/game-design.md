@@ -26,6 +26,12 @@ Piliers non négociables :
   de charge et les talents : il ne les remplace pas. Le type est porté par le **châssis** de
   la toupie, qui n'est pas un cinquième emplacement — toutes les pièces restent
   interchangeables entre châssis. Le type des bots est fixé par chapitre et par salle.
+  **Le châssis est figé pour la descente** : on le choisit avant de partir, et il ne
+  change qu'à la mort ou au boss vaincu — une descente des dix salles = un run. Les
+  pièces, elles, continuent de prendre effet dans la seconde. Sans ce verrou, changer
+  de châssis à chaque salle pour être toujours du bon côté du triangle validait le
+  chapitre 1 en **17 runs / 1,42 h** contre 23 / 1,91 h : plus d'effet que le triangle
+  lui-même, et la contre-pioche cessait d'être une décision (`docs/ameliorations.md`).
   Certaines Lames tournent à gauche (chocs frontaux amplifiés contre rotation droite) —
   Saison 1, jalon 4.
 

@@ -133,6 +133,53 @@ durée, les trois boutons sont `MIX.whirrGain`, `MIX.whirrFreqHigh` et `MIX.subG
 
 ---
 
+## Session du 2026-08-28 — le verrou du châssis
+
+### ✅ 4. Changer de toupie à chaque salle valait mieux que bien choisir
+
+> « Changer de toupie est gratuit et immédiat, et la table des types est affichée :
+> on peut donc changer de châssis à chaque salle pour être toujours du bon côté du
+> triangle. »
+
+**Mesuré à l'autopilote, 5 graines, chapitre 1 jusqu'à validation :**
+
+| Politique de châssis | Runs | Durée |
+|---|---|---|
+| **contre-pioche à chaque salle** | **17** | **1,42 h** |
+| contre-pioche au départ de la descente | 30 | 2,11 h |
+| Brasier Solaire, jamais changée (référence) | 23 | 1,91 h |
+
+Le contournement pesait donc plus lourd que le triangle lui-même (dont l'écart
+meilleur/pire châssis est de ×1,76), et il vidait de son sens la décision centrale
+du jalon 2b : contre-piocher n'était plus un pari sur la composition d'un chapitre,
+c'était une routine sans coût.
+
+**Correctif — le châssis est figé pour la descente.** `RunState` porte désormais
+`toupie`, posé au départ du run et relu par `syncRunStats` à la place de
+`meta.toupies.active`. Les pièces continuent de prendre effet dans la seconde —
+acquis du jalon 1, intact ; seul le châssis attend. Le choix en attente monte sur la
+toupie à deux frontières, et deux seulement : la mort (`resetRun`) et le tour de
+chapitre bouclé (`equipPendingToupie`, appelé quand le boss est vidé). Un joueur qui
+enchaîne les descentes sans mourir peut donc toujours re-choisir — sans quoi le farm
+continu du jalon 3 l'aurait enfermé sur un châssis indéfiniment.
+
+L'écran Toupies distingue maintenant **« Pilotée »** (le run en cours) de
+**« Au prochain run »** (le choix en attente), et dit en une ligne pourquoi appuyer
+sur « Équiper » ne change rien à l'arène — sans ce texte, le verrou se lit comme un
+bug. Sur la carte pilotée, le bouton devient « Annuler le changement » : c'est ce
+qu'il fait réellement.
+
+**Garde-fou.** `npm run calibrate` joue désormais les deux politiques de
+contre-pioche côte à côte : le châssis étant verrouillé, elles doivent donner le même
+résultat au centième près. Vérifié par mutation — en rendant `syncRunStats` relisant
+`meta.toupies.active`, la ligne « par salle » retombe exactement à 17 runs / 1,42 h
+et le harnais affiche « VERROU ROMPU ».
+
+Aucun chiffre de la mesure principale ne bouge : 23 runs / 1,91 h, premier coffre
+d'Arène 0,78 h après validation, salle 10 la plus meurtrière.
+
+---
+
 ## En attente d'arbitrage
 
 - 💭 **Un simple mute suffit-il ?** Le bouton actuel est tout ou rien. Un réglage de
@@ -164,3 +211,13 @@ entier se rejoue en quelques millisecondes hors navigateur.
   et compter les `hits` retenus par le filtre de `CombatScreen`.
 - **Rendu** : `npm run dev` puis Playwright (voir `scripts/shots.mjs`) — c'est le
   seul moyen de juger un repère visuel.
+- **Vérifier en navigateur un mécanisme qui n'arrive qu'au bout d'une descente**
+  (le boss vaincu, par exemple) : jouer les dix salles en temps réel demande une
+  dizaine de minutes. Accélérer l'horloge de la page suffit — un `page.addInitScript`
+  qui enveloppe `requestAnimationFrame` pour avancer un temps virtuel de 240 ms par
+  image et fait pointer `performance.now` dessus. `useGameLoop` consomme alors
+  ~2,4 ticks par image au lieu d'un tous les six, soit ×14 : le boss tombe en une
+  trentaine de secondes. La simulation avançant par pas fixes de 100 ms,
+  **ce qu'elle calcule est rigoureusement inchangé** — seule la cadence
+  d'observation bouge. Sauvegarde de départ injectée dans `localStorage` avant le
+  premier chargement, pièces au rang 11, pour que les salles tombent vite.
