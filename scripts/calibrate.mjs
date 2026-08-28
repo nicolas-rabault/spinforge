@@ -1,10 +1,12 @@
 // Autopilote de calibration. Conservé volontairement : le jalon 3 en redemandera.
 // La simulation étant pure et sans DOM, aucun navigateur n'est nécessaire.
-import { createRun, syncRunStats, tick } from '../src/sim/sim.ts';
+import { createRun, equipPendingToupie, syncRunStats, tick } from '../src/sim/sim.ts';
 import { addPiece, applyRunReward, createInitialMeta, setActiveToupie } from '../src/sim/meta.ts';
 import { tryUpgrade, upgradeCost } from '../src/sim/economy.ts';
 import { canOpen, openChest } from '../src/sim/chest.ts';
 import { TICK_S, SALLES_PER_CHAPTER, CHESTS } from '../src/sim/config.ts';
+import { botTypeFor } from '../src/sim/salle.ts';
+import { typeMult } from '../src/sim/typeChart.ts';
 import { TOUPIES } from '../src/content/toupies.ts';
 
 const SEEDS = [1, 7, 42, 1337, 90210];
@@ -20,6 +22,22 @@ function steerTowardNearest(run) {
   }
   if (!best) return null;
   return { x: best.pos.x - run.player.pos.x, y: best.pos.y - run.player.pos.y };
+}
+
+/**
+ * Le châssis qui domine le mieux le type d'une salle : on maximise le rapport
+ * entre ce qu'on inflige et ce qu'on subit, le triangle jouant des deux côtés.
+ * Dérivé de `typeMult`, jamais d'une table réécrite ici.
+ */
+function counterFor(chapter, salle) {
+  const botType = botTypeFor(chapter, salle);
+  let best = TOUPIES[0];
+  let bestRatio = 0;
+  for (const t of TOUPIES) {
+    const ratio = typeMult(t.type, botType) / typeMult(botType, t.type);
+    if (ratio > bestRatio) { bestRatio = ratio; best = t; }
+  }
+  return best.id;
 }
 
 /** Achats gloutons : on améliore l'emplacement le moins cher tant qu'on peut. */
@@ -42,12 +60,20 @@ function spend(meta) {
  * il est omis, `meta` garde le châssis de départ (Brasier Solaire) posé par
  * `createInitialMeta`, donc ce garde-fou de non-régression reste au mot près
  * ce qu'il mesurait avant le comparatif de châssis ajouté pour la Task 11.
+ *
+ * `counterPick` fait jouer un contre-pioqueur qui possède les quatre toupies :
+ * `'salle'` rebascule à chaque salle, `'descente'` seulement au départ de chaque
+ * descente. Les deux mesurent la même chose tant que le châssis est verrouillé.
  */
-function simulate(seed, { buyChests, toupieId }) {
+function simulate(seed, { buyChests, toupieId, counterPick }) {
   const meta = createInitialMeta(seed);
   if (toupieId) {
     meta.toupies.unlocked = [toupieId];
     setActiveToupie(meta, toupieId);
+  }
+  if (counterPick) {
+    meta.toupies.unlocked = TOUPIES.map((t) => t.id);
+    setActiveToupie(meta, counterFor(1, 1));
   }
   let run = createRun(meta, seed);
   let ticks = 0;
@@ -70,6 +96,14 @@ function simulate(seed, { buyChests, toupieId }) {
       // (`ForgeScreen.tsx`). Sans lui, l'autopilote sous-mesure la vitesse de
       // progression réelle du joueur.
       syncRunStats(run, meta);
+      // Le contournement d'avant le verrou : se remettre du bon côté du triangle
+      // à chaque salle, `syncRunStats` l'appliquant dans la seconde. Depuis le
+      // verrou, seul `equipPendingToupie` fait monter ce choix sur la toupie.
+      if (counterPick && (counterPick === 'salle' || run.salle === 1)) {
+        setActiveToupie(meta, counterFor(run.chapter, run.salle));
+        syncRunStats(run, meta);
+      }
+      if (salleBefore === SALLES_PER_CHAPTER) equipPendingToupie(run, meta);
       if (meta.chapterValidated && ticksToValidate === null) {
         ticksToValidate = ticks;
         runsToValidate = runs;
@@ -83,6 +117,7 @@ function simulate(seed, { buyChests, toupieId }) {
     if (run.phase === 'dead') {
       deathsBySalle.set(run.salle, (deathsBySalle.get(run.salle) ?? 0) + 1);
       runs++;
+      if (counterPick) setActiveToupie(meta, counterFor(1, 1));
       run = createRun(meta, seed + runs);
     }
   }
@@ -141,3 +176,25 @@ const best = Math.min(...runCounts);
 const worst = Math.max(...runCounts);
 console.log('Écart meilleur/pire (runs) : %s/%s = ×%s (cible : < ×2)',
   worst, best, (worst / best).toFixed(2));
+
+// Garde-fou du verrou de châssis. Les deux séries jouent le même autopilote,
+// possèdent les quatre toupies et contre-piochent le même triangle ; elles ne
+// diffèrent que par le MOMENT du choix. Le châssis étant figé pour la descente,
+// changer d'avis salle par salle ne peut plus rien rapporter : les deux lignes
+// doivent être identiques. Vérifié par mutation — en rendant `syncRunStats`
+// relisant `meta.toupies.active`, « par salle » retombe à 17 runs / 1,42 h face
+// aux 30 / 2,11 h de « par descente », et la ligne de verdict crie.
+const pickSeries = ['salle', 'descente'].map((when) => {
+  const rs = SEEDS.map((seed) => simulate(seed, { buyChests: true, counterPick: when }));
+  return { when, runs: median(rs.map((r) => r.runs)), hours: median(rs.map((r) => r.hoursToValidate)) };
+});
+
+console.log('\n=== Verrou du châssis — contre-pioche du triangle (%d graines) ===', SEEDS.length);
+for (const p of pickSeries) {
+  console.log('contre-pioche par %s : %s runs · %s h', p.when.padEnd(9), fmt(p.runs), fmt(p.hours));
+}
+const [parSalle, parDescente] = pickSeries;
+const locked = parSalle.runs === parDescente.runs && parSalle.hours === parDescente.hours;
+console.log(locked
+  ? 'Verrou actif : changer de châssis en cours de descente ne rapporte rien.'
+  : 'VERROU ROMPU : contre-piocher salle par salle rapporte encore.');
