@@ -1,6 +1,7 @@
 import { ECON, PIECE_EFFECT, PLAYER_BASE } from './config';
 import { rarityMult, type PieceInstance, type Slot } from './piece';
 import { resolveProfile } from './profile';
+import type { ToupieId } from '../content/toupies';
 import type { MetaState, RunReward, Stats } from './types';
 
 export function upgradeCost(level: number): number {
@@ -20,9 +21,9 @@ function factor(piece: PieceInstance, perLevel: number): number {
   return (1 + perLevel * piece.level) * rarityMult(piece.rank);
 }
 
-export function playerStats(meta: MetaState): Stats {
+export function playerStats(meta: MetaState, toupie: ToupieId): Stats {
   const { lame, disque, pointe, noyau } = meta.equipped;
-  const p = resolveProfile(meta);
+  const p = resolveProfile(meta, toupie);
   return {
     attack: PLAYER_BASE.attack * factor(lame, PIECE_EFFECT.lameAttack) * p.attack,
     defense: PLAYER_BASE.defense * factor(disque, PIECE_EFFECT.disqueDefense) * p.defense,

@@ -31,7 +31,10 @@ export function ForgeScreen({
   onChanged: () => void;
 }) {
   const meta = metaRef.current;
-  const before = playerStats(meta);
+  // Le châssis piloté, jamais celui en attente : la Forge chiffre la toupie qui
+  // est dans l'arène, pas celle qui y montera au prochain run.
+  const toupie = runRef.current.toupie;
+  const before = playerStats(meta, toupie);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>
       <h2 style={{ font: '600 20px Oswald, ui-sans-serif, sans-serif', margin: 0, letterSpacing: '.02em' }}>
@@ -44,7 +47,7 @@ export function ForgeScreen({
         const piece = meta.equipped[row.key];
         const cost = upgradeCost(piece.level);
         const after = row.read(
-          playerStats({ ...meta, equipped: { ...meta.equipped, [row.key]: { ...piece, level: piece.level + 1 } } }),
+          playerStats({ ...meta, equipped: { ...meta.equipped, [row.key]: { ...piece, level: piece.level + 1 } } }, toupie),
         );
         const affordable = meta.credits >= cost;
         const talents = talentsOf(row.key, piece.rank);

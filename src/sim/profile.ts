@@ -1,4 +1,5 @@
 import { CHASSIS, MODELS_PROFILE } from './config';
+import type { ToupieId } from '../content/toupies';
 import type { MetaState } from './types';
 
 /** Les sept axes qu'un profil peut multiplier. Châssis et modèles génériques
@@ -31,10 +32,10 @@ export const NEUTRAL_PROFILE: Record<ProfileAxis, number> = Object.fromEntries(
  *  Tout se compose par multiplication : rien n'écrase rien. Un Colosse (masse
  *  ×1,30) sur une Carapace Abyssale (×1,40) donne ×1,82, auquel le talent
  *  Masse ajoutera encore son facteur au montage de la toupie. */
-export function resolveProfile(meta: MetaState): Record<ProfileAxis, number> {
+export function resolveProfile(meta: MetaState, toupie: ToupieId): Record<ProfileAxis, number> {
   const out = { ...NEUTRAL_PROFILE };
   const sources: (StatProfile | undefined)[] = [
-    CHASSIS[meta.toupies.active],
+    CHASSIS[toupie],
     MODELS_PROFILE[meta.equipped.disque.model],
     MODELS_PROFILE[meta.equipped.pointe.model],
   ];

@@ -5,11 +5,11 @@ import { applySteering, clampToArena, moveAndBounce } from './physics';
 import { nextRandom } from './rng';
 import { spawnSalle } from './salle';
 import { resolveTalents } from './talents';
-import { activeToupie } from './meta';
+import { toupieById, type ToupieId } from '../content/toupies';
 import type { Input, MetaState, RunReward, RunState, Top } from './types';
 
-function makePlayer(meta: MetaState): Top {
-  const stats = playerStats(meta);
+function makePlayer(meta: MetaState, toupie: ToupieId): Top {
+  const stats = playerStats(meta, toupie);
   const talents = resolveTalents(meta);
   return {
     id: 'player',
@@ -27,7 +27,7 @@ function makePlayer(meta: MetaState): Top {
     accel: stats.accel,
     talents,
     decayPauseTicks: 0,
-    type: activeToupie(meta).type,
+    type: toupieById(toupie).type,
     mass: stats.mass * talents.mass,
   };
 }
@@ -42,12 +42,14 @@ function startSalle(run: RunState): void {
 }
 
 export function createRun(meta: MetaState, seed: number): RunState {
+  const toupie = meta.toupies.active;
   const run: RunState = {
     tick: 0,
     rngState: seed >>> 0 || 1,
     chapter: 1,
     salle: 1,
-    player: makePlayer(meta),
+    toupie,
+    player: makePlayer(meta, toupie),
     bots: [],
     phase: 'fighting',
     secondSouffleUsed: false,
@@ -60,7 +62,8 @@ export function resetRun(run: RunState, meta: MetaState): void {
   run.salle = 1;
   run.phase = 'fighting';
   run.secondSouffleUsed = false;
-  run.player = makePlayer(meta);
+  run.toupie = meta.toupies.active;
+  run.player = makePlayer(meta, run.toupie);
   startSalle(run);
 }
 
@@ -71,9 +74,14 @@ export function resetRun(run: RunState, meta: MetaState): void {
  * une régression sur le jalon 1, où l'amélioration prenait effet dans la seconde.
  * Le spin est **borné vers le bas, jamais soigné** : sinon améliorer son Noyau
  * à 3 % de spin serait un soin gratuit.
+ *
+ * Le châssis, lui, vient de `run.toupie` et **jamais** de `meta.toupies.active` :
+ * les pièces prennent effet dans la seconde, le châssis reste celui de la
+ * descente. Sans cette asymétrie on change de type à chaque salle pour être
+ * toujours du bon côté du triangle, et la contre-pioche cesse d'être un choix.
  */
 export function syncRunStats(run: RunState, meta: MetaState): void {
-  const stats = playerStats(meta);
+  const stats = playerStats(meta, run.toupie);
   const talents = resolveTalents(meta);
   run.player.attack = stats.attack;
   run.player.defense = stats.defense;
@@ -82,9 +90,24 @@ export function syncRunStats(run: RunState, meta: MetaState): void {
   run.player.spinDecay = stats.spinDecay;
   run.player.spin = Math.min(run.player.spin, stats.spinMax);
   run.player.talents = talents;
-  run.player.type = activeToupie(meta).type;
+  run.player.type = toupieById(run.toupie).type;
   run.player.accel = stats.accel;
   run.player.mass = stats.mass * talents.mass;
+}
+
+/**
+ * Le châssis en attente monte sur la toupie. Une descente des dix salles = un
+ * run : c'est ici, et nulle part ailleurs, que le choix prend effet — à la mort
+ * (`resetRun`) et au tour de chapitre bouclé. `tick` ne peut pas s'en charger,
+ * le méta étant hors de sa portée.
+ *
+ * Ne soigne pas : `syncRunStats` borne le spin vers le bas seulement, donc
+ * troquer un châssis contre un plus endurant au passage du boss ne rend rien.
+ */
+export function equipPendingToupie(run: RunState, meta: MetaState): void {
+  if (run.toupie === meta.toupies.active) return;
+  run.toupie = meta.toupies.active;
+  syncRunStats(run, meta);
 }
 
 function refreshBotAims(run: RunState): void {
