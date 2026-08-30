@@ -369,6 +369,95 @@ durée, les trois boutons sont `MIX.whirrGain`, `MIX.whirrFreqHigh` et `MIX.subG
 
 ---
 
+## Session du 2026-08-28 — le verrou du châssis
+
+### ✅ 4. Changer de toupie à chaque salle valait mieux que bien choisir
+
+> « Changer de toupie est gratuit et immédiat, et la table des types est affichée :
+> on peut donc changer de châssis à chaque salle pour être toujours du bon côté du
+> triangle. »
+
+**Mesuré à l'autopilote, 5 graines, chapitre 1 joué jusqu'à validation.** Toutes
+ces séries possèdent les quatre toupies ; le nombre de toupies débloquées ne change
+aucun résultat, vérifié séparément sur les quatre châssis.
+
+| Politique de châssis | Runs | Durée |
+|---|---|---|
+| **contre-pioche à chaque salle** (le contournement) | 17 | **1,42 h** |
+| **Carapace Abyssale, tenue du début à la fin** (le témoin) | 17 | **1,66 h** |
+| Typhon Primal, tenue du début à la fin | 30 | 2,11 h |
+| Brasier Solaire, la toupie de départ | 23 | 1,91 h |
+
+**Le bon témoin est Carapace Abyssale, pas Brasier Solaire.** Un joueur qui possède
+quatre toupies et ne triche pas ne reste pas sur celle de départ : il prend la
+meilleure et la garde. Le contournement lui fait donc gagner **0,24 h, soit ~14 %
+de temps à nombre de runs égal** — et non les 23 → 17 qu'une comparaison à la toupie
+de départ laisserait croire. Cette comparaison-là confondrait deux effets : posséder
+un meilleur châssis, et tricher avec.
+
+**Ce n'est pas la taille du gain qui a tranché, c'est ce qu'il détruit.** Le triangle
+des forces a été ajouté au jalon 2b pour qu'on parie sur la composition d'un chapitre
+avant d'y descendre. Une contre-pioche gratuite et instantanée supprime le pari :
+il n'y a plus de mauvais choix, seulement un geste à répéter à chaque salle.
+
+**Fenêtre où le problème existe.** Il faut au moins deux toupies pour contre-piocher,
+et avant la validation du chapitre 1 on n'en a qu'une : les gemmes ne tombent que du
+boss (`econ.bossGems` = 60), une toupie en coûte 900, et le cadeau du Fondateur exige
+`chapterValidated`. Le contournement est donc un problème d'**après** le premier mur —
+c'est-à-dire du jalon 3, quand le farm tournera en continu. Les mesures ci-dessus se
+lisent comme un baromètre d'efficacité de combat, pas comme un parcours jouable.
+
+**Correctif — le châssis est figé pour la descente.** `RunState` porte désormais
+`toupie`, posé au départ du run et relu par `syncRunStats` à la place de
+`meta.toupies.active`. Les pièces continuent de prendre effet dans la seconde —
+acquis du jalon 1, intact ; seul le châssis attend. Le choix en attente monte sur la
+toupie à deux frontières, et deux seulement : la mort (`resetRun`) et le tour de
+chapitre bouclé (`equipPendingToupie`, appelé quand le boss est vidé). Un joueur qui
+enchaîne les descentes sans mourir peut donc toujours re-choisir — sans quoi le farm
+continu du jalon 3 l'aurait enfermé sur un châssis indéfiniment.
+
+L'écran Toupies distingue maintenant **« Pilotée »** (le run en cours) de
+**« Au prochain run »** (le choix en attente), et dit en une ligne pourquoi appuyer
+sur « Équiper » ne change rien à l'arène — sans ce texte, le verrou se lit comme un
+bug. Sur la carte pilotée, le bouton devient « Annuler le changement » : c'est ce
+qu'il fait réellement.
+
+**Garde-fou.** `npm run calibrate` joue désormais deux séries côte à côte, identiques
+en tout sauf le moment du choix : rebasculer à chaque salle, ou tenir le même châssis
+jusqu'au boss. Le verrou en place, elles doivent donner le même résultat au centième
+près. Vérifié par mutation dans les deux directions : `syncRunStats` relisant
+`meta.toupies.active` d'une part, `equipPendingToupie` appelée à chaque salle au lieu
+du seul boss d'autre part — les deux ramènent la première série à 17 runs / 1,42 h et
+font afficher « VERROU ROMPU ». La seconde mutation compte autant que la première :
+appeler l'adoption *trop souvent* rouvre exactement le même trou que ne pas la
+verrouiller.
+
+Aucun chiffre de la mesure principale ne bouge : 23 runs / 1,91 h, premier coffre
+d'Arène 0,78 h après validation, salle 10 la plus meurtrière.
+
+### Remesure après l'intégration du jalon 2.5 — le contournement a grossi
+
+Les chiffres ci-dessus datent d'**avant** l'intégration du terrain et du butin. Le
+verrou a été refusionné dans le build intégré et remesuré au même harnais, désormais
+à dix graines et sous la politique `steerWithTerrain` :
+
+| | Runs | Durée |
+|---|---|---|
+| **contre-pioche à chaque salle** (verrou retiré) | 6 | **0,19 h** |
+| **Carapace Abyssale, tenue du début à la fin** (le témoin) | 5 | **0,29 h** |
+| même choix, tenu jusqu'au boss (témoin apparié) | 19 | 0,46 h |
+
+Le contournement fait donc gagner **~34 % de temps** là où il en faisait gagner 14 %
+avant l'intégration. La raison est mécanique : le terrain a raccourci les combats, si
+bien que la part du triangle dans l'issue d'une salle a monté d'autant. **Le verrou
+vaut plus cher après l'intégration qu'avant.**
+
+Le verrou reste neutre en équilibrage : les quatre garde-fous du build fusionné sont
+identiques avec et sans lui (chapitre 1 à 0,32 h / 9 runs, salle 10 la plus meurtrière
+avec 23 morts, premier coffre immédiat, passivité jamais validée).
+
+---
+
 ## En attente d'arbitrage
 
 - 💭 **Un simple mute suffit-il ?** Le bouton actuel est tout ou rien. Un réglage de
@@ -400,3 +489,16 @@ entier se rejoue en quelques millisecondes hors navigateur.
   et compter les `hits` retenus par le filtre de `CombatScreen`.
 - **Rendu** : `npm run dev` puis Playwright (voir `scripts/shots.mjs`) — c'est le
   seul moyen de juger un repère visuel.
+- **Vérifier en navigateur un mécanisme qui n'arrive qu'au bout d'une descente**
+  (le boss vaincu, par exemple) : jouer les dix salles en temps réel demande une
+  dizaine de minutes. Accélérer l'horloge de la page suffit — un `page.addInitScript`
+  qui enveloppe `requestAnimationFrame` pour avancer un temps virtuel de 240 ms par
+  image et fait pointer `performance.now` dessus. `useGameLoop` consomme alors
+  ~2,4 ticks par image au lieu d'un tous les six, soit ×14 : le boss tombe en une
+  trentaine de secondes. La simulation avançant par pas fixes de 100 ms,
+  **ce qu'elle calcule est rigoureusement inchangé** — seule la cadence
+  d'observation bouge. Sauvegarde de départ injectée dans `localStorage` avant le
+  premier chargement, pièces au rang 11, pour que les salles tombent vite ; une
+  toupie nue et zéro pilotage donnent l'inverse, la mort en quelques secondes.
+  `scripts/verrou.mjs` (`npm run verrou`, avec `npm run dev` en marche) fait les deux
+  et sert de modèle.

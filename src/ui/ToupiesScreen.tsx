@@ -1,10 +1,9 @@
-import { TOUPIES, type ToupieId, type TopType } from '../content/toupies';
+import { TOUPIES, toupieById, type ToupieId, type TopType } from '../content/toupies';
 import {
   activeToupie, buyToupie, canClaimFounderGift, claimFounderGift, setActiveToupie,
 } from '../sim/meta';
 import { botTypeFor } from '../sim/salle';
 import { CHASSIS, SALLES_PER_CHAPTER, TOUPIE_SHOP, TYPES } from '../sim/config';
-import { syncRunStats } from '../sim/sim';
 import { formatCredits } from './format';
 import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
 import { TYPE_LABELS } from './typeLabels';
@@ -70,18 +69,20 @@ export function ToupiesScreen({
   onChanged: () => void;
 }) {
   const meta = metaRef.current;
-  const active = activeToupie(meta);
+  const pending = activeToupie(meta);
+  const piloted = toupieById(runRef.current.toupie);
+  // Le châssis est figé pour la descente : tant que le choix diffère de la
+  // toupie pilotée, il attend la mort ou le boss. Sans ce texte, « Équiper » ne
+  // changerait rien à l'écran et se lirait comme un bug.
+  const waiting = pending.id !== piloted.id;
+  const dead = runRef.current.phase === 'dead';
   const giftAvailable = canClaimFounderGift(meta);
   const groups = chapterGroups(1);
 
-  // Une seule porte de mutation : `sync` puis `onChanged`, exactement ce que fait
-  // ForgeScreen après un achat — sans ça, changer de toupie n'affecterait le
-  // pilotage qu'au prochain run au lieu du run en cours.
+  // Une seule porte de mutation. Plus de `syncRunStats` ici : le run ne relit
+  // jamais `meta.toupies.active`, c'est tout l'objet du verrou.
   const mutate = (fn: (m: MetaState, id: ToupieId) => boolean, id: ToupieId) => {
-    if (fn(metaRef.current, id)) {
-      syncRunStats(runRef.current, metaRef.current);
-      onChanged();
-    }
+    if (fn(metaRef.current, id)) onChanged();
   };
 
   return (
@@ -89,6 +90,23 @@ export function ToupiesScreen({
       <h2 style={{ font: '600 20px Oswald, ui-sans-serif, sans-serif', margin: 0, letterSpacing: '.02em' }}>
         Toupies
       </h2>
+
+      {waiting ? (
+        <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)' }}>
+          {dead ? (
+            <>
+              <span style={{ color: 'var(--text)' }}>{pending.label}</span> monte sur le ring dès que
+              tu relances la descente.
+            </>
+          ) : (
+            <>
+              Tu pilotes <span style={{ color: 'var(--ember)' }}>{piloted.label}</span> jusqu'au bout
+              de la descente. <span style={{ color: 'var(--text)' }}>{pending.label}</span> prend le
+              relais à la mort ou au boss vaincu.
+            </>
+          )}
+        </p>
+      ) : null}
 
       <section style={cardStyle('var(--line)')}>
         <p style={{ margin: 0, font: '500 15px Oswald, ui-sans-serif, sans-serif' }}>
@@ -123,27 +141,30 @@ export function ToupiesScreen({
 
       {TOUPIES.map((t) => {
         const owned = meta.toupies.unlocked.includes(t.id);
-        const isActive = t.id === active.id;
+        const isPiloted = t.id === piloted.id;
+        const isPending = t.id === pending.id;
         const profile = CHASSIS[t.id] ?? {};
         const axes = AXIS_ORDER.filter((a) => profile[a] !== undefined);
         const affordable = meta.gems >= TOUPIE_SHOP.priceGems;
 
         return (
-          <section key={t.id} style={cardStyle(isActive ? 'var(--ember)' : 'var(--line)')}>
+          <section key={t.id} style={cardStyle(isPiloted ? 'var(--ember)' : 'var(--line)')}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
               <div>
                 <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif' }}>{t.label}</p>
                 <p style={{ margin: 0, fontSize: 12.5, color: `var(--type-${t.type})` }}>{TYPE_LABELS[t.type]}</p>
               </div>
-              {owned && isActive ? (
+              {owned && (isPiloted || isPending) ? (
                 <span
                   style={{
                     minHeight: 22, padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap',
-                    background: 'var(--ember)', color: 'var(--ink)',
+                    background: isPiloted ? 'var(--ember)' : 'transparent',
+                    color: isPiloted ? 'var(--ink)' : 'var(--muted)',
+                    border: isPiloted ? '1px solid var(--ember)' : '1px solid var(--line)',
                     font: '600 12px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.03em',
                   }}
                 >
-                  Pilotée
+                  {isPiloted ? 'Pilotée' : 'Au prochain run'}
                 </span>
               ) : null}
             </div>
@@ -166,9 +187,11 @@ export function ToupiesScreen({
               </span>
             </div>
 
-            {owned && isActive ? null : owned ? (
+            {owned && isPending ? null : owned ? (
+              // La carte pilotée n'apparaît ici que si un autre châssis attend :
+              // y appuyer revient à renoncer au changement, pas à « équiper ».
               <button onClick={() => mutate(setActiveToupie, t.id)} style={actionButtonStyle(true)}>
-                Équiper
+                {isPiloted ? 'Annuler le changement' : 'Équiper'}
               </button>
             ) : giftAvailable ? (
               <button onClick={() => mutate(claimFounderGift, t.id)} style={actionButtonStyle(true)}>

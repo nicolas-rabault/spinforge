@@ -479,3 +479,38 @@ bloquant.
 - **Les identités d'arène des chapitres 2 à 8** : le jalon 2.5 a livré le système de terrain,
   pas les huit arènes qui l'utilisent. Inatteignables tant que l'enchaînement des chapitres
   n'existe pas (jalon 3).
+
+## Dette connue (verrou du châssis, 2026-08-28)
+
+Suite directe du jalon 2b : changer de toupie était gratuit et immédiat, donc on
+contre-piochait salle par salle. Mesures, correctif et garde-fou :
+`docs/ameliorations.md`, session du 2026-08-28.
+
+**Une seule des deux directions du verrou est couverte automatiquement.**
+`npm run calibrate` attrape bien le trou dans ses deux formes : `syncRunStats` qui
+relirait `meta.toupies.active`, **et** `equipPendingToupie` appelée trop souvent (à
+chaque salle au lieu du seul boss) — les deux ramènent la série de contre-pioche à
+6 runs / 0,19 h contre 19 / 0,46 h, et font crier le verdict. Ce que rien n'attrape, c'est l'appel
+*manquant* : si `src/ui/useGameLoop.ts:60` disparaissait, le châssis en attente ne
+monterait jamais après le boss et aucun test ne rougirait — le harnais de calibration
+n'a aucune série qui change de châssis entre deux descentes, donc il ne franchit
+jamais cette frontière. C'est ce que couvre `npm run verrou` (`scripts/verrou.mjs`),
+en navigateur : il joue une descente entière et vérifie les deux frontières, la mort
+et le boss. Vérifié par mutation — l'appel retiré de `useGameLoop`, il rougit sur la
+seule assertion du boss. Il n'entre pas dans `npm run test` pour autant : il lui faut
+un `npm run dev` en marche et une minute de navigateur. À rendre automatique quand le
+jalon 3 donnera à la boucle de jeu une frontière de run explicite — le farm AUTO devra
+en avoir une de toute façon.
+
+**Deux sites dérivent « le boss vient de tomber ».**
+`salleJustCleared === SALLES_PER_CHAPTER` dans `applyRunReward` (`src/sim/meta.ts`), et
+`salleBefore === SALLES_PER_CHAPTER` dans `src/ui/useGameLoop.ts`. La sortie propre existe et ne coûte presque rien : `RunReward`
+gagnerait `boss: boolean`, que `salleReward` connaît déjà (`src/sim/economy.ts:11`) ;
+les deux sites liraient `reward.boss`, et `applyRunReward` perdrait son troisième
+paramètre. Rien de tout cela ne fait entrer le méta dans `sim.ts` — la règle
+d'architecture n° 1 tient. Non fait ici : cela élargit le diff à `types.ts`, `meta.ts`,
+`economy.ts` et leurs tests, c'est-à-dire précisément les fichiers que la branche du
+jalon 2.5 réécrit en parallèle. À faire juste après la fusion des deux branches.
+
+**`chapterGroups(1)` code toujours le chapitre 1 en dur** (`src/ui/ToupiesScreen.tsx`) :
+inchangé par ce lot, déjà listé en dette du jalon 2b.

@@ -26,6 +26,16 @@ Piliers non négociables :
   de charge et les talents : il ne les remplace pas. Le type est porté par le **châssis** de
   la toupie, qui n'est pas un cinquième emplacement — toutes les pièces restent
   interchangeables entre châssis. Le type des bots est fixé par chapitre et par salle.
+  **Le châssis est figé pour la descente** : on le choisit avant de partir, et il ne
+  change qu'à la mort ou au boss vaincu — une descente des dix salles = un run. Les
+  pièces, elles, continuent de prendre effet dans la seconde. Sans ce verrou, un
+  joueur qui possède plusieurs toupies rebascule à chaque salle pour être toujours du
+  bon côté du triangle, et la contre-pioche cesse d'être un pari sur la composition
+  d'un chapitre : elle devient une routine sans coût. Mesuré sur le build fusionné
+  (dix graines, politique terrain) : contre-piocher à chaque salle valide le chapitre 1
+  en **0,19 h**, contre **0,29 h** pour le meilleur châssis tenu du début à la fin —
+  **~34 % de temps en moins**. Le cas n'apparaît qu'**après** la validation du
+  chapitre 1, faute d'une deuxième toupie avant. Détail : `docs/ameliorations.md`.
   Certaines Lames tournent à gauche (chocs frontaux amplifiés contre rotation droite) —
   Saison 1, jalon 4.
 - **Répulsion** (jalon 2.5) : un choc rend plus d'énergie qu'il n'absorbe (`restitution` 1,6) — la rotation est le réservoir d'énergie du monde du jeu, chaque contact en convertit une part en recul. Le plafond de vitesse ne borne plus que le **pilotage** : un joueur ne dépasse jamais sa vitesse de Pointe par son seul doigt, mais le recul d'un choc peut le franchir — il retombe au plafond ordinaire en une poignée de ticks (amortissement de surcharge), assez pour se voir clairement « envoyé valser ». Voir `docs/ameliorations.md` pour la panne que cette règle a corrigée : sans elle, la répulsion existait dans le calcul mais n'était jamais parcourue.

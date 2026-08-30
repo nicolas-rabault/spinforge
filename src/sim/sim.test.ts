@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRun, resetRun, syncRunStats, tick } from './sim';
+import { createRun, equipPendingToupie, resetRun, syncRunStats, tick } from './sim';
 import { applyRunReward, createInitialMeta, setActiveToupie } from './meta';
 import { salleReward } from './economy';
 import { spawnSalle, botCountFor } from './salle';
@@ -253,21 +253,88 @@ describe('type et masse du joueur', () => {
     expect(avecTalent.player.mass).toBeCloseTo(MODELS_PROFILE['disque.colosse'].mass! * TALENTS.masse.mass, 6);
   });
 
-  it('syncRunStats recopie type, accel et masse quand la toupie active change', () => {
+  it('syncRunStats fige le châssis de la descente et laisse passer les pièces', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = createRun(meta, 1); // Brasier Solaire, profil de châssis neutre
+    const attackBefore = run.player.attack;
 
+    // Le contournement mesuré avant le verrou : changer de châssis à chaque salle
+    // pour être toujours du bon côté du triangle. Carapace Abyssale pèse sur les
+    // trois axes vérifiés ici — type défense, accel ×0,80, masse ×1,40 — donc si
+    // `syncRunStats` lisait encore `meta.toupies.active`, les trois bougeraient.
+    meta.toupies.unlocked.push('carapace-abyssale');
+    setActiveToupie(meta, 'carapace-abyssale');
+    // Améliorée dans le même appel : sans cette moitié, le test passerait encore
+    // si `syncRunStats` ne faisait plus rien du tout.
+    meta.equipped.lame.level = 5;
+    // Perturbés d'abord : sans ça, les trois assertions ci-dessous porteraient sur
+    // les valeurs que `createRun` a déjà écrites, et passeraient encore si
+    // `syncRunStats` cessait purement et simplement d'écrire ces champs.
+    run.player.type = 'attaque';
+    run.player.accel = 0;
+    run.player.mass = 0;
+    syncRunStats(run, meta);
+
+    expect(run.player.type).toBe('equilibre');
+    expect(run.player.accel).toBeCloseTo(PLAYER_BASE.accel, 6);
+    expect(run.player.mass).toBeCloseTo(1, 6);
+    expect(run.player.attack).toBeGreaterThan(attackBefore);
+  });
+});
+
+describe('resetRun', () => {
+  it('adopte le châssis choisi pendant le run perdu', () => {
+    const meta = createInitialMeta(1);
+    const run = createRun(meta, 1); // Brasier Solaire
+    // Le joueur change d'avis en cours de descente : le choix attend la mort.
+    meta.toupies.unlocked.push('typhon-primal');
+    setActiveToupie(meta, 'typhon-primal');
+    expect(run.toupie).toBe('brasier-solaire');
+
+    resetRun(run, meta);
+
+    expect(run.toupie).toBe('typhon-primal');
+    expect(run.player.type).toBe('attaque');
+  });
+});
+
+describe('equipPendingToupie', () => {
+  it('monte le châssis en attente et recopie type, accel et masse', () => {
+    const meta = createInitialMeta(1);
+    const run = createRun(meta, 1); // Brasier Solaire, profil neutre
     meta.toupies.unlocked.push('carapace-abyssale');
     setActiveToupie(meta, 'carapace-abyssale');
     meta.equipped.disque.rank = TALENTS.masse.rank;
-    syncRunStats(run, meta);
 
+    equipPendingToupie(run, meta);
+
+    expect(run.toupie).toBe('carapace-abyssale');
     expect(run.player.type).toBe('defense');
-    // Carapace Abyssale pèse sur l'accélération (×0,80) et la masse (×1,40) :
-    // ces deux assertions divergeraient de PLAYER_BASE.accel / TALENTS.masse.mass
-    // seuls si `syncRunStats` cessait de recopier `stats.accel` / `stats.mass`.
+    // Carapace pèse sur l'accélération (×0,80) et la masse (×1,40) : ces deux
+    // assertions retomberaient sur les valeurs neutres si l'adoption ne
+    // repassait pas par `syncRunStats`.
     expect(run.player.accel).toBeCloseTo(PLAYER_BASE.accel * CHASSIS['carapace-abyssale'].accel!, 6);
     expect(run.player.mass).toBeCloseTo(CHASSIS['carapace-abyssale'].mass! * TALENTS.masse.mass, 6);
+  });
+
+  it('ne soigne pas : passer à un châssis plus endurant ne remplit pas la barre', () => {
+    const meta = createInitialMeta(1);
+    const run = createRun(meta, 1); // Brasier Solaire, spinMax neutre
+    const spinMaxAvant = run.player.spinMax;
+    run.player.spin = spinMaxAvant; // barre pleine sur l'ancien châssis
+
+    // Carapace Abyssale est le seul châssis qui monte le spin max (×1,15) : la
+    // barre grandit donc sous la toupie. Sans la borne vers le bas de
+    // `syncRunStats`, ou avec un soin à la place, le spin suivrait le nouveau
+    // plafond et l'adoption au boss serait une potion gratuite.
+    meta.toupies.unlocked.push('carapace-abyssale');
+    setActiveToupie(meta, 'carapace-abyssale');
+
+    equipPendingToupie(run, meta);
+
+    expect(run.player.spinMax).toBeCloseTo(spinMaxAvant * CHASSIS['carapace-abyssale'].spinMax!, 6);
+    expect(run.player.spin).toBe(spinMaxAvant);
+    expect(run.player.spin).toBeLessThan(run.player.spinMax);
   });
 });
 

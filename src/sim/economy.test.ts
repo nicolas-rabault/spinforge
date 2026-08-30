@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { playerStats, salleReward, tryUpgrade, upgradeCost } from './economy';
 import { createInitialMeta } from './meta';
+import { STARTER_TOUPIE } from '../content/toupies';
 import { ECON, LOOT, PLAYER_BASE } from './config';
 import { rarityMult } from './piece';
 
@@ -68,7 +69,7 @@ describe('salleReward — butin', () => {
 
 describe('pièces', () => {
   it('équipement de départ = stats de base', () => {
-    const s = playerStats(createInitialMeta(1));
+    const s = playerStats(createInitialMeta(1), STARTER_TOUPIE);
     expect(s.attack).toBeCloseTo(PLAYER_BASE.attack, 10);
     expect(s.spinDecay).toBeCloseTo(PLAYER_BASE.spinDecay, 10);
   });
@@ -76,14 +77,14 @@ describe('pièces', () => {
   it('la Lame monte l’attaque de 10 % par niveau', () => {
     const meta = createInitialMeta(1);
     meta.equipped.lame.level = 5;
-    expect(playerStats(meta).attack).toBeCloseTo(PLAYER_BASE.attack * 1.5, 5);
+    expect(playerStats(meta, STARTER_TOUPIE).attack).toBeCloseTo(PLAYER_BASE.attack * 1.5, 5);
   });
 
   it('le rang multiplie par-dessus le niveau', () => {
     const meta = createInitialMeta(1);
     meta.equipped.lame.level = 5;
     meta.equipped.lame.rank = 4;
-    expect(playerStats(meta).attack).toBeCloseTo(PLAYER_BASE.attack * 1.5 * rarityMult(4), 5);
+    expect(playerStats(meta, STARTER_TOUPIE).attack).toBeCloseTo(PLAYER_BASE.attack * 1.5 * rarityMult(4), 5);
   });
 });
 
@@ -94,7 +95,7 @@ describe('tryUpgrade', () => {
     expect(tryUpgrade(meta, 'lame')).toBe(true);
     expect(meta.credits).toBe(0);
     expect(meta.equipped.lame.level).toBe(1);
-    expect(playerStats(meta).attack).toBeCloseTo(PLAYER_BASE.attack * 1.1, 5);
+    expect(playerStats(meta, STARTER_TOUPIE).attack).toBeCloseTo(PLAYER_BASE.attack * 1.1, 5);
   });
 
   it('refuse si crédits insuffisants', () => {

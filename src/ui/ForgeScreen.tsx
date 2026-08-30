@@ -31,7 +31,13 @@ export function ForgeScreen({
   onChanged: () => void;
 }) {
   const meta = metaRef.current;
-  const before = playerStats(meta);
+  // La Forge chiffre la toupie sur laquelle l'achat va porter : celle de l'arène
+  // tant que le run vit, celle qui attend une fois la descente perdue — `resetRun`
+  // la montera au clic sur « Retenter », et c'est là qu'on fait ses courses.
+  const toupie = runRef.current.phase === 'dead'
+    ? metaRef.current.toupies.active
+    : runRef.current.toupie;
+  const before = playerStats(meta, toupie);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>
       <h2 style={{ font: '600 20px Oswald, ui-sans-serif, sans-serif', margin: 0, letterSpacing: '.02em' }}>
@@ -44,7 +50,7 @@ export function ForgeScreen({
         const piece = meta.equipped[row.key];
         const cost = upgradeCost(piece.level);
         const after = row.read(
-          playerStats({ ...meta, equipped: { ...meta.equipped, [row.key]: { ...piece, level: piece.level + 1 } } }),
+          playerStats({ ...meta, equipped: { ...meta.equipped, [row.key]: { ...piece, level: piece.level + 1 } } }, toupie),
         );
         const affordable = meta.credits >= cost;
         const talents = talentsOf(row.key, piece.rank);

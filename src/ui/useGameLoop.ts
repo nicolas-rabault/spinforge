@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { TICK_S } from '../sim/config';
-import { tick } from '../sim/sim';
+import { SALLES_PER_CHAPTER, TICK_S } from '../sim/config';
+import { equipPendingToupie, tick } from '../sim/sim';
 import { applyRunReward } from '../sim/meta';
 import type { MetaState, RunReward, RunState, Vec } from '../sim/types';
 
@@ -54,6 +54,10 @@ export function useGameLoop(
         const reward = tick(runRef.current, { steer: steerRef.current });
         if (reward) {
           applyRunReward(metaRef.current, reward, salleBefore);
+          // Le boss vidé referme la descente : c'est la seule frontière, avec la
+          // mort, où le châssis choisi entre-temps monte sur la toupie. `tick` a
+          // déjà ramené `run.salle` à 1 pour le tour suivant.
+          if (salleBefore === SALLES_PER_CHAPTER) equipPendingToupie(runRef.current, metaRef.current);
           h.onReward(reward);
         }
         h.afterTick(runRef.current);

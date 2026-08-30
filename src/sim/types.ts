@@ -73,6 +73,10 @@ export interface RunState {
   rngState: number;
   chapter: number;
   salle: number;
+  /** Le châssis de cette descente. Figé du départ au boss : c'est ce qui empêche
+   *  de contre-piocher salle par salle. Le choix en attente vit dans
+   *  `meta.toupies.active` et ne monte qu'à `equipPendingToupie`. */
+  toupie: ToupieId;
   player: Top;
   bots: Top[];
   /** Le terrain de la salle en cours. Reconstruit à chaque entrée de salle
