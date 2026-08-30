@@ -40,7 +40,6 @@ fusion sur les quatre paliers.
 **Critères** : ouvrir des coffres, fusionner jusqu'à changer de rang, équiper des pièces qui
 changent le gameplay ; pity vérifiés par test ; un rechargement conserve tout.
 
-## Jalon 2b — Les toupies ✦ plan : `docs/superpowers/plans/2026-08-27-jalon-2b-toupies.md`
 ## Jalon 2.5 — Le terrain et le butin ✦ plan : `docs/superpowers/plans/2026-08-27-jalon-2-5-terrain-et-butin.md`
 
 Inséré après le jalon 2a, à la suite d'une session de test du 2026-08-26 : le système de
@@ -82,7 +81,7 @@ autres chapitres restent à poser (§ 8 arènes-chapitres de `docs/game-design.m
   plafond de 20 h du harnais, contre 0,35 h en jouant le terrain — la forme la plus forte du
   garde-fou que ce jalon existe pour produire.
 
-## Jalon 2b — Les toupies
+## Jalon 2b — Les toupies ✦ plan : `docs/superpowers/plans/2026-08-27-jalon-2b-toupies.md`
 
 Les quatre Fondateurs (châssis + Lame/Noyau signature), types et triangle des forces,
 comportements distincts des modèles génériques, doublons signature des toupies débloquées.
@@ -406,18 +405,19 @@ Constatée et arbitrée pendant l'exécution du plan du jalon 2.5. Aucun de ces 
 bloquant.
 
 **Équilibrage**
-- `combat.damageK` (1,3, réglé à la Task 8b) et `econ.rewardBase` (86, réglé à la Task 14)
-  vivent tous les deux dans une zone chaotique du harnais de calibration : une variation de
-  ±1 à ±2 peut faire basculer le garde-fou « la salle 10 reste la plus meurtrière » ou
-  changer la mesure de plusieurs dixièmes d'heure. Les deux valeurs retenues sont dans un
-  palier, pas sur un pic isolé, mais l'un comme l'autre **doivent être remesurés au harnais**
-  si la physique de collision, le contenu de la salle 10, ou le jeu de graines du harnais
-  changent — ne pas supposer qu'ils restent stables. **La même obligation vaut désormais
-  pour `arena.breach.ejectSpeed` et `boss.mass`** : ce sont exactement les leviers qu'on ira
-  chercher le jour où l'éjection du boss (hors de portée aux valeurs actuelles, voir
-  ci-dessous) sera rouverte, et ils retombent dans la même zone chaotique du harnais que
-  `damageK` — toute variation de l'un ou l'autre doit être remesurée, pas seulement supposée
-  bonne.
+- `combat.damageK` et `econ.rewardBase` vivaient tous les deux dans une zone chaotique du
+  harnais de calibration — **l'intégration du jalon 2.5 dans le jalon 2b a honoré cette
+  obligation de remesure**, précisément parce qu'elle changeait deux des conditions qui
+  l'imposaient : la masse résolue vient désormais de quatre facteurs (châssis × modèle de
+  Disque × talent Masse × masse propre) et le triangle des forces multiplie aussi les
+  dégâts. Nouvelles références, mesurées à dix graines : `econ.rewardBase` **104**, choisie
+  dans le premier palier démontré de ce projet (102–110, sept valeurs consécutives qui
+  tiennent le garde-fou de la salle 10, contre un point unique auparavant) ; `combat.damageK`
+  **1,3**, confirmée dans son propre palier (1,2–1,6). **L'obligation de remesure reste
+  ouverte pour l'avenir** : si la physique de collision, le contenu de la salle 10,
+  `arena.breach.ejectSpeed`, `boss.mass` ou le jeu de graines du harnais changent encore, les
+  deux valeurs devront être vérifiées à nouveau — ne pas supposer qu'elles restent stables.
+  Détail du balayage : `docs/superpowers/plans/2026-08-28-calibration-integration.md`.
 - Tout l'équilibrage de ce jalon a été mesuré au harnais avec la politique `steerWithTerrain`
   (`scripts/calibrate.mjs`), dont la manœuvre distinctive — dépenser son budget de pilotage à
   se placer derrière la cible, du côté opposé à la brèche la plus proche, pour l'y pousser —
@@ -428,13 +428,14 @@ bloquant.
   jalon (`combat.damageK`, `econ.rewardBase`, `arena.shard.everyTicks`, …) a donc été réglé
   contre une politique dont le geste caractéristique réussit rarement. Non retouché ici : le
   harnais n'est pas à re-régler pour cette dette, seulement à garder à l'esprit en le lisant.
-- Le boss reste à **87,1 s**. Deux cibles existent et aucune n'est tenue : la cible finale
-  du cahier des charges est **~45 s** (spec § 3.1, table de la § 3), soit un écart réel de
-  **~42 s** ; le repère intermédiaire de **60 s** que le combat seul visait avant le passage
-  à l'économie (spec § 3.2, celui qu'affiche `npm run calibrate`) est manqué de **~27 s**.
-  Loin des 183 s de départ, mais ni l'une ni l'autre cible n'est tenue. Voir « Équilibrage du
-  chapitre 1 » ci-dessus pour l'arbitrage complet : la vitesse a été sacrifiée au pilier
-  « le boss est le mur ».
+- Le boss est descendu de **87 s** (jalon 2.5 seul) à **64,8 s** après l'intégration et sa
+  recalibration — effet de bord d'un joueur mieux équipé par l'économie recalibrée, pas d'un
+  réglage de combat : `combat.damageK` n'a pas bougé pendant la passe combat. La cible du
+  cahier des charges reste **~45 s** (spec § 3.1) et n'est toujours pas tenue, et **aucun
+  bouton ouvert par cette intégration ne l'y amène** — le seul qui s'en approche, `damageK` à
+  1,6, coûte six minutes de chapitre. Voir « Équilibrage du chapitre 1 » ci-dessus pour
+  l'arbitrage d'origine, et `docs/superpowers/plans/2026-08-28-calibration-integration.md`
+  pour le balayage complet.
 - L'éjection ne tue pas le boss aux valeurs actuelles (`arena.breach.ejectSpeed` 400,
   `boss.mass` 3) : il faudrait ~615 px/s de vitesse de charge pour l'éjecter, hors de portée
   du plafond de pilotage du joueur (240, 384 sous accélérateur) même dans la géométrie la
@@ -448,10 +449,6 @@ bloquant.
 - `ticksToFirstChest` (`scripts/calibrate.mjs`) n'a pas de test automatisé. C'est la mesure
   qui prouve la promesse phare du jalon (« un coffre ouvert en moins de deux minutes »), et
   elle ne vit que dans un script de calibration, jamais exercée par `npm run test`.
-- `boss.mass` et `shard.radius` n'ont pas de test de forme dans `config.test.ts`, à la
-  différence du reste de `arena` — lacune du plan d'implémentation, pas de l'exécution. Les
-  deux valeurs sont consommées et donc exercées indirectement par les tests de combat et de
-  rendu, mais rien ne verrouille leur domaine de valeur.
 - La borne corrigée de la migration de sauvegarde (`env.v < 2` plutôt que
   `env.v < SAVE_SCHEMA`, `src/sim/save.ts`) est **inobservable**, pas non testée :
   `migrateInventoryV1` renvoie une pile v2 telle quelle dès que `typeof s.count !== 'number'`
@@ -459,3 +456,12 @@ bloquant.
   formé — elle ne s'est jamais manifestée, et aucun test ne peut échouer pour ce défaut
   précis. Une entrée promettant un futur test ici promettrait quelque chose qui ne peut pas
   exister ; ne pas en écrire une.
+
+**Née de l'intégration**
+- **L'écart entre châssis atteint ×3,8** (Tigre Foudre : 19 runs médians ; Carapace Abyssale :
+  5) pour une cible de ×2. Il se corrige par les profils de châssis — mais la spec
+  d'intégration ferme explicitement cette porte (§ 6, « aucune décision de design du 2b
+  rouverte »). À rouvrir dans une passe qui en aura le mandat.
+- **Les identités d'arène des chapitres 2 à 8** : le jalon 2.5 a livré le système de terrain,
+  pas les huit arènes qui l'utilisent. Inatteignables tant que l'enchaînement des chapitres
+  n'existe pas (jalon 3).

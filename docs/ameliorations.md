@@ -10,6 +10,45 @@ Statuts : ✅ corrigé · 🔧 en cours · 📋 à faire · 💭 à arbitrer
 
 ---
 
+## Session du 2026-08-30 — intégration du jalon 2.5 dans le jalon 2b
+
+Pas un test joueur : le jalon 2b (toupies, triangle des forces) et le jalon 2.5 (terrain,
+butin de salle) ont été développés en parallèle sur le même cœur de simulation, puis
+fusionnés (`0d28725`) et recalibrés en une passe commune, économie (`5e40a89`) puis combat
+(`f4af698`) — jamais les deux dans le même commit.
+
+**Pourquoi une recalibration était nécessaire.** La masse résolue d'une toupie vient
+désormais de quatre facteurs (châssis × modèle de Disque × talent Masse × masse propre) et
+le triangle des forces multiplie aussi les dégâts — deux systèmes du jalon 2b que le jalon
+2.5 n'avait jamais mesurés ensemble avec le sien. `combat.damageK` et `econ.rewardBase`, réglés
+une première fois isolément, ont donc été entièrement remesurés à dix graines plutôt
+qu'ajustés à l'estime.
+
+| | Jalon 2.5 seul | Build intégré et recalibré |
+|---|---|---|
+| Chapitre 1 validé | 0,35 h / 10 runs | **0,32 h (19,2 min) / 9 runs** |
+| Premier coffre ouvert | 0,00 h | **0,00 h** |
+| Salle la plus meurtrière | salle 10, 20 morts contre 9 | **salle 10, 23 morts contre 18** (salle 8) |
+| Combat de boss | 87 s | **64,8 s** |
+| Politique passive | jamais validée en 20 h | **jamais validée en 20 h** |
+
+`econ.rewardBase` s'est révélé chaotique sur toute sa plage balayée : la valeur héritée du
+jalon 2.5 (86) n'était qu'un pic isolé — ses deux voisines immédiates (84 et 88) cassaient le
+pilier « la salle 10 reste la salle la plus meurtrière ». La valeur retenue, **104**, est la
+première de ce projet choisie depuis un palier démontré (102–110, sept valeurs consécutives
+qui tiennent le garde-fou) plutôt que depuis un point isolé. `combat.damageK` (1,3) et
+`arena.restitution` (1,6), hérités tels quels du jalon 2.5, ont été confirmés par le même
+balayage plutôt que reconduits par défaut : baisser `damageK` fait exploser le combat de
+boss (370 s à 0,5), et `restitution` à 1,6 s'est révélée être une règle de design du jalon
+2.5 (la répulsion), pas un bouton d'équilibrage — aucune mesure n'imposait de la redescendre.
+
+Le boss reste au-dessus de sa cible de ~45 s malgré la baisse ; sa descente de 87 s à 64,8 s
+est un effet de bord de l'économie recalibrée (un joueur mieux équipé plus tôt), pas d'un
+réglage de combat. Détail complet du balayage : `docs/superpowers/plans/2026-08-28-calibration-integration.md`.
+Dette actualisée : « Dette connue (jalon 2.5) » dans `docs/roadmap.md`.
+
+---
+
 ## Session du 2026-08-26 — deuxième test joueur
 
 Trois remarques, sur trois sujets différents cette fois — le pilotage, le rythme des
