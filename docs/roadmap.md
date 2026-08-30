@@ -452,11 +452,9 @@ bloquant.
   et sous les 384 d'une zone accélérateur. Ce n'est plus une impossibilité de conception, c'est
   une manœuvre exigeante : châssis et Disque lourds, zone accélérateur, boss adossé à une
   brèche. **Elle n'a jamais été mesurée en conditions de jeu, et le harnais ne l'exerce
-  pas** : les 71 combats de boss sans éjection ci-dessus et les 33 de la remesure
-  post-intégration (passe combat,
-  `docs/superpowers/plans/2026-08-28-calibration-integration.md`) ont été joués par un
-  autopilote qui ne construit pas de toupie lourde — ils ne prouvent donc rien sur un joueur
-  qui le ferait exprès. La règle d'éjection elle-même n'est pas en cause : elle est uniforme
+  pas** : les 71 combats de boss sans éjection cités ci-dessus, comme ceux des passes de
+  calibration de l'intégration, ont tous été joués par un autopilote qui ne construit pas de
+  toupie lourde — ils ne prouvent donc rien sur un joueur qui le ferait exprès. La règle d'éjection elle-même n'est pas en cause : elle est uniforme
   et représente environ une mort de joueur sur dix sur le protocole du jalon 2.5. Mesurer
   cette manœuvre en conditions de jeu — ou doter le harnais d'un autopilote capable de la
   tenter — est le ressort d'une future passe, explicitement scopée — pas de ce jalon-ci.

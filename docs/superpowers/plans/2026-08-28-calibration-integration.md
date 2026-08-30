@@ -371,6 +371,10 @@ le marché que le plan interdit.
   ouvert ne l'y amène : le seul qui s'en approche, `damageK` 1,6, coûte 6 minutes de chapitre.
 - **L'écart entre châssis atteint ×3,8** (Tigre Foudre 19 runs contre Carapace Abyssale 5) pour
   une cible de ×2. Il se corrige par les profils de châssis, fermés par la spec § 6.
-- **La marge du pilier de la salle 10 vaut +5** à la valeur retenue, contre +19 ailleurs dans le
-  même palier. Le palier protège le voisinage, pas chaque point.
+- **La marge du pilier de la salle 10 ne vaut que +2** à la valeur retenue : 23 morts contre 21
+  à la salle 7, deuxième du classement. C'est la même marge qu'à la référence 86 — la marge ne
+  départage donc pas les deux valeurs, contrairement à ce que le tableau de balayage laissait
+  croire (voir la note sur la colonne « Écart à la salle 8 »). Ce qui départage reste le palier :
+  102–110 tiennent le garde-fou, 84, 88 et 101 le cassent. Le palier protège le voisinage, pas
+  la marge de chaque point.
 
