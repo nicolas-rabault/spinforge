@@ -71,11 +71,13 @@ autres chapitres restent à poser (§ 8 arènes-chapitres de `docs/game-design.m
   (`arena.breach.ejectSpeed` 400), éjecter le boss demanderait ~615 px/s de vitesse de
   charge même dans la géométrie la plus favorable qui soit (boss immobile, exactement au
   bord, charge parfaitement radiale) — hors de portée du plafond de pilotage du joueur
-  (240, 384 sous accélérateur). Mesuré : 71 combats de boss sur 20 graines, 8 h simulées,
-  **zéro éjection**. C'est `combat.damageK` qui a fait chuter le boss de 183 s à 87,1 s, pas
-  l'éjection (voir « Équilibrage du chapitre 1 » ci-dessous). Rouvrir ce couple de valeurs
-  pour rendre l'éjection du boss atteignable est le ressort d'une future passe combat,
-  explicitement scopée — pas de ce jalon-ci ;
+  (240, 384 sous accélérateur). Mesuré au jalon 2.5, quand la masse du joueur valait
+  encore 1 : 71 combats de boss sur 20 graines, 8 h simulées, **zéro éjection**. C'est
+  `combat.damageK` qui a fait chuter le boss de 183 s à 87,1 s, pas l'éjection (voir
+  « Équilibrage du chapitre 1 » ci-dessous). **Ce constat ne tient plus depuis
+  l'intégration du jalon 2b** : `Top.mass` y devient la masse résolue du joueur (châssis ×
+  modèle de Disque × talent Masse), et le seuil d'éjection du boss s'effondre avec elle —
+  voir la dette du jalon 2.5 ci-dessous, corrigée en conséquence ;
 - la politique passive reste très en retrait de la politique « terrain » au harnais —
   **tenu, largement dépassé** : la politique passive ne valide jamais le chapitre 1 dans le
   plafond de 20 h du harnais, contre 0,35 h en jouant le terrain — la forme la plus forte du
@@ -436,14 +438,28 @@ bloquant.
   1,6, coûte six minutes de chapitre. Voir « Équilibrage du chapitre 1 » ci-dessus pour
   l'arbitrage d'origine, et `docs/superpowers/plans/2026-08-28-calibration-integration.md`
   pour le balayage complet.
-- L'éjection ne tue pas le boss aux valeurs actuelles (`arena.breach.ejectSpeed` 400,
-  `boss.mass` 3) : il faudrait ~615 px/s de vitesse de charge pour l'éjecter, hors de portée
-  du plafond de pilotage du joueur (240, 384 sous accélérateur) même dans la géométrie la
-  plus favorable. Mesuré : 71 combats de boss sur 20 graines, zéro éjection — voir le
-  critère d'acceptation du jalon 2.5 ci-dessus, corrigé en conséquence. La règle d'éjection
-  elle-même n'est pas en cause : elle est uniforme et représente environ une mort de joueur
-  sur dix sur ce protocole. Rendre le boss réellement éjectable est le ressort d'une future
-  passe combat, explicitement scopée — pas de ce jalon-ci.
+- **L'éjection du boss est devenue atteignable pour une toupie lourde, et ne l'était pas
+  avant l'intégration.** Mesuré au jalon 2.5, quand la masse du joueur valait encore 1 : il
+  fallait ~615 px/s de vitesse de charge pour éjecter le boss (`arena.breach.ejectSpeed`
+  400, `boss.mass` 3), hors de portée du plafond de pilotage (240, 384 sous accélérateur)
+  même dans la géométrie la plus favorable — d'où 71 combats de boss sur 20 graines, zéro
+  éjection (voir le critère d'acceptation du jalon 2.5 ci-dessus, corrigé en conséquence).
+  Depuis l'intégration, `Top.mass` est la masse **résolue** du joueur (châssis × modèle de
+  Disque × talent Masse), et ce seuil s'effondre avec elle : à masse résolue 2,6 (départ +
+  Disque lourd type Gravité/Colosse + talent Masse), 331 px/s suffisent déjà — sous les
+  384 px/s d'une zone accélérateur — et à 4,00 (+ Pointe Ressort), 269 px/s suffisent :
+  au-dessus du plafond de base (240 px/s), mais sous les 312 px/s d'une Pointe Furie rang 11
+  et sous les 384 d'une zone accélérateur. Ce n'est plus une impossibilité de conception, c'est
+  une manœuvre exigeante : châssis et Disque lourds, zone accélérateur, boss adossé à une
+  brèche. **Elle n'a jamais été mesurée en conditions de jeu, et le harnais ne l'exerce
+  pas** : les 71 combats de boss sans éjection ci-dessus et les 33 de la remesure
+  post-intégration (passe combat,
+  `docs/superpowers/plans/2026-08-28-calibration-integration.md`) ont été joués par un
+  autopilote qui ne construit pas de toupie lourde — ils ne prouvent donc rien sur un joueur
+  qui le ferait exprès. La règle d'éjection elle-même n'est pas en cause : elle est uniforme
+  et représente environ une mort de joueur sur dix sur le protocole du jalon 2.5. Mesurer
+  cette manœuvre en conditions de jeu — ou doter le harnais d'un autopilote capable de la
+  tenter — est le ressort d'une future passe, explicitement scopée — pas de ce jalon-ci.
 
 **Tests**
 - `ticksToFirstChest` (`scripts/calibrate.mjs`) n'a pas de test automatisé. C'est la mesure

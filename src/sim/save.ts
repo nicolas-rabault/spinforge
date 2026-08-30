@@ -7,8 +7,12 @@ import type { PieceInstance, PieceStack } from './piece';
  *  seule celle du schéma 1 vers le 2 subsiste (inventaire `{count, bestLevel}`
  *  devenu `{levels}`). Le passage au schéma 4 fusionne deux dialectes du schéma 3
  *  livrés en parallèle — `toupies`/`founderGiftClaimed` d'un côté, `pending` de
- *  l'autre. Aucun chemin de migration : le jeu n'est pas sorti, les blobs v3 des
- *  deux dialectes repartent à zéro. */
+ *  l'autre. Pas de migration écrite pour ce passage : il n'en faut pas. Un blob
+ *  v3, désormais antérieur au schéma courant, tombe dans la branche « schéma
+ *  antérieur » de `deserializeMeta` et traverse `hydrate`, qui comble les
+ *  champs que son dialecte ignorait (`pending` pour le dialecte
+ *  `toupies`/`founderGiftClaimed`, ou l'inverse). Le joueur garde crédits,
+ *  gemmes, équipement, inventaire et pity. */
 export const SAVE_SCHEMA = 4;
 
 interface Envelope {

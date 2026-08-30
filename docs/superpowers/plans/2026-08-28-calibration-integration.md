@@ -165,7 +165,7 @@ Aucun bouton de combat n'a bougé pendant cette passe.
 
 **Valeur retenue : 86 → 104.**
 
-| `rewardBase` | Chapitre 1 | Runs | Premier coffre | Salle la plus meurtrière | Marge salle 10 | Garde-fou 1 |
+| `rewardBase` | Chapitre 1 | Runs | Premier coffre | Salle la plus meurtrière | Écart à la salle 8 | Garde-fou 1 |
 |---|---|---|---|---|---|---|
 | 80 | 0,31 h | 9 | 0,00 h | salle 9 (19) | — | ✗ |
 | 84 | 0,29 h | 9 | 0,00 h | salle 8 (18) | — | ✗ |
@@ -191,6 +191,19 @@ Aucun bouton de combat n'a bougé pendant cette passe.
 La passivité tient (« jamais » validé en 20 h) et le premier coffre reste à 0,00 h sur **les vingt**
 mesures : ces deux garde-fous ne discriminent rien ici, ils sont insensibles à ce bouton.
 
+**Note sur la colonne « Écart à la salle 8 » (ex-« Marge salle 10 »).** Cette colonne n'est
+**pas** la marge de la salle 10 sur la deuxième salle la plus meurtrière du classement : le
+script qui a produit ce tableau ne relevait que les salles 8 et 10 du rapport de calibration,
+pas les dix. À `rewardBase = 104` (la valeur retenue), le classement complet des morts par
+salle place en réalité la **salle 7 en second** (21 morts, contre 18 pour la salle 8) — la
+marge réelle de la salle 10 (23 morts) est donc **+2**, pas +5. Voir « Mesure de confirmation »
+ci-dessous pour le détail salle par salle. Les autres lignes du tableau n'ont pas été
+revérifiées de ce point de vue : la colonne y reste un simple écart à la salle 8, pas une
+marge au second du classement. Ce que le script calculait correctement, en revanche, c'est le
+classement lui-même (quelle salle est la plus meurtrière) — colonne « Salle la plus
+meurtrière » — puisqu'il comparait bien les dix salles pour ça. Le garde-fou 1 (✓/✗) et le
+palier 102–110 restent donc exacts.
+
 ### Ce que le balayage a appris, et qui vaut plus que la valeur retenue
 
 **`rewardBase` est chaotique sur toute sa plage, exactement comme la dette du jalon 2.5
@@ -210,16 +223,22 @@ encadrés d'échecs).
 les bords sont nets. C'est la première fois dans l'histoire de ce projet qu'une valeur
 d'équilibrage est choisie depuis un palier démontré plutôt que depuis un point unique.
 
-**Pourquoi 104 dans ce palier.** Elle domine la référence 86 sur les quatre axes mesurés :
-durée 0,32 h contre 0,34 h, 9 runs contre 10, marge du pilier +5 contre +2, et surtout
-appartenance à un palier contre pic isolé. C'est aussi la valeur du palier la plus proche de
-la cible indicative de ~15 min.
+**Pourquoi 104 dans ce palier.** Elle domine la référence 86 sur **trois** axes mesurés :
+durée (0,32 h contre 0,34 h), runs (9 contre 10), et surtout appartenance à un palier
+démontré contre un pic isolé. Un quatrième axe, la marge du pilier, s'est révélé faux à
+l'usage — la colonne d'où il venait ne comparait que les salles 8 et 10, pas le classement
+complet ; recalculée correctement, la marge vaut **+2 dans les deux cas** (104 comme 86,
+salle 7 en second), donc ne départage rien (voir la note sous le tableau ci-dessus).
+L'appartenance à un palier démontré reste l'argument principal : c'est aussi la valeur du
+palier la plus proche de la cible indicative de ~15 min.
 
-**La réserve à porter à la passe suivante.** À l'intérieur même du palier, la marge du
-pilier fluctue fortement (+5 à +19) et la durée aussi (0,32 h à 0,52 h). Le palier garantit
-que *le voisinage* tient le garde-fou, pas que chaque point y soit également robuste. Si une
-passe ultérieure veut une marge plus large au prix de la durée, 105 (+19, 0,41 h) et 103
-(+18, 0,46 h) sont les candidates, et elles sont dans le même palier.
+**La réserve à porter à la passe suivante.** À l'intérieur même du palier, l'écart à la
+salle 8 fluctue fortement (+5 à +19) et la durée aussi (0,32 h à 0,52 h) — pour rappel, cet
+écart n'est pas la marge au second du classement (voir la note sous le tableau ci-dessus),
+seule celle de 104 a été revérifiée. Le palier garantit que *le voisinage* tient le
+garde-fou, pas que chaque point y soit également robuste. Si une passe ultérieure veut un
+écart plus large au prix de la durée, 105 (+19, 0,41 h) et 103 (+18, 0,46 h) sont les
+candidates, et elles sont dans le même palier.
 
 **Un garde-fou du 2b s'est dégradé, et n'a pas été traité ici** : l'écart entre châssis passe
 de ×2,83 à ×3,00 puis, à 104, Tigre Foudre grimpe à 19 runs / 0,82 h contre 5 runs / 0,29 h
@@ -238,6 +257,17 @@ Salle la plus meurtrière : [10,23]
   salle 10 : 64.80 s  (vidée 10 fois, morts 23)
 Garde-fou passivité      : jamais
 ```
+
+Morts par salle, 1 à 10, relevées sur le rapport complet (pas seulement 8 et 10) :
+
+```
+0, 0, 1, 0, 10, 9, 21, 18, 15, 23
+```
+
+La salle 7 (21 morts) est la deuxième plus meurtrière, pas la salle 8 (18) : la marge réelle
+de la salle 10 sur son dauphin est **+2**, pas +5. Le classement lui-même ne change pas —
+la salle 10 (23) reste bien la plus meurtrière — seule la colonne de marge du tableau
+ci-dessus était fausse.
 
 Les quatre garde-fous tiennent : salle 10 la plus meurtrière (23 contre 18), passivité jamais
 validée, premier coffre immédiat, chapitre 1 franchissable en 19,2 min. Le boss descend de

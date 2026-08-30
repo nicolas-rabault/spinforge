@@ -28,7 +28,7 @@ qu'ajustés à l'estime.
 |---|---|---|
 | Chapitre 1 validé | 0,35 h / 10 runs | **0,32 h (19,2 min) / 9 runs** |
 | Premier coffre ouvert | 0,00 h | **0,00 h** |
-| Salle la plus meurtrière | salle 10, 20 morts contre 9 | **salle 10, 23 morts contre 18** (salle 8) |
+| Salle la plus meurtrière | salle 10, 20 morts contre 9 | **salle 10, 23 morts**, devant la salle 7 à 21 |
 | Combat de boss | 87 s | **64,8 s** |
 | Politique passive | jamais validée en 20 h | **jamais validée en 20 h** |
 
