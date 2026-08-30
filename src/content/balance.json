@@ -43,7 +43,7 @@
   "boss": { "spinMult": 4, "attackMult": 1.5, "radius": 18, "mass": 3 },
   "econ": {
     "upgradeBase": 100, "upgradeGrowth": 1.08,
-    "rewardBase": 86, "rewardGrowth": 1.13, "bossRewardMult": 10,
+    "rewardBase": 104, "rewardGrowth": 1.13, "bossRewardMult": 10,
     "bossGems": 60
   },
   "toupieShop": { "priceGems": 900 },

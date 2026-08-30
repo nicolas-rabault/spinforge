@@ -158,16 +158,90 @@ triangle est un bouton fermé pour les deux passes suivantes (T14 économie,
 T15 combat). Signalé ici comme référence, pas comme cible de cette tâche.
 
 ---
+## Passe économie — faite
 
-## Passe économie (à venir)
+**Bouton balayé : `econ.rewardBase`. Vingt mesures, dix graines, un seul bouton à la fois.**
+Aucun bouton de combat n'a bougé pendant cette passe.
 
-Boutons ouverts : `econ.rewardBase`, `econ.rewardGrowth`, `econ.upgradeGrowth`,
-prix des coffres. Un bouton à la fois, remesuré entre chaque valeur, un seul
-commit pour tout le domaine économie.
+**Valeur retenue : 86 → 104.**
 
-| Bouton | Valeur essayée | Chapitre 1 | Runs | Premier coffre | Salle la plus meurtrière | Passivité |
-| --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | |
+| `rewardBase` | Chapitre 1 | Runs | Premier coffre | Salle la plus meurtrière | Marge salle 10 | Garde-fou 1 |
+|---|---|---|---|---|---|---|
+| 80 | 0,31 h | 9 | 0,00 h | salle 9 (19) | — | ✗ |
+| 84 | 0,29 h | 9 | 0,00 h | salle 8 (18) | — | ✗ |
+| **86** (référence) | 0,34 h | 10 | 0,00 h | **salle 10 (21)** | +2 | ✓ *pic isolé* |
+| 88 | 0,26 h | 8 | 0,00 h | salle 7 (17) | — | ✗ |
+| 90 | 0,36 h | 9 | 0,00 h | salle 7 (23) | — | ✗ |
+| 95 | 0,33 h | 9 | 0,00 h | salle 7 (19) | — | ✗ |
+| 97 | 0,36 h | 9 | 0,00 h | salle 7 (25) | — | ✗ |
+| 98 | 0,32 h | 9 | 0,00 h | **salle 10 (22)** | +5 | ✓ *pic isolé* |
+| 99 | 0,34 h | 9 | 0,00 h | salle 7 (17) | — | ✗ |
+| 100 | 0,33 h | 9 | 0,00 h | **salle 10 (26)** | +9 | ✓ *pic isolé* |
+| 101 | 0,27 h | 9 | 0,00 h | salle 7 (17) | — | ✗ |
+| 102 | 0,48 h | 12 | 0,00 h | **salle 10 (32)** | +14 | ✓ palier |
+| 103 | 0,46 h | 12 | 0,00 h | **salle 10 (36)** | +18 | ✓ palier |
+| **104 — RETENUE** | **0,32 h** | **9** | **0,00 h** | **salle 10 (23)** | **+5** | **✓ palier** |
+| 105 | 0,41 h | 12 | 0,00 h | **salle 10 (35)** | +19 | ✓ palier |
+| 106 | 0,40 h | 10 | 0,00 h | **salle 10 (33)** | +15 | ✓ palier |
+| 108 | 0,52 h | 13 | 0,00 h | **salle 10 (35)** | +17 | ✓ palier |
+| 110 | 0,41 h | 11 | 0,00 h | **salle 10 (25)** | +9 | ✓ palier |
+| 112 | 0,30 h | 9 | 0,00 h | salle 7 (21) | — | ✗ |
+| 115 | 0,54 h | 13 | 0,00 h | **salle 10 (34)** | +24 | ✓ palier |
+
+La passivité tient (« jamais » validé en 20 h) et le premier coffre reste à 0,00 h sur **les vingt**
+mesures : ces deux garde-fous ne discriminent rien ici, ils sont insensibles à ce bouton.
+
+### Ce que le balayage a appris, et qui vaut plus que la valeur retenue
+
+**`rewardBase` est chaotique sur toute sa plage, exactement comme la dette du jalon 2.5
+l'annonçait — et c'est bien pire que « chaotique » ne le laissait deviner.** Ce n'est pas
+une courbe bruitée : c'est un damier. La durée du chapitre ne croît pas avec le revenu
+(0,26 h à 88, 0,54 h à 115, 0,27 h à 101), parce qu'un revenu différent change ce que
+l'autopilote achète, donc le nombre de tirages consommés, donc tout le flux en aval.
+
+**La découverte qui compte : la valeur de référence 86 était un pic isolé.** Ses deux
+voisines immédiates, 84 et 88, cassent le garde-fou de la salle 10. Le jalon 2.5 avait donc
+livré — sans le savoir — une valeur dont la tenue du pilier de design ne devait rien à la
+conception et tout au hasard du flux. Trois autres pics isolés existent plus bas (98 et 100,
+encadrés d'échecs).
+
+**Le seul vrai palier de la plage est 102–110** : sept valeurs testées consécutives
+(102, 103, 104, 105, 106, 108, 110) tiennent toutes le garde-fou. 112 le casse, 101 aussi :
+les bords sont nets. C'est la première fois dans l'histoire de ce projet qu'une valeur
+d'équilibrage est choisie depuis un palier démontré plutôt que depuis un point unique.
+
+**Pourquoi 104 dans ce palier.** Elle domine la référence 86 sur les quatre axes mesurés :
+durée 0,32 h contre 0,34 h, 9 runs contre 10, marge du pilier +5 contre +2, et surtout
+appartenance à un palier contre pic isolé. C'est aussi la valeur du palier la plus proche de
+la cible indicative de ~15 min.
+
+**La réserve à porter à la passe suivante.** À l'intérieur même du palier, la marge du
+pilier fluctue fortement (+5 à +19) et la durée aussi (0,32 h à 0,52 h). Le palier garantit
+que *le voisinage* tient le garde-fou, pas que chaque point y soit également robuste. Si une
+passe ultérieure veut une marge plus large au prix de la durée, 105 (+19, 0,41 h) et 103
+(+18, 0,46 h) sont les candidates, et elles sont dans le même palier.
+
+**Un garde-fou du 2b s'est dégradé, et n'a pas été traité ici** : l'écart entre châssis passe
+de ×2,83 à ×3,00 puis, à 104, Tigre Foudre grimpe à 19 runs / 0,82 h contre 5 runs / 0,29 h
+pour Carapace Abyssale — soit ×3,8. Il se corrige par les profils de châssis, que la spec
+d'intégration ferme explicitement (§ 6, « aucune décision de design du 2b rouverte »).
+Reporté en dette, voir `docs/roadmap.md`.
+
+### Mesure de confirmation à `rewardBase = 104`
+
+```
+Validation du chapitre 1 : médiane 0.32 h
+Premier coffre ouvert    : médiane 0.00 h
+Runs jusqu’à validation  : médiane 9.00
+Salle la plus meurtrière : [10,23]
+  salle 8  : 22.60 s  (vidée 48 fois, morts 18)
+  salle 10 : 64.80 s  (vidée 10 fois, morts 23)
+Garde-fou passivité      : jamais
+```
+
+Les quatre garde-fous tiennent : salle 10 la plus meurtrière (23 contre 18), passivité jamais
+validée, premier coffre immédiat, chapitre 1 franchissable en 19,2 min. Le boss descend de
+78,5 s à 64,8 s — effet de bord d'un joueur mieux équipé, pas d'un réglage de combat.
 
 ## Passe combat (à venir)
 
