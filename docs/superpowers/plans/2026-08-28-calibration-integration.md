@@ -243,13 +243,104 @@ Les quatre garde-fous tiennent : salle 10 la plus meurtrière (23 contre 18), pa
 validée, premier coffre immédiat, chapitre 1 franchissable en 19,2 min. Le boss descend de
 78,5 s à 64,8 s — effet de bord d'un joueur mieux équipé, pas d'un réglage de combat.
 
-## Passe combat (à venir)
+## Passe combat — faite, sans changement de valeur
 
-Boutons ouverts : `combat.damageK`, `arena.breach.halfWidthDeg`,
-`arena.breach.ejectSpeed`, `boss.mass`, `arena.zones.pointes.spinDrain`,
-`arena.restitution`, `arena.overspeedDamping`. Commit distinct de la passe
-économie, mesuré séparément.
+**Onze mesures, dix graines, un bouton à la fois, à `rewardBase = 104` posé par la passe
+économie.** Conclusion : **aucun bouton de combat n'est modifié.** Les valeurs de la branche
+survivent à la rencontre avec le triangle des forces et la masse de châssis.
 
-| Bouton | Valeur essayée | Chapitre 1 | Runs | Premier coffre | Salle la plus meurtrière | Passivité |
-| --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | |
+Une passe qui ne change rien n'est pas une passe vide : elle transforme quatre valeurs
+héritées et jamais vérifiées ensemble en quatre valeurs mesurées.
+
+### `combat.damageK` — l'hypothèse de la spec est réfutée
+
+La spec d'intégration (§ 4.1) posait : « Le 2.5 l'a monté à 1,3 pour raccourcir des combats
+trop longs ; `main` est resté à 0,35 et a laissé le triangle différencier. Avec les deux
+vivants, le triangle multiplie *aussi* les dégâts : **1,3 est probablement trop.** »
+
+La mesure dit le contraire.
+
+| `damageK` | Chapitre 1 | Runs | Salle la plus meurtrière | s1 | s3 | s8 | **boss** | Garde-fou 1 |
+|---|---|---|---|---|---|---|---|---|
+| 0,5 | 0,64 h | 6 | salle 10 (24) | 17,2 s | 22,8 s | 55,1 s | **369,6 s** | ✓ |
+| 0,7 | 0,51 h | 7 | salle 10 (18) | 12,7 s | 14,0 s | 38,1 s | **188,1 s** | ✓ |
+| 1,0 | 0,45 h | 10 | salle 9 (23) | 7,9 s | 11,9 s | 29,2 s | 106,2 s | ✗ |
+| 1,2 | 0,50 h | 12 | salle 10 (34) | 7,0 s | 10,0 s | 25,1 s | 78,9 s | ✓ palier |
+| **1,3 — CONSERVÉE** | **0,32 h** | **9** | **salle 10 (23)** | 6,9 s | 9,8 s | 22,6 s | **64,8 s** | ✓ palier |
+| 1,4 | 0,33 h | 11 | salle 10 (28) | 6,0 s | 7,1 s | 21,8 s | 72,0 s | ✓ palier |
+| 1,5 | 0,49 h | 15 | salle 10 (45) | 6,3 s | 7,5 s | 18,4 s | 84,4 s | ✓ palier |
+| 1,6 | 0,43 h | 13 | salle 10 (35) | 5,6 s | 6,9 s | 19,3 s | 57,3 s | ✓ palier |
+
+**Baisser `damageK` fait exploser le combat de boss** : 64,8 s à 1,3, mais 106 s à 1,0, 188 s à
+0,7 et **370 s à 0,5**. La raison est structurelle : le boss porte `spinMult` 4, donc toute
+perte de dégâts le frappe quatre fois plus qu'un bot ordinaire. Descendre vers le 0,35 de
+`main` rendrait le boss injouable — ce n'est pas un réglage à affiner, c'est une impasse.
+
+`damageK` a un vrai palier, **1,2 à 1,6** : cinq valeurs consécutives tiennent le garde-fou de
+la salle 10, seul 1,0 le casse. Et dans ce palier, **1,3 est le meilleur point sur les deux
+axes qui comptent** : la durée du chapitre la plus courte (0,32 h) et le combat de boss le
+plus court (64,8 s), donc le plus proche de la cible de 60 s du harnais.
+
+**1,3 est donc conservée — non par défaut, mais parce que le balayage la désigne.**
+
+Le seul reproche mesurable qu'on puisse lui faire : les salles 1 à 3 s'expédient en 6,9 s et
+9,8 s là où le harnais vise ~12 s. Aucune valeur du palier ne corrige ça — au contraire, elles
+raccourcissent encore. C'est le prix de la forme voulue : des salles d'ouverture rapides et un
+boss qui fait mur.
+
+### `arena.restitution` — le pilier l'emporte sur cinq secondes
+
+La spec notait cette clé « — » côté `main` ; c'est faux, `main` porte **0,8**, la valeur du
+point de fork. La collision est donc réelle : 0,8 contre 1,6.
+
+| `restitution` | Chapitre 1 | Runs | Salle la plus meurtrière | boss | Garde-fou 1 |
+|---|---|---|---|---|---|
+| **1,6 — CONSERVÉE** | 0,32 h | 9 | salle 10 (23) | 64,8 s | ✓ |
+| 1,2 | 0,40 h | 12 | salle 10 (33) | 63,6 s | ✓ |
+| 0,8 | 0,32 h | 10 | salle 10 (27) | 59,6 s | ✓ |
+
+Les trois tiennent les quatre garde-fous. 0,8 donne même le meilleur temps de boss, seul passage
+sous la cible de 60 s.
+
+**Et pourtant : 1,6 est conservée.** `restitution` à 1,6 n'est pas un bouton d'équilibrage, c'est
+**une règle de design du jalon 2.5** : un choc rend plus d'énergie qu'il n'absorbe, le plafond de
+vitesse ne borne plus que le pilotage, et un joueur percuté se voit « envoyé valser ».
+`docs/ameliorations.md` enregistre la panne que cette règle a corrigée — sans elle, la répulsion
+existait dans le calcul mais n'était jamais parcourue à l'écran. Le plan d'intégration est
+explicite : ne la descendre **que si une mesure l'exige**.
+
+Aucune mesure ne l'exige : les quatre garde-fous tiennent à 1,6. Descendre à 0,8 échangerait un
+pilier de design contre cinq secondes sur un chiffre qui n'est pas un garde-fou. C'est exactement
+le marché que le plan interdit.
+
+### Boutons ouverts non balayés, et pourquoi
+
+- `arena.breach.ejectSpeed` et `boss.mass` : **hors périmètre déclaré** (spec § 6). La
+  non-éjectabilité du boss est renvoyée à une passe de combat explicitement délimitée. Y toucher
+  ici rouvrirait une question de design sans le mandat pour la trancher.
+- `arena.zones.pointes.spinDrain`, `arena.breach.halfWidthDeg`, `arena.overspeedDamping` : aucun
+  garde-fou ne les met en cause. Les toucher serait régler à l'aveugle. De plus, la dette du
+  jalon 2.5 note que la politique « terrain » du harnais n'utilise presque pas le terrain
+  (1,4 % des bots détruits le sont par éjection) : les balayer mesurerait surtout l'autopilote,
+  pas le jeu.
+
+### État final des quatre garde-fous
+
+`rewardBase` 104 · `damageK` 1,3 · `restitution` 1,6 · `boss.mass` 3 · Bronze 250.
+
+| Garde-fou | État | Mesure |
+|---|---|---|
+| 1. La salle 10 reste la salle la plus meurtrière | **TENU** | 23 morts contre 18 à la salle 8 |
+| 2. La passivité reste très loin derrière le pilotage | **TENU** | jamais validé en 20 h |
+| 3. Le premier coffre reste immédiat | **TENU** | 0,00 h, dès la salle 1 |
+| 4. Chapitre 1 franchissable | **TENU** | 0,32 h (19,2 min) / 9 runs |
+
+### Ce qui reste en dette après cette passe
+
+- **Le boss à 64,8 s manque toujours sa cible de ~45 s** (spec du jalon 2.5, § 3.1). Aucun bouton
+  ouvert ne l'y amène : le seul qui s'en approche, `damageK` 1,6, coûte 6 minutes de chapitre.
+- **L'écart entre châssis atteint ×3,8** (Tigre Foudre 19 runs contre Carapace Abyssale 5) pour
+  une cible de ×2. Il se corrige par les profils de châssis, fermés par la spec § 6.
+- **La marge du pilier de la salle 10 vaut +5** à la valeur retenue, contre +19 ailleurs dans le
+  même palier. Le palier protège le voisinage, pas chaque point.
+
