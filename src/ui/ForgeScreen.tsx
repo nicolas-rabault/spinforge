@@ -1,9 +1,11 @@
 import { formatCredits } from '../i18n';
 import { playerStats, tryUpgrade, upgradeCost } from '../sim/economy';
 import { syncRunStats } from '../sim/sim';
-import { rankLabel, type Slot } from '../sim/piece';
+import type { Slot } from '../sim/piece';
+import { rankLabel } from './rank';
 import { modelById } from '../content/pieces';
-import { talentsOf, TALENT_LABELS } from '../sim/talents';
+import { talentsOf } from '../sim/talents';
+import { talentLabel } from './talentLabels';
 import { MODELS_PROFILE } from '../sim/config';
 import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
 import { InventoryPanel } from './InventoryPanel';
@@ -95,7 +97,7 @@ export function ForgeScreen({
               ))}
               {talents.length > 0 ? (
                 <span style={{ fontSize: 12.5, color: 'var(--ember)' }}>
-                  {talents.map((id) => TALENT_LABELS[id]).join(' · ')}
+                  {talents.map(talentLabel).join(' · ')}
                 </span>
               ) : null}
             </span>

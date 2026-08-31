@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { canOpen, chestPrice, grantChest, openChest } from '../sim/chest';
 import { addPiece, pendingTotal } from '../sim/meta';
-import { rankLabel, type PieceInstance } from '../sim/piece';
+import type { PieceInstance } from '../sim/piece';
+import { rankColor, rankLabel } from './rank';
 import { modelById } from '../content/pieces';
 import { CHESTS } from '../sim/config';
 import { formatCredits } from '../i18n';
-import { rankColor } from './rank';
 import type { ChestKind, MetaState } from '../sim/types';
 
 const CHEST_LIST: { kind: ChestKind; name: string; blurb: string }[] = [

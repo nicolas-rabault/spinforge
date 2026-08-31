@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { equipFromStack } from '../sim/meta';
 import { canFuse, fusionRecipe, tryFuse } from '../sim/fusion';
-import { rankLabel, type Slot } from '../sim/piece';
+import type { Slot } from '../sim/piece';
 import { modelById } from '../content/pieces';
 import { MODELS_PROFILE } from '../sim/config';
 import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
-import { rankColor } from './rank';
+import { rankColor, rankLabel } from './rank';
 import type { MetaState } from '../sim/types';
 
 const SLOT_LABELS: { key: Slot | 'tous'; label: string }[] = [

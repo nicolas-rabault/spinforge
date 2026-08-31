@@ -5,7 +5,7 @@ import { chapterOf } from '../content/chapters';
 import { SALLES_PER_CHAPTER } from '../sim/config';
 import { resetRun } from '../sim/sim';
 import { botTypeFor } from '../sim/salle';
-import { TYPE_LABELS } from './typeLabels';
+import { typeLabel } from './typeLabels';
 import type { MetaState, RunState, Vec } from '../sim/types';
 import type { Audio } from '../audio/audio';
 
@@ -78,7 +78,7 @@ export function CombatScreen({
             setBanner(
               isBoss
                 ? { text: chapterOf(run.chapter).boss, tint: 'var(--boss)' }
-                : { text: `Salle ${run.salle} · ${TYPE_LABELS[botTypeFor(run.chapter, run.salle)]}`, tint: `var(--type-${botTypeFor(run.chapter, run.salle)})` },
+                : { text: `Salle ${run.salle} · ${typeLabel(botTypeFor(run.chapter, run.salle))}`, tint: `var(--type-${botTypeFor(run.chapter, run.salle)})` },
             );
             window.setTimeout(() => setBanner(null), 2100);
           }

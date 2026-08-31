@@ -6,7 +6,7 @@ import { botTypeFor } from '../sim/salle';
 import { CHASSIS, SALLES_PER_CHAPTER, TOUPIE_SHOP, TYPES } from '../sim/config';
 import { formatCredits } from '../i18n';
 import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
-import { TYPE_LABELS } from './typeLabels';
+import { typeLabel } from './typeLabels';
 import type { MetaState, RunState } from '../sim/types';
 
 /** Ce que le triangle donne réellement, en toutes lettres — sinon les deux
@@ -122,7 +122,7 @@ export function ToupiesScreen({
           {groups.map((g) => (
             <div key={g.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
               <span style={{ color: 'var(--muted)' }}>{g.label}</span>
-              <span style={{ color: `var(--type-${g.type})` }}>{TYPE_LABELS[g.type]}</span>
+              <span style={{ color: `var(--type-${g.type})` }}>{typeLabel(g.type)}</span>
             </div>
           ))}
         </div>
@@ -152,7 +152,7 @@ export function ToupiesScreen({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
               <div>
                 <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif' }}>{t.label}</p>
-                <p style={{ margin: 0, fontSize: 12.5, color: `var(--type-${t.type})` }}>{TYPE_LABELS[t.type]}</p>
+                <p style={{ margin: 0, fontSize: 12.5, color: `var(--type-${t.type})` }}>{typeLabel(t.type)}</p>
               </div>
               {owned && (isPiloted || isPending) ? (
                 <span
