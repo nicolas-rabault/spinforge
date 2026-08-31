@@ -18,14 +18,20 @@ npm run test    # vitest run (tests unitaires de la simulation)
 npm run build   # tsc + vite build
 ```
 
+Avec `npm run dev` en marche, `/spinforge/styleboard.html` affiche la **planche de
+style** : les 24 objets du catalogue dessinés, à tous les paliers de rang et à
+toutes les tailles. C'est la surface de vérification du rendu — elle n'est jamais
+construite par `vite build`, donc jamais livrée.
+
 ## Règles d'architecture (non négociables)
 
 1. **`src/sim/` est pur et déterministe** : aucun import de DOM, PixiJS, React ou `Date`/`Math.random`. Le RNG est sérialisé dans l'état (`rngState`), le temps avance uniquement par `tick()` à pas fixe (100 ms). Deux runs avec même seed + mêmes inputs ⇒ états strictement identiques (c'est testé).
 2. **Le rendu est un spectateur** : `src/render/` (PixiJS) et `src/ui/` (React) lisent l'état, ne le modifient jamais directement — toute mutation passe par les fonctions de `src/sim/`.
-3. **Tous les chiffres d'équilibrage vivent dans `src/sim/config.ts`** (puis en JSON statique à partir du jalon 2). Jamais de constante d'équilibrage en dur ailleurs.
-4. **Le farm ne progresse jamais** : le mode AUTO et le hors-ligne rejouent le meilleur chapitre validé, ils ne franchissent jamais de nouveau contenu. Pilier de design — ne pas « corriger ».
-5. **IP** : aucun nom officiel Beyblade (toupies, personnages, produits) dans le code, les données ou l'UI. Le catalogue original est dans `docs/game-design.md` ; les « (≈ …) » sont des références internes de design uniquement.
-6. Textes joueur en **français** ; code et identifiants en anglais (sauf vocabulaire du jeu : `salle`, `toupie`, etc. acceptés dans les types métier).
+3. **Tous les chiffres d'équilibrage vivent dans `src/sim/config.ts`** (puis en JSON statique à partir du jalon 2). Jamais de constante d'équilibrage en dur ailleurs. Le barème du *game feel* (`src/render/feel.ts`) et les recettes de dessin (`src/art/recipes.ts`) sont l'autre versant : ils ne touchent jamais la simulation.
+4. **`src/art/` est la source unique de tout ce qui se dessine** : pièces, toupies, coffres. PixiJS et React consomment le même code — l'inventaire et l'arène ne peuvent pas montrer deux objets différents. Ajouter une pièce ou une toupie au catalogue sans sa recette fait échouer `src/art/recipes.test.ts`.
+5. **Le farm ne progresse jamais** : le mode AUTO et le hors-ligne rejouent le meilleur chapitre validé, ils ne franchissent jamais de nouveau contenu. Pilier de design — ne pas « corriger ».
+6. **IP** : aucun nom officiel Beyblade (toupies, personnages, produits) dans le code, les données ou l'UI. Le catalogue original est dans `docs/game-design.md` ; les « (≈ …) » sont des références internes de design uniquement.
+7. Textes joueur en **français** ; code et identifiants en anglais (sauf vocabulaire du jeu : `salle`, `toupie`, etc. acceptés dans les types métier).
 
 ## Tests
 

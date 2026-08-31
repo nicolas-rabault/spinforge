@@ -262,6 +262,22 @@ moi-même avant de déclarer la vague finie. C'est la méthode déjà écrite da
 La vague 1 est le point où une réorientation coûte le moins cher : rien du jeu n'a
 encore changé.
 
+### Décisions prises sur pièce
+
+Deux points laissés ouverts par cette spec ont été tranchés sur capture, pas sur
+intuition :
+
+- **Le radar à 7 axes est retenu.** Jugé sur la planche de style à 132 px et à
+  64 px : les quatre châssis y donnent quatre formes distinctes et la comparaison
+  avant/après se lit d'un coup. Le repli en quatre barres n'a pas été nécessaire.
+- **La planche de style est conservée** (`styleboard.html` + `src/dev/`), contre
+  ce que prévoyait le § 6 initial. Elle a servi quatre fois pendant la refonte, et
+  c'est la seule surface qui vérifie qu'une pièce ajoutée au catalogue est
+  effectivement dessinable. `vite build` ne construit que `index.html` : elle
+  n'est jamais livrée au joueur. La supprimer aurait laissé le test de couverture
+  garantir qu'une recette *existe*, sans que personne ne puisse voir à quoi elle
+  ressemble.
+
 ## § 7. Ce qui est hors périmètre
 
 - **La simulation.** Aucun fichier de `src/sim/` n'est modifié.

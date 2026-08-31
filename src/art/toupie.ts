@@ -144,7 +144,7 @@ export function drawToupieTop(ctx: Ctx, art: ToupieArt, px: number, chip = 0): v
 
   const chassisMetal: Metal = {
     light: 0x6d7c90, mid: 0x39424f, dark: 0x181d25,
-    accent: mix(0x8a94a6, TYPE_TINT[toupieById(art.chassis).type], 0.55),
+    accent: mix(0x8a94a6, TYPE_TINT[toupieById(art.chassis).type], 0.8),
   };
   paintMetal(ctx, chassisPath(ctx, r, art.chassis, chip), r, chassisMetal, { edge: r * 0.03 });
 
@@ -256,16 +256,19 @@ export function drawToupiePortrait(ctx: Ctx, art: ToupieArt, px: number): void {
 
   const chassisMetal: Metal = {
     light: 0x6d7c90, mid: 0x39424f, dark: 0x181d25,
-    accent: mix(0x8a94a6, TYPE_TINT[type], 0.55),
+    accent: mix(0x8a94a6, TYPE_TINT[type], 0.85),
   };
   const cPath = chassisPath(ctx, r, art.chassis, 0);
   extrude(ctx, cPath, yLame + r * 0.08, r * 0.20, k, chassisMetal);
-  face(ctx, cPath, yLame + r * 0.08, k, r, chassisMetal, r * 0.03);
+  face(ctx, cPath, yLame + r * 0.08, k, r, chassisMetal, r * 0.05);
 
+  // La couronne est nettement plus petite que le châssis — même rapport que la vue
+  // de dessus. À 0,9 elle le recouvrait entièrement et les quatre châssis
+  // donnaient quatre portraits identiques.
   const lameMetal = metalFor(art.pieces.lame.rank);
-  const lPath = lamePath(ctx, r * 0.9, art.pieces.lame.model, 0);
+  const lPath = lamePath(ctx, r * 0.66, art.pieces.lame.model, 0);
   extrude(ctx, lPath, yLame, r * 0.16, k, lameMetal);
-  face(ctx, lPath, yLame, k, r * 0.9, lameMetal, r * 0.028);
+  face(ctx, lPath, yLame, k, r * 0.66, lameMetal, r * 0.028);
 
   // Noyau en façade, au creux de la pile : c'est le point le plus lumineux du portrait.
   ctx.save();

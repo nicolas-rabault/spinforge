@@ -3,45 +3,14 @@ import {
   activeToupie, buyToupie, canClaimFounderGift, claimFounderGift, setActiveToupie,
 } from '../sim/meta';
 import { botTypeFor } from '../sim/salle';
-import { CHASSIS, SALLES_PER_CHAPTER, TOUPIE_SHOP, TYPES } from '../sim/config';
+import { CHASSIS, SALLES_PER_CHAPTER, TOUPIE_SHOP } from '../sim/config';
+import { playerArt } from '../art/toupie';
 import { formatCredits } from './format';
-import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
 import { TYPE_LABELS } from './typeLabels';
+import { ToupiePortrait } from './art/ToupiePortrait';
+import { StatRadar } from './art/StatRadar';
+import { TypeTriangle } from './art/TypeTriangle';
 import type { MetaState, RunState } from '../sim/types';
-
-/** Ce que le triangle donne réellement, en toutes lettres — sinon les deux
- *  grandeurs qui gouvernent chaque combat (`TYPES.dominantBonus`,
- *  `TYPES.equilibreBonus`) ne sont écrites nulle part dans le jeu. */
-function typeBonusLine(type: TopType): string {
-  if (type === 'equilibre') {
-    const pct = Math.round(TYPES.equilibreBonus * 100);
-    return `Équilibre : +${pct} % de dégâts sur chaque coup, jamais subis en retour.`;
-  }
-  const pct = Math.round(TYPES.dominantBonus * 100);
-  return `+${pct} % de dégâts contre son type dominé, +${pct} % subis face à qui la domine.`;
-}
-
-interface SalleGroup {
-  label: string;
-  type: TopType;
-}
-
-/** Regroupe les dix salles du chapitre 1 par plages consécutives de même type —
- *  sans ce regroupement la contre-pioche se lirait comme dix lignes répétitives
- *  au lieu d'une composition qu'on saisit d'un regard. */
-function chapterGroups(chapter: number): SalleGroup[] {
-  const groups: { start: number; end: number; type: TopType }[] = [];
-  for (let salle = 1; salle <= SALLES_PER_CHAPTER; salle++) {
-    const type = botTypeFor(chapter, salle);
-    const last = groups[groups.length - 1];
-    if (last && last.type === type) last.end = salle;
-    else groups.push({ start: salle, end: salle, type });
-  }
-  return groups.map((g) => ({
-    label: g.start === g.end ? `Salle ${g.start}` : `Salles ${g.start}-${g.end}`,
-    type: g.type,
-  }));
-}
 
 function cardStyle(border: string) {
   return {
@@ -52,13 +21,51 @@ function cardStyle(border: string) {
 
 function actionButtonStyle(enabled: boolean) {
   return {
-    minHeight: 46, borderRadius: 10, cursor: enabled ? 'pointer' as const : 'default' as const,
+    minHeight: 44, borderRadius: 10, cursor: enabled ? 'pointer' as const : 'default' as const,
     border: `1px solid ${enabled ? 'var(--ember)' : 'var(--line)'}`,
     background: enabled ? 'var(--ember)' : 'var(--panel)',
     color: enabled ? 'var(--ink)' : 'var(--muted)',
     opacity: enabled ? 1 : 0.55,
     font: '600 14px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.02em',
   };
+}
+
+/** La composition du chapitre : une pastille par salle, teintée du type qu'on y
+ *  affronte, la dixième en losange pour le boss. Remplace trois lignes
+ *  « Salles 1-3 — Endurance » : ici on voit d'un coup où le chapitre bascule, et
+ *  la bande se lit contre le triangle juste au-dessus. */
+function ChapterComposition({ chapter }: { chapter: number }) {
+  const salles = Array.from({ length: SALLES_PER_CHAPTER }, (_, i) => ({
+    salle: i + 1,
+    type: botTypeFor(chapter, i + 1),
+  }));
+  return (
+    <div
+      role="img"
+      aria-label={salles.map((s) => `Salle ${s.salle} : ${TYPE_LABELS[s.type]}`).join(', ')}
+      // `alignSelf: stretch` : la carte parente centre ses enfants, et sans cela
+      // la bande se réduisait à la largeur de son contenu — c'est-à-dire à rien,
+      // ses pastilles étant toutes en `flex: 1 1 0`.
+      style={{ display: 'flex', gap: 4, alignItems: 'center', alignSelf: 'stretch', width: '100%' }}
+    >
+      {salles.map(({ salle, type }) => {
+        const boss = salle === SALLES_PER_CHAPTER;
+        return (
+          <span
+            key={salle}
+            style={{
+              flex: '1 1 0', height: boss ? 20 : 14,
+              borderRadius: boss ? 5 : 999,
+              background: `var(--type-${type})`,
+              opacity: boss ? 1 : 0.72,
+              border: boss ? '2px solid var(--boss)' : 'none',
+              boxSizing: 'border-box',
+            }}
+          />
+        );
+      })}
+    </div>
+  );
 }
 
 export function ToupiesScreen({
@@ -77,7 +84,6 @@ export function ToupiesScreen({
   const waiting = pending.id !== piloted.id;
   const dead = runRef.current.phase === 'dead';
   const giftAvailable = canClaimFounderGift(meta);
-  const groups = chapterGroups(1);
 
   // Une seule porte de mutation. Plus de `syncRunStats` ici : le run ne relit
   // jamais `meta.toupies.active`, c'est tout l'objet du verrou.
@@ -87,9 +93,13 @@ export function ToupiesScreen({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>
-      <h2 style={{ font: '600 20px Oswald, ui-sans-serif, sans-serif', margin: 0, letterSpacing: '.02em' }}>
-        Toupies
-      </h2>
+      {/* Le triangle des forces, dessiné, et juste dessous la composition du
+          chapitre dans les mêmes teintes. Quatre lignes de paragraphe et trois
+          lignes de tableau tenaient ici. */}
+      <section style={{ ...cardStyle('var(--line)'), alignItems: 'center', gap: 10 }}>
+        <TypeTriangle size={196} highlight={piloted.type as TopType} />
+        <ChapterComposition chapter={1} />
+      </section>
 
       {waiting ? (
         <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)' }}>
@@ -108,26 +118,6 @@ export function ToupiesScreen({
         </p>
       ) : null}
 
-      <section style={cardStyle('var(--line)')}>
-        <p style={{ margin: 0, font: '500 15px Oswald, ui-sans-serif, sans-serif' }}>
-          Chapitre 1 — composition
-        </p>
-        <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
-          Attaque bat Endurance, qui bat Défense, qui bat Attaque : +{Math.round(TYPES.dominantBonus * 100)} %
-          de dégâts infligés au type battu, subis en retour face au type qui bat. Équilibre ne domine ni
-          n'est dominé : +{Math.round(TYPES.equilibreBonus * 100)} % de dégâts sur chaque coup, jamais subis
-          en retour.
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {groups.map((g) => (
-            <div key={g.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-              <span style={{ color: 'var(--muted)' }}>{g.label}</span>
-              <span style={{ color: `var(--type-${g.type})` }}>{TYPE_LABELS[g.type]}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {giftAvailable ? (
         <section style={cardStyle('var(--ember)')}>
           <p style={{ margin: 0, font: '600 15px Oswald, ui-sans-serif, sans-serif', color: 'var(--ember)' }}>
@@ -143,48 +133,34 @@ export function ToupiesScreen({
         const owned = meta.toupies.unlocked.includes(t.id);
         const isPiloted = t.id === piloted.id;
         const isPending = t.id === pending.id;
-        const profile = CHASSIS[t.id] ?? {};
-        const axes = AXIS_ORDER.filter((a) => profile[a] !== undefined);
         const affordable = meta.gems >= TOUPIE_SHOP.priceGems;
 
         return (
           <section key={t.id} style={cardStyle(isPiloted ? 'var(--ember)' : 'var(--line)')}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-              <div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              {/* Le portrait montre TES pièces sur CE châssis : on compare des
+                  toupies montées, pas des noms. */}
+              <ToupiePortrait art={playerArt(meta.equipped, t.id)} size={104} />
+              <div style={{ flex: '1 1 0', display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                 <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif' }}>{t.label}</p>
                 <p style={{ margin: 0, fontSize: 12.5, color: `var(--type-${t.type})` }}>{TYPE_LABELS[t.type]}</p>
+                {owned && (isPiloted || isPending) ? (
+                  <span
+                    style={{
+                      marginTop: 3, alignSelf: 'flex-start', padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap',
+                      background: isPiloted ? 'var(--ember)' : 'transparent',
+                      color: isPiloted ? 'var(--ink)' : 'var(--muted)',
+                      border: isPiloted ? '1px solid var(--ember)' : '1px solid var(--line)',
+                      font: '600 12px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.03em',
+                    }}
+                  >
+                    {isPiloted ? 'Pilotée' : 'Au prochain run'}
+                  </span>
+                ) : null}
               </div>
-              {owned && (isPiloted || isPending) ? (
-                <span
-                  style={{
-                    minHeight: 22, padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap',
-                    background: isPiloted ? 'var(--ember)' : 'transparent',
-                    color: isPiloted ? 'var(--ink)' : 'var(--muted)',
-                    border: isPiloted ? '1px solid var(--ember)' : '1px solid var(--line)',
-                    font: '600 12px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.03em',
-                  }}
-                >
-                  {isPiloted ? 'Pilotée' : 'Au prochain run'}
-                </span>
-              ) : null}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {axes.length === 0 ? (
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                  Profil de châssis neutre — aucun bonus ni malus de stats.
-                </span>
-              ) : axes.map((a) => (
-                <span
-                  key={a}
-                  style={{ fontSize: 12, color: isGain(a, profile[a]!) ? 'var(--ember)' : 'var(--muted)' }}
-                >
-                  {axisLine(a, profile[a]!)}
-                </span>
-              ))}
-              <span style={{ fontSize: 12, color: `var(--type-${t.type})` }}>
-                {typeBonusLine(t.type)}
-              </span>
+              {/* Le profil du châssis, seul : c'est ce qui distingue vraiment les
+                  quatre, et la forme se compare d'une carte à l'autre. */}
+              <StatRadar values={CHASSIS[t.id] ?? {}} size={92} labels={false} />
             </div>
 
             {owned && isPending ? null : owned ? (
