@@ -1,7 +1,9 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { formatCredits, getLang, pickLang, setLang, t, tn } from './index';
 
-afterEach(() => setLang('fr'));
+// Chaque test part du français : la détection rendrait « en » dans cet
+// environnement, et un test ne doit pas dépendre de l'ordre d'exécution.
+beforeEach(() => setLang('fr'));
 
 describe('pickLang', () => {
   it('donne priorité au choix stocké sur les préférences du navigateur', () => {
