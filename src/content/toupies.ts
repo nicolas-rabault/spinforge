@@ -16,7 +16,6 @@ export type ToupieId =
 
 export interface Toupie {
   id: ToupieId;
-  label: string;
   type: TopType;
   signature: { lame: string; noyau: string };
 }
@@ -25,25 +24,21 @@ export interface Toupie {
 export const TOUPIES: Toupie[] = [
   {
     id: 'brasier-solaire',
-    label: 'Brasier Solaire',
     type: 'equilibre',
     signature: { lame: 'lame.couronne-solaire', noyau: 'noyau.fournaise' },
   },
   {
     id: 'typhon-primal',
-    label: 'Typhon Primal',
     type: 'attaque',
     signature: { lame: 'lame.croc-de-tempete', noyau: 'noyau.oeil-du-cyclone' },
   },
   {
     id: 'carapace-abyssale',
-    label: 'Carapace Abyssale',
     type: 'defense',
     signature: { lame: 'lame.ecaille-abyssale', noyau: 'noyau.caparacon' },
   },
   {
     id: 'tigre-foudre',
-    label: 'Tigre Foudre',
     type: 'endurance',
     signature: { lame: 'lame.griffe-orageuse', noyau: 'noyau.arc-electrique' },
   },

@@ -5,6 +5,7 @@ import {
 import { botTypeFor } from '../sim/salle';
 import { CHASSIS, SALLES_PER_CHAPTER, TOUPIE_SHOP, TYPES } from '../sim/config';
 import { formatCredits } from '../i18n';
+import { toupieLabel } from './contentLabels';
 import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
 import { typeLabel } from './typeLabels';
 import type { MetaState, RunState } from '../sim/types';
@@ -95,13 +96,13 @@ export function ToupiesScreen({
         <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)' }}>
           {dead ? (
             <>
-              <span style={{ color: 'var(--text)' }}>{pending.label}</span> monte sur le ring dès que
+              <span style={{ color: 'var(--text)' }}>{toupieLabel(pending.id)}</span> monte sur le ring dès que
               tu relances la descente.
             </>
           ) : (
             <>
-              Tu pilotes <span style={{ color: 'var(--ember)' }}>{piloted.label}</span> jusqu'au bout
-              de la descente. <span style={{ color: 'var(--text)' }}>{pending.label}</span> prend le
+              Tu pilotes <span style={{ color: 'var(--ember)' }}>{toupieLabel(piloted.id)}</span> jusqu'au bout
+              de la descente. <span style={{ color: 'var(--text)' }}>{toupieLabel(pending.id)}</span> prend le
               relais à la mort ou au boss vaincu.
             </>
           )}
@@ -151,7 +152,7 @@ export function ToupiesScreen({
           <section key={t.id} style={cardStyle(isPiloted ? 'var(--ember)' : 'var(--line)')}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
               <div>
-                <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif' }}>{t.label}</p>
+                <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif' }}>{toupieLabel(t.id)}</p>
                 <p style={{ margin: 0, fontSize: 12.5, color: `var(--type-${t.type})` }}>{typeLabel(t.type)}</p>
               </div>
               {owned && (isPiloted || isPending) ? (

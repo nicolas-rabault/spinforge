@@ -3,7 +3,7 @@ import { canOpen, chestPrice, grantChest, openChest } from '../sim/chest';
 import { addPiece, pendingTotal } from '../sim/meta';
 import type { PieceInstance } from '../sim/piece';
 import { rankColor, rankLabel } from './rank';
-import { modelById } from '../content/pieces';
+import { modelLabel } from './contentLabels';
 import { CHESTS } from '../sim/config';
 import { formatCredits } from '../i18n';
 import type { ChestKind, MetaState } from '../sim/types';
@@ -69,7 +69,7 @@ export function ChestScreen({
               }}
             >
               <span style={{ font: '500 15px Oswald, ui-sans-serif, sans-serif' }}>
-                {modelById(piece.model).label}
+                {modelLabel(piece.model)}
               </span>
               <span style={{ fontSize: 12.5, color: rankColor(piece.rank), whiteSpace: 'nowrap' }}>
                 {rankLabel(piece.rank)}

@@ -3,6 +3,7 @@ import { equipFromStack } from '../sim/meta';
 import { canFuse, fusionRecipe, tryFuse } from '../sim/fusion';
 import type { Slot } from '../sim/piece';
 import { modelById } from '../content/pieces';
+import { modelLabel } from './contentLabels';
 import { MODELS_PROFILE } from '../sim/config';
 import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
 import { rankColor, rankLabel } from './rank';
@@ -60,7 +61,6 @@ export function InventoryPanel({
       ) : null}
 
       {stacks.map((stack) => {
-        const model = modelById(stack.model);
         const recipe = fusionRecipe(stack.rank);
         const fusable = canFuse(meta, stack.model, stack.rank);
         // Lames et Noyaux n'ont pas de profil : `MODELS_PROFILE` ne les liste pas,
@@ -77,7 +77,7 @@ export function InventoryPanel({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
               <span style={{ font: '500 16px Oswald, ui-sans-serif, sans-serif' }}>
-                {model.label}{' '}
+                {modelLabel(stack.model)}{' '}
                 <span style={{ color: 'var(--muted)', fontSize: 13 }}>×{stack.levels.length}</span>
               </span>
               <span style={{ fontSize: 12.5, color: rankColor(stack.rank), whiteSpace: 'nowrap' }}>

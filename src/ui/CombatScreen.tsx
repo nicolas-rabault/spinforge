@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createArena } from '../render/arena';
 import { useGameLoop } from './useGameLoop';
-import { chapterOf } from '../content/chapters';
+import { chapterBoss, chapterName } from './contentLabels';
 import { SALLES_PER_CHAPTER } from '../sim/config';
 import { resetRun } from '../sim/sim';
 import { botTypeFor } from '../sim/salle';
@@ -77,7 +77,7 @@ export function CombatScreen({
             const isBoss = run.salle === SALLES_PER_CHAPTER;
             setBanner(
               isBoss
-                ? { text: chapterOf(run.chapter).boss, tint: 'var(--boss)' }
+                ? { text: chapterBoss(run.chapter), tint: 'var(--boss)' }
                 : { text: `Salle ${run.salle} · ${typeLabel(botTypeFor(run.chapter, run.salle))}`, tint: `var(--type-${botTypeFor(run.chapter, run.salle)})` },
             );
             window.setTimeout(() => setBanner(null), 2100);
@@ -125,7 +125,6 @@ export function CombatScreen({
   };
 
   const s = runRef.current;
-  const chapter = chapterOf(s.chapter);
   const spinPct = Math.max(0, Math.min(100, (s.player.spin / s.player.spinMax) * 100));
 
   return (
@@ -139,14 +138,14 @@ export function CombatScreen({
     >
       <section style={{ border: '1px solid var(--line)', background: 'var(--panel)', borderRadius: 11, padding: '9px 12px' }}>
         <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
-          Chapitre {s.chapter} — {chapter.name}
+          Chapitre {s.chapter} — {chapterName(s.chapter)}
         </p>
         <p style={{ margin: 0, font: '500 22px/1.15 Oswald, ui-sans-serif, sans-serif', letterSpacing: '.02em' }}>
           SALLE {s.salle} / {SALLES_PER_CHAPTER}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
           <span style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
-            {s.salle === SALLES_PER_CHAPTER ? chapter.boss : `Boss : salle ${SALLES_PER_CHAPTER}`}
+            {s.salle === SALLES_PER_CHAPTER ? chapterBoss(s.chapter) : `Boss : salle ${SALLES_PER_CHAPTER}`}
           </span>
           <div style={{ flex: '1 1 0', height: 7, borderRadius: 4, background: 'var(--bg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
             <div style={{ width: `${((s.salle - 1) / (SALLES_PER_CHAPTER - 1)) * 100}%`, height: '100%', background: 'var(--ember)' }} />

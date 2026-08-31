@@ -3,7 +3,7 @@ import { playerStats, tryUpgrade, upgradeCost } from '../sim/economy';
 import { syncRunStats } from '../sim/sim';
 import type { Slot } from '../sim/piece';
 import { rankLabel } from './rank';
-import { modelById } from '../content/pieces';
+import { modelLabel } from './contentLabels';
 import { talentsOf } from '../sim/talents';
 import { talentLabel } from './talentLabels';
 import { MODELS_PROFILE } from '../sim/config';
@@ -82,7 +82,7 @@ export function ForgeScreen({
                 {row.label} <span style={{ color: 'var(--muted)' }}>niv. {piece.level}</span>
               </span>
               <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-                {modelById(piece.model).label} · {rankLabel(piece.rank)}
+                {modelLabel(piece.model)} · {rankLabel(piece.rank)}
               </span>
               <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
                 {row.stat} {row.read(before).toFixed(0)} → {after.toFixed(0)}
