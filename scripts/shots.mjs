@@ -67,7 +67,12 @@ page.on('pageerror', (e) => console.error('[pageerror]', e.message));
 // `addInitScript` s'exécute avant tout script de la page, donc avant que `loadMeta()`
 // ne lise `localStorage` au montage de `App` — l'injection précède toujours la lecture.
 await page.addInitScript(
-  ({ key, value }) => localStorage.setItem(key, value),
+  ({ key, value }) => {
+    localStorage.setItem(key, value);
+    // Chromium démarre en en-US et l'app suit le navigateur : sans ce forçage,
+    // les captures sortiraient en anglais.
+    localStorage.setItem('spinforge.lang', 'fr');
+  },
   { key: SAVE_KEY, value: JSON.stringify(SEED_SAVE) },
 );
 await page.goto(URL, { waitUntil: 'networkidle' });

@@ -107,13 +107,23 @@ Chaque pièce progresse sur deux axes infinis : **niveau** (crédits/fragments) 
 
 **Lore** : à Gyrapolis, la météorite « Cœur Gyre » s'est écrasée au centre de la ville ; ses débris forgés en toupies tournent sans s'arrêter. Les quatre premières, les Fondateurs, ont donné naissance aux arènes de quartier.
 
-**Saison 0 — Les Quatre Fondateurs** : Typhon Primal (Attaque), Brasier Solaire (Équilibre), Carapace Abyssale (Défense), Tigre Foudre (Endurance).
+**Saison 0 — Les Quatre Fondateurs** : Typhon Primal (Attaque), Brasier Solaire (Équilibre), Carapace Abyssale (Défense), Tigre Foudre (Endurance). En anglais : Primal Typhoon, Solar Blaze, Abyssal Carapace, Thunder Tiger — types Attack, Balance, Defense, Stamina.
 
 **Saison 1 — La Génération Rafale (12)** : Sleipnir Azur, Hydre Écarlate, Ajax Vaillant, Drake Nocturne (rotation gauche), Wyrm Doré (rotation gauche), Estoc Royal, Rafale d'Émeraude, Molosse Stygien, Faucheur Pâle, Vouivre d'Ivoire, Phénix Cendré, Simorgh Vermeil. Détails (types, motifs, capacités) : planche Catalogue du canvas.
 
-**Pièces génériques** : Disques — Lourd, Gravité, Éventail, Axial, Colosse, Météorite. Pointes — Plate, Aiguille, Orbitale, Gyroscope, Furie, Ressort. (Descriptifs fonctionnels, pas des marques.)
+**Pièces génériques** : Disques — Lourd, Gravité, Éventail, Axial, Colosse, Météorite. Pointes — Plate, Aiguille, Orbitale, Gyroscope, Furie, Ressort. (Descriptifs fonctionnels, pas des marques.) En anglais : Discs — Heavy, Gravity, Fan, Axial, Colossus, Meteorite ; Tips — Flat, Needle, Orbital, Gyroscope, Fury, Spring.
+
+**Lames et Noyaux signature** : Couronne Solaire, Croc de Tempête, Écaille Abyssale, Griffe Orageuse ; Fournaise, Œil du Cyclone, Caparaçon, Arc Électrique. En anglais : Solar Crown, Storm Fang, Abyssal Scale, Storm Claw ; Furnace, Cyclone Eye, Caparison, Electric Arc.
+
+**Rangs** : Commun, Bon, Rare, Excellent (+1, +2), Épique (+1 à +3), Légende (+N à l'infini) — Common, Good, Rare, Excellent, Epic, Legend.
+
+**Talents** : Estoc, Riposte, Percée, Ancrage, Frôlement, Masse, Glisse, Relance, Toupie folle, Réserve, Second souffle, Cœur Gyre — Thrust, Riposte, Breakthrough, Anchor, Graze, Mass, Glide, Relaunch, Wild Spin, Reserve, Second Wind, Gyre Heart.
 
 **8 arènes-chapitres** : 1 Hangar Rouillé (aucun piège) · 2 Dojo Néon (murs élastiques) · 3 Marché Souterrain (piliers mobiles) · 4 Cratère de Magma (geysers) · 5 Temple sous la Glace (friction réduite) · 6 Jardin Suspendu (arène qui bascule) · 7 Station Orbitale (gravité réduite) · 8 Le Vortex (chapitre infini, modificateur toutes les 10 salles).
+
+**Noms anglais des chapitres et de leurs boss** : 1 Rusted Hangar / Hangar Warden · 2 Neon Dojo / Neon Master · 3 Underground Market / Pillar Elder · 4 Magma Crater / Crater Smith · 5 Temple Beneath the Ice / Frost Watcher · 6 Hanging Garden / Hanging Sentinel · 7 Orbital Station / Orbital Pilot · 8 The Vortex / Vortex Core. Boss français : Gardien du Hangar, Maître des Néons, Doyen des Piliers, Forgeron du Cratère, Veilleur de Givre, Sentinelle Suspendue, Pilote Orbital, Cœur du Vortex.
+
+Les mots eux-mêmes vivent dans `src/i18n/fr.ts` et `src/i18n/en.ts` ; la Saison 1 devra arriver bilingue.
 
 Le **système de terrain** (répulsion, brèches, zones au sol, éclat) est livré au jalon 2.5 et actif dès le chapitre 1 ; les identités par chapitre ci-dessus restent du contenu à poser dessus, et sont inatteignables tant que l'enchaînement des chapitres n'existe pas (jalon 3).
 

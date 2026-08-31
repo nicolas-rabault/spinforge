@@ -59,6 +59,10 @@ async function open(browser, maxed) {
   await page.evaluate((s) => {
     localStorage.setItem('spinforge.save', s);
     localStorage.setItem('spinforge.onboarded', '1');
+    // Chromium démarre en en-US et l'app suit le navigateur : sans ce forçage,
+    // l'interface passerait en anglais et chaque recherche par texte ci-dessous
+    // échouerait sans dire pourquoi — le défaut qu'un verrou ne doit pas avoir.
+    localStorage.setItem('spinforge.lang', 'fr');
   }, save(maxed));
   await page.reload();
   await page.waitForTimeout(1200);
