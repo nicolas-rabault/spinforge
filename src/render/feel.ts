@@ -46,19 +46,22 @@ export const FEEL = {
   // marque du joueur : le repère qui répond à « laquelle est la mienne ? ».
   // Sa teinte ne suit JAMAIS le spin — un repère qui s'éteint avec la toupie
   // disparaît exactement quand on le cherche.
-  markerRadiusMult: 2.15,
-  markerAlphaBase: 0.3,
-  markerAlphaPulse: 0.16,
   markerPulseHz: 1.15,
   caretSizeMult: 0.62,
-  caretGapMult: 1.45,
+  caretGapMult: 1.78,
   caretBobMult: 0.16,
 
-  // repère de type : point posé sur le corps de chaque toupie non-joueur, teinte
-  // fixe (TYPE_TINT, jamais spinTint) — même règle que le marqueur ci-dessus.
-  // Rayon + décalage < 1 : il ne doit jamais dépasser du disque.
-  typeMarkSizeMult: 0.22,
-  typeMarkGapMult: 0.62,
+  // jauge de spin portée par chaque toupie. La piste sombre est tracée en entier
+  // et ne s'efface jamais : c'est elle qui tient le rôle de l'ancien anneau de
+  // marquage quand le spin du joueur tombe à zéro.
+  gaugeRadiusMult: 1.34,
+  gaugeWidthPlayer: 0.3,
+  gaugeWidthBot: 0.2,
+  /** Pas de ratio en deçà duquel la jauge n'est pas retracée. */
+  gaugeStep: 0.008,
+
+  // badge d'avantage porté par les adversaires (jamais par le joueur).
+  badgeGapMult: 2.4,
 
   // boss
   bossHaloMult: 2.7,

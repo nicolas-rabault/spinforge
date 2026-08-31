@@ -39,18 +39,30 @@ export function App() {
   const [muted, setMuted] = useState(() => audioRef.current!.isMuted());
   useEffect(() => () => audioRef.current?.destroy(), []);
 
+  // En combat, l'arène occupe tout l'écran et le reste se pose dessus. Ailleurs,
+  // la colonne ordinaire avec ses marges. C'est le seul endroit où la disposition
+  // dépend de l'onglet — les écrans eux-mêmes n'en savent rien.
+  const combat = tab === 'combat';
+  const overlay = { position: 'absolute' as const, left: 0, right: 0, zIndex: 3 };
+
   return (
     <div
       style={{
-        height: '100%', boxSizing: 'border-box', maxWidth: 460, margin: '0 auto', padding: '14px 16px 12px',
-        display: 'flex', flexDirection: 'column', gap: 10,
+        height: '100%', boxSizing: 'border-box', maxWidth: 460, margin: '0 auto',
+        position: 'relative', padding: combat ? 0 : '14px 16px 12px',
+        display: 'flex', flexDirection: 'column', gap: combat ? 0 : 10,
         background: 'var(--bg)', color: 'var(--text)', userSelect: 'none',
       }}
     >
-      <header style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <header
+        style={{
+          display: 'flex', gap: 8, alignItems: 'center',
+          ...(combat ? { ...overlay, top: 0, padding: '10px 12px 0', pointerEvents: 'none' } : {}),
+        }}
+      >
         <span
           style={{
-            border: '1px solid var(--line)', background: 'var(--panel)', borderRadius: 9,
+            border: '1px solid var(--line)', background: 'rgba(19,25,34,.9)', borderRadius: 9,
             padding: '5px 11px', fontSize: 12.5,
           }}
         >
@@ -61,7 +73,7 @@ export function App() {
         </span>
         <span
           style={{
-            border: '1px solid var(--line)', background: 'var(--panel)', borderRadius: 9,
+            border: '1px solid var(--line)', background: 'rgba(19,25,34,.9)', borderRadius: 9,
             padding: '5px 11px', fontSize: 12.5,
           }}
         >
@@ -79,7 +91,8 @@ export function App() {
           aria-label={muted ? 'Réactiver le son' : 'Couper le son'}
           style={{
             marginLeft: 'auto', width: 34, height: 34, borderRadius: 9, cursor: 'pointer',
-            border: '1px solid var(--line)', background: 'var(--panel)', color: 'var(--muted)', fontSize: 15,
+            border: '1px solid var(--line)', background: 'rgba(19,25,34,.9)', color: 'var(--muted)',
+            fontSize: 15, pointerEvents: 'auto',
           }}
         >
           {muted ? '🔇' : '🔊'}
@@ -87,7 +100,12 @@ export function App() {
       </header>
 
       {loaded.recovered ? (
-        <p style={{ margin: 0, fontSize: 12, color: 'var(--boss)' }}>
+        <p
+          style={{
+            margin: combat ? '52px 12px 0' : 0, fontSize: 12, color: 'var(--boss)',
+            ...(combat ? { ...overlay, top: 0, background: 'rgba(6,8,12,.92)', borderRadius: 9, padding: 9 } : {}),
+          }}
+        >
           Ta sauvegarde était illisible et n'a pas pu être chargée. Elle a été mise de côté ; une nouvelle partie a démarré.
         </p>
       ) : null}
@@ -95,14 +113,14 @@ export function App() {
       {/* L'écran de combat reste monté quand on passe en Forge : détruire l'app
           PixiJS à chaque changement d'onglet coûterait un rechargement complet
           des textures. On le masque, la boucle se met en pause. */}
-      <div style={{ display: tab === 'combat' ? 'flex' : 'none', flexDirection: 'column', flex: '1 1 0', minHeight: 0 }}>
+      <div style={{ position: 'absolute', inset: 0, display: combat ? 'block' : 'none' }}>
         <CombatScreen runRef={runRef} metaRef={metaRef} running={tab === 'combat'} onTick={redraw} onMetaChanged={metaChanged} audio={audioRef.current} />
       </div>
       {tab === 'forge' ? <ForgeScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
       {tab === 'coffres' ? <ChestScreen metaRef={metaRef} onChanged={metaChanged} /> : null}
       {tab === 'toupies' ? <ToupiesScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
 
-      <TabBar tab={tab} onChange={setTab} pending={pendingTotal(metaRef.current)} />
+      <TabBar tab={tab} onChange={setTab} pending={pendingTotal(metaRef.current)} floating={combat} />
     </div>
   );
 }

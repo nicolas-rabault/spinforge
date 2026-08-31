@@ -11,7 +11,8 @@
  */
 import { toupieById, TOUPIES, type TopType, type ToupieId } from '../content/toupies';
 import type { Slot } from '../content/pieces';
-import { TYPE_TINT, type Metal } from '../theme';
+import type { PieceInstance } from '../sim/piece';
+import { rankTier, TYPE_TINT, type Metal } from '../theme';
 import {
   conePath, crownPath, gemPath, glow, mix, paintMetal, rgba, type Ctx, type Path,
 } from './draw';
@@ -25,6 +26,31 @@ export interface ToupieArt {
 
 export function typeOf(art: ToupieArt): TopType {
   return toupieById(art.chassis).type;
+}
+
+export const ART_SLOTS: Slot[] = ['lame', 'disque', 'pointe', 'noyau'];
+
+/** La toupie du joueur : son châssis de descente et ses quatre pièces équipées.
+ *  C'est cette fonction qui fait apparaître la Forge dans l'arène. */
+export function playerArt(equipped: Record<Slot, PieceInstance>, chassis: ToupieId): ToupieArt {
+  return {
+    chassis,
+    pieces: {
+      lame: { model: equipped.lame.model, rank: equipped.lame.rank },
+      disque: { model: equipped.disque.model, rank: equipped.disque.rank },
+      pointe: { model: equipped.pointe.model, rank: equipped.pointe.rank },
+      noyau: { model: equipped.noyau.model, rank: equipped.noyau.rank },
+    },
+  };
+}
+
+/** Identité d'une toupie montée, au **palier** de rang près. Sert de clé aux deux
+ *  caches — celui de l'UI (`art/cache.ts`) et celui de l'arène
+ *  (`render/toupieTextures.ts`) : deux clés différentes, et les deux vues
+ *  finiraient par montrer deux objets différents. */
+export function toupieKey(art: ToupieArt): string {
+  const slots = ART_SLOTS.map((s) => `${art.pieces[s].model}:${rankTier(art.pieces[s].rank)}`).join(',');
+  return `${art.chassis}|${slots}`;
 }
 
 /** Les pièces que porte un adversaire. Les bots n'ont pas d'inventaire : on leur

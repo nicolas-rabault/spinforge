@@ -14,7 +14,7 @@ import type { ChestKind } from '../sim/types';
 import { makeCanvas, type Ctx } from './draw';
 import { drawPieceGlyph, drawPieceTile } from './piece';
 import { drawChest } from './chest';
-import { drawToupiePortrait, type ToupieArt } from './toupie';
+import { drawToupiePortrait, toupieKey, type ToupieArt } from './toupie';
 
 const MAX_DPR = 2;
 const cache = new Map<string, string>();
@@ -44,16 +44,8 @@ export function pieceGlyphUrl(model: string, rank: number, size: number): string
     drawPieceGlyph(ctx, model, rank, px));
 }
 
-/** Clé d'une toupie montée : le châssis et, par pièce, le modèle et le **palier**. */
-function artKey(art: ToupieArt): string {
-  const slots = (['lame', 'disque', 'pointe', 'noyau'] as const)
-    .map((s) => `${art.pieces[s].model}:${rankTier(art.pieces[s].rank)}`)
-    .join(',');
-  return `${art.chassis}|${slots}`;
-}
-
 export function toupiePortraitUrl(art: ToupieArt, size: number): string {
-  return render(`portrait|${artKey(art)}|${size}`, size, (ctx, px) =>
+  return render(`portrait|${toupieKey(art)}|${size}`, size, (ctx, px) =>
     drawToupiePortrait(ctx, art, px));
 }
 
