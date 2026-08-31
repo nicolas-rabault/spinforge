@@ -1,8 +1,8 @@
-/** Quatre paliers de lisibilité, alignés sur les paliers nommés de l'échelle.
- *  Un rang doit se reconnaître à la couleur sans lire son étiquette. */
+import { rankTier } from '../theme';
+
+/** Couleur d'un rang. Les seuils vivent dans `theme.ts` (`rankTier`) et nulle part
+ *  ailleurs : cette fonction et les cadres dessinés par `src/art/` doivent classer
+ *  un rang de la même façon, sinon le même objet change de rareté selon l'écran. */
 export function rankColor(rank: number): string {
-  if (rank >= 11) return 'var(--boss)';
-  if (rank >= 7) return 'var(--ember)';
-  if (rank >= 4) return 'var(--player)';
-  return 'var(--muted)';
+  return `var(--rank-${rankTier(rank)})`;
 }

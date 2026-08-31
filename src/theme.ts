@@ -35,6 +35,43 @@ export const TYPE_TINT: Record<TopType, number> = {
   equilibre: 0xd7c9a8,
 };
 
+/** Les quatre paliers de rareté, acier → bleui → violet → or. **Une seule échelle
+ *  pour tout le jeu** : les cadres de pièce (`src/art/`) et les libellés de rang
+ *  (`src/ui/rank.ts`) lisent celle-ci. Avant, `ui/rank.ts` portait ses propres
+ *  seuils *et* une échelle inversée (Légende violet, Épique doré) — un doublon qui
+ *  suffisait à faire dire deux choses différentes au même rang selon l'écran.
+ *
+ *  Chaque palier est un métal complet, pas une teinte : `light`/`mid`/`dark` font le
+ *  dégradé du corps, `accent` est la couleur d'identité (gemmes, liseré, texte). */
+export interface Metal {
+  light: number;
+  mid: number;
+  dark: number;
+  accent: number;
+}
+
+export const RANK_TIERS: readonly [Metal, Metal, Metal, Metal] = [
+  { light: 0x9fb0c4, mid: 0x5d6b7d, dark: 0x252c36, accent: 0xb9c6d6 },
+  { light: 0x8fc4ff, mid: 0x3f74c4, dark: 0x1b2a44, accent: 0x5f9dff },
+  { light: 0xd7b4ff, mid: 0x8a52d8, dark: 0x2a1b40, accent: 0xba78ff },
+  { light: 0xffe3a0, mid: 0xd9922a, dark: 0x3a2408, accent: 0xffc24a },
+];
+
+/** L'acier nu : le métal de base sur lequel la teinte du palier vient se mêler.
+ *  Un objet Commun est cet acier exactement ; une Légende en garde le brossage. */
+export const STEEL: Metal = { light: 0x8fa0b6, mid: 0x46515f, dark: 0x1c222a, accent: 0xb9c6d6 };
+
+export type RankTier = 0 | 1 | 2 | 3;
+
+/** Seuils des paliers — source unique. Alignés sur les paliers *nommés* de
+ *  `rankLabel()` : Commun-Rare, Excellent, Épique, Légende et au-delà. */
+export function rankTier(rank: number): RankTier {
+  if (rank >= 11) return 3;
+  if (rank >= 7) return 2;
+  if (rank >= 4) return 1;
+  return 0;
+}
+
 export type Camp = 'player' | 'bot' | 'boss';
 
 /** Atténuation multiplicative : l'incandescence baisse, la teinte reste intacte. */
@@ -63,4 +100,5 @@ export function applyThemeToDocument(): void {
   for (const [type, value] of Object.entries(TYPE_TINT)) {
     root.setProperty(`--type-${type}`, hex(value));
   }
+  RANK_TIERS.forEach((tier, i) => root.setProperty(`--rank-${i}`, hex(tier.accent)));
 }
