@@ -1,4 +1,4 @@
-import { formatCredits } from '../i18n';
+import { formatCredits, t, type MessageKey } from '../i18n';
 import { playerStats, tryUpgrade, upgradeCost } from '../sim/economy';
 import { syncRunStats } from '../sim/sim';
 import type { Slot } from '../sim/piece';
@@ -13,16 +13,18 @@ import type { MetaState, RunState, Stats } from '../sim/types';
 
 interface SlotRow {
   key: Slot;
-  label: string;
-  stat: string;
+  label: MessageKey;
+  stat: MessageKey;
   read: (s: Stats) => number;
 }
 
+/** Des clés et non des chaînes : une table de libellés construite au chargement
+ *  du module resterait figée dans la langue du démarrage. */
 const SLOTS: SlotRow[] = [
-  { key: 'lame', label: 'Lame', stat: 'Attaque', read: (s) => s.attack },
-  { key: 'disque', label: 'Disque', stat: 'Défense', read: (s) => s.defense },
-  { key: 'pointe', label: 'Pointe', stat: 'Vitesse', read: (s) => s.maxSpeed },
-  { key: 'noyau', label: 'Noyau', stat: 'Spin max', read: (s) => s.spinMax },
+  { key: 'lame', label: 'slot.lame', stat: 'stat.attack', read: (s) => s.attack },
+  { key: 'disque', label: 'slot.disque', stat: 'stat.defense', read: (s) => s.defense },
+  { key: 'pointe', label: 'slot.pointe', stat: 'stat.maxSpeed', read: (s) => s.maxSpeed },
+  { key: 'noyau', label: 'slot.noyau', stat: 'stat.spinMax', read: (s) => s.spinMax },
 ];
 
 export function ForgeScreen({
@@ -43,10 +45,10 @@ export function ForgeScreen({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>
       <h2 style={{ font: '600 20px Oswald, ui-sans-serif, sans-serif', margin: 0, letterSpacing: '.02em' }}>
-        Ta toupie
+        {t('forge.title')}
       </h2>
       <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)' }}>
-        Le combat est en pause pendant que tu améliores.
+        {t('forge.paused')}
       </p>
       {SLOTS.map((row) => {
         const piece = meta.equipped[row.key];
@@ -79,13 +81,14 @@ export function ForgeScreen({
           >
             <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <span style={{ font: '500 17px Oswald, ui-sans-serif, sans-serif' }}>
-                {row.label} <span style={{ color: 'var(--muted)' }}>niv. {piece.level}</span>
+                {t(row.label)}{' '}
+                <span style={{ color: 'var(--muted)' }}>{t('forge.level', { n: piece.level })}</span>
               </span>
               <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
                 {modelLabel(piece.model)} · {rankLabel(piece.rank)}
               </span>
               <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-                {row.stat} {row.read(before).toFixed(0)} → {after.toFixed(0)}
+                {t(row.stat)} {row.read(before).toFixed(0)} → {after.toFixed(0)}
               </span>
               {axes.map((a) => (
                 <span

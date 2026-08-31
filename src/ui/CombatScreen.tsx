@@ -6,6 +6,8 @@ import { SALLES_PER_CHAPTER } from '../sim/config';
 import { resetRun } from '../sim/sim';
 import { botTypeFor } from '../sim/salle';
 import { typeLabel } from './typeLabels';
+import { t } from '../i18n';
+import { tx } from '../i18n/tx';
 import type { MetaState, RunState, Vec } from '../sim/types';
 import type { Audio } from '../audio/audio';
 
@@ -78,7 +80,12 @@ export function CombatScreen({
             setBanner(
               isBoss
                 ? { text: chapterBoss(run.chapter), tint: 'var(--boss)' }
-                : { text: `Salle ${run.salle} · ${typeLabel(botTypeFor(run.chapter, run.salle))}`, tint: `var(--type-${botTypeFor(run.chapter, run.salle)})` },
+                : {
+                    text: t('combat.banner.salle', {
+                      n: run.salle, type: typeLabel(botTypeFor(run.chapter, run.salle)),
+                    }),
+                    tint: `var(--type-${botTypeFor(run.chapter, run.salle)})`,
+                  },
             );
             window.setTimeout(() => setBanner(null), 2100);
           }
@@ -138,14 +145,16 @@ export function CombatScreen({
     >
       <section style={{ border: '1px solid var(--line)', background: 'var(--panel)', borderRadius: 11, padding: '9px 12px' }}>
         <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
-          Chapitre {s.chapter} — {chapterName(s.chapter)}
+          {t('combat.chapter', { n: s.chapter, name: chapterName(s.chapter) })}
         </p>
         <p style={{ margin: 0, font: '500 22px/1.15 Oswald, ui-sans-serif, sans-serif', letterSpacing: '.02em' }}>
-          SALLE {s.salle} / {SALLES_PER_CHAPTER}
+          {t('combat.salle', { n: s.salle, max: SALLES_PER_CHAPTER })}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
           <span style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
-            {s.salle === SALLES_PER_CHAPTER ? chapterBoss(s.chapter) : `Boss : salle ${SALLES_PER_CHAPTER}`}
+            {s.salle === SALLES_PER_CHAPTER
+              ? chapterBoss(s.chapter)
+              : t('combat.bossAt', { n: SALLES_PER_CHAPTER })}
           </span>
           <div style={{ flex: '1 1 0', height: 7, borderRadius: 4, background: 'var(--bg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
             <div style={{ width: `${((s.salle - 1) / (SALLES_PER_CHAPTER - 1)) * 100}%`, height: '100%', background: 'var(--ember)' }} />
@@ -188,12 +197,12 @@ export function CombatScreen({
           }}
         >
           <p style={{ margin: 0, font: '600 14px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.04em', color: 'var(--player)' }}>
-            ▾ TA TOUPIE EST CELLE DU CHEVRON
+            {t('combat.hint.title')}
           </p>
           <p style={{ margin: '4px 0 0', fontSize: 12, lineHeight: 1.4 }}>
-            Glisse le doigt n'importe où pour la piloter.{' '}
-            <strong style={{ color: 'var(--ember)' }}>Fonce dans l'adversaire</strong> : qui charge casse
-            plus et encaisse moins.
+            {tx('combat.hint.body', {
+              charge: <strong style={{ color: 'var(--ember)' }}>{t('combat.hint.charge')}</strong>,
+            })}
           </p>
         </div>
       ) : null}
@@ -201,7 +210,7 @@ export function CombatScreen({
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
         {/* Le chevron et la teinte reprennent exactement ceux du repère porté par la
             toupie du joueur : la barre nomme la toupie autant qu'elle mesure son spin. */}
-        <span style={{ fontSize: 11, color: 'var(--player)', letterSpacing: '.07em', whiteSpace: 'nowrap' }}>▾ TON SPIN</span>
+        <span style={{ fontSize: 11, color: 'var(--player)', letterSpacing: '.07em', whiteSpace: 'nowrap' }}>{t('combat.spin')}</span>
         <div style={{ flex: '1 1 0', height: 9, borderRadius: 5, background: 'var(--bg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <div style={{ width: `${spinPct}%`, height: '100%', background: 'var(--player)' }} />
         </div>
@@ -215,7 +224,7 @@ export function CombatScreen({
             background: 'var(--ember)', color: 'var(--ink)', font: '600 15px Oswald, ui-sans-serif, sans-serif',
           }}
         >
-          Ta toupie s'est arrêtée — Retenter
+          {t('combat.retry')}
         </button>
       ) : null}
     </div>
