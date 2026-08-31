@@ -3,7 +3,7 @@ import { createRun } from '../sim/sim';
 import { pendingTotal } from '../sim/meta';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
 import { createAudio } from '../audio/audio';
-import { formatCredits } from '../i18n';
+import { formatCredits, getLang, setLang, t } from '../i18n';
 import { CombatScreen } from './CombatScreen';
 import { ForgeScreen } from './ForgeScreen';
 import { ChestScreen } from './ChestScreen';
@@ -39,6 +39,18 @@ export function App() {
   const [muted, setMuted] = useState(() => audioRef.current!.isMuted());
   useEffect(() => () => audioRef.current?.destroy(), []);
 
+  // `t()` lit un singleton de module, ce qui évite d'enfiler une locale à
+  // travers `axisLine`, `rankLabel` et `formatCredits`. Ce `useState` n'existe
+  // que pour redessiner : aucun `memo` dans l'arbre, un seul rendu de la racine
+  // repropage partout — et le run en cours n'est pas interrompu.
+  const [lang, setLangState] = useState(() => getLang());
+  const toggleLang = () => {
+    const next = lang === 'fr' ? 'en' : 'fr';
+    setLang(next);
+    document.documentElement.lang = next;
+    setLangState(next);
+  };
+
   return (
     <div
       style={{
@@ -54,7 +66,7 @@ export function App() {
             padding: '5px 11px', fontSize: 12.5,
           }}
         >
-          Crédits{' '}
+          {t('header.credits')}{' '}
           <span style={{ color: 'var(--ember)', fontFamily: 'Oswald, ui-sans-serif, sans-serif', fontVariantNumeric: 'tabular-nums' }}>
             {formatCredits(metaRef.current.credits)}
           </span>
@@ -65,20 +77,31 @@ export function App() {
             padding: '5px 11px', fontSize: 12.5,
           }}
         >
-          Gemmes{' '}
+          {t('header.gems')}{' '}
           <span style={{ color: 'var(--player)', fontFamily: 'Oswald, ui-sans-serif, sans-serif', fontVariantNumeric: 'tabular-nums' }}>
             {formatCredits(metaRef.current.gems)}
           </span>
         </span>
+        <button
+          onClick={toggleLang}
+          aria-label={t('header.switchLang')}
+          style={{
+            marginLeft: 'auto', width: 34, height: 34, borderRadius: 9, cursor: 'pointer',
+            border: '1px solid var(--line)', background: 'var(--panel)', color: 'var(--muted)',
+            font: '600 12px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.04em',
+          }}
+        >
+          {lang === 'fr' ? 'EN' : 'FR'}
+        </button>
         <button
           onClick={() => {
             const next = !muted;
             audioRef.current!.setMuted(next);
             setMuted(next);
           }}
-          aria-label={muted ? 'Réactiver le son' : 'Couper le son'}
+          aria-label={muted ? t('header.unmute') : t('header.mute')}
           style={{
-            marginLeft: 'auto', width: 34, height: 34, borderRadius: 9, cursor: 'pointer',
+            width: 34, height: 34, borderRadius: 9, cursor: 'pointer',
             border: '1px solid var(--line)', background: 'var(--panel)', color: 'var(--muted)', fontSize: 15,
           }}
         >
@@ -88,7 +111,7 @@ export function App() {
 
       {loaded.recovered ? (
         <p style={{ margin: 0, fontSize: 12, color: 'var(--boss)' }}>
-          Ta sauvegarde était illisible et n'a pas pu être chargée. Elle a été mise de côté ; une nouvelle partie a démarré.
+          {t('save.recovered')}
         </p>
       ) : null}
 
