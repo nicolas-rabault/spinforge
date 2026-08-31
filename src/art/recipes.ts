@@ -87,6 +87,16 @@ export const PIECE_RECIPES: Record<string, PieceRecipe> = {
   'noyau.arc-electrique': { slot: 'noyau', facets: 5, ornament: 'arc' },
 };
 
+/** Le modèle qui sert d'**emblème** à son emplacement, pour dire « ce coffre
+ *  contient des Disques » sans nommer un Disque en particulier. C'est un choix
+ *  d'illustration : il ne promet rien sur ce qui tombera. */
+export const SLOT_EMBLEM: Record<Slot, string> = {
+  lame: 'lame.couronne-solaire',
+  disque: 'disque.lourd',
+  pointe: 'pointe.plate',
+  noyau: 'noyau.fournaise',
+};
+
 export function pieceRecipe(model: string): PieceRecipe {
   const r = PIECE_RECIPES[model];
   if (!r) throw new Error(`pas de recette de dessin pour la pièce : ${model}`);

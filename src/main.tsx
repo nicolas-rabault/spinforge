@@ -3,6 +3,7 @@ import '@fontsource/inter/600.css';
 import '@fontsource/oswald/500.css';
 import '@fontsource/oswald/600.css';
 import { createRoot } from 'react-dom/client';
+import './ui/anim.css';
 import { applyThemeToDocument } from './theme';
 import { App } from './ui/App';
 
