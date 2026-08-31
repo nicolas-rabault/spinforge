@@ -4,7 +4,7 @@ import {
 } from '../sim/meta';
 import { botTypeFor } from '../sim/salle';
 import { CHASSIS, SALLES_PER_CHAPTER, TOUPIE_SHOP, TYPES } from '../sim/config';
-import { formatCredits } from './format';
+import { formatCredits } from '../i18n';
 import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
 import { TYPE_LABELS } from './typeLabels';
 import type { MetaState, RunState } from '../sim/types';

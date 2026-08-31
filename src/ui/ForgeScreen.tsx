@@ -1,4 +1,4 @@
-import { formatCredits } from './format';
+import { formatCredits } from '../i18n';
 import { playerStats, tryUpgrade, upgradeCost } from '../sim/economy';
 import { syncRunStats } from '../sim/sim';
 import { rankLabel, type Slot } from '../sim/piece';

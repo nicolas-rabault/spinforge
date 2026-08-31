@@ -4,7 +4,7 @@ import { addPiece, pendingTotal } from '../sim/meta';
 import { rankLabel, type PieceInstance } from '../sim/piece';
 import { modelById } from '../content/pieces';
 import { CHESTS } from '../sim/config';
-import { formatCredits } from './format';
+import { formatCredits } from '../i18n';
 import { rankColor } from './rank';
 import type { ChestKind, MetaState } from '../sim/types';
 
