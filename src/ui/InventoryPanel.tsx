@@ -3,18 +3,20 @@ import { equipFromStack } from '../sim/meta';
 import { canFuse, fusionRecipe, tryFuse } from '../sim/fusion';
 import type { Slot } from '../sim/piece';
 import { modelById } from '../content/pieces';
+import { t, tn, type MessageKey } from '../i18n';
 import { modelLabel } from './contentLabels';
 import { MODELS_PROFILE } from '../sim/config';
 import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
 import { rankColor, rankLabel } from './rank';
 import type { MetaState } from '../sim/types';
 
-const SLOT_LABELS: { key: Slot | 'tous'; label: string }[] = [
-  { key: 'tous', label: 'Tous' },
-  { key: 'lame', label: 'Lames' },
-  { key: 'disque', label: 'Disques' },
-  { key: 'pointe', label: 'Pointes' },
-  { key: 'noyau', label: 'Noyaux' },
+/** Les pluriels du filtre, distincts des `slot.*` singuliers de la Forge. */
+const SLOT_FILTERS: { key: Slot | 'tous'; label: MessageKey }[] = [
+  { key: 'tous', label: 'filter.all' },
+  { key: 'lame', label: 'filter.lame' },
+  { key: 'disque', label: 'filter.disque' },
+  { key: 'pointe', label: 'filter.pointe' },
+  { key: 'noyau', label: 'filter.noyau' },
 ];
 
 export function InventoryPanel({
@@ -34,10 +36,10 @@ export function InventoryPanel({
   return (
     <>
       <h2 style={{ font: '600 20px Oswald, ui-sans-serif, sans-serif', margin: '6px 0 0', letterSpacing: '.02em' }}>
-        Inventaire
+        {t('inventory.title')}
       </h2>
       <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-        {SLOT_LABELS.map(({ key, label }) => (
+        {SLOT_FILTERS.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setFilter(key)}
@@ -49,14 +51,14 @@ export function InventoryPanel({
               fontSize: 12.5, fontFamily: 'Oswald, ui-sans-serif, sans-serif',
             }}
           >
-            {label}
+            {t(label)}
           </button>
         ))}
       </div>
 
       {stacks.length === 0 ? (
         <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)' }}>
-          Rien ici pour l'instant. Ouvre un coffre pour trouver des pièces.
+          {t('inventory.empty')}
         </p>
       ) : null}
 
@@ -105,7 +107,7 @@ export function InventoryPanel({
                   font: '500 13px Oswald, ui-sans-serif, sans-serif',
                 }}
               >
-                Équiper
+                {t('action.equip')}
               </button>
               <button
                 disabled={!fusable}
@@ -118,9 +120,10 @@ export function InventoryPanel({
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
                 }}
               >
-                <span>Fusionner</span>
+                <span>{t('inventory.fuse')}</span>
                 <span style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  {recipe.identical} identiques{recipe.sacrifice > 0 ? ` + ${recipe.sacrifice} sacrifice${recipe.sacrifice > 1 ? 's' : ''}` : ''}
+                  {t('inventory.recipe.identical', { n: recipe.identical })}
+                  {recipe.sacrifice > 0 ? tn('inventory.recipe.sacrifice', recipe.sacrifice) : ''}
                 </span>
               </button>
             </div>

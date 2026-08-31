@@ -4,7 +4,8 @@ import {
 } from '../sim/meta';
 import { botTypeFor } from '../sim/salle';
 import { CHASSIS, SALLES_PER_CHAPTER, TOUPIE_SHOP, TYPES } from '../sim/config';
-import { formatCredits } from '../i18n';
+import { formatCredits, t } from '../i18n';
+import { tx } from '../i18n/tx';
 import { toupieLabel } from './contentLabels';
 import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
 import { typeLabel } from './typeLabels';
@@ -14,16 +15,14 @@ import type { MetaState, RunState } from '../sim/types';
  *  grandeurs qui gouvernent chaque combat (`TYPES.dominantBonus`,
  *  `TYPES.equilibreBonus`) ne sont écrites nulle part dans le jeu. */
 function typeBonusLine(type: TopType): string {
-  if (type === 'equilibre') {
-    const pct = Math.round(TYPES.equilibreBonus * 100);
-    return `Équilibre : +${pct} % de dégâts sur chaque coup, jamais subis en retour.`;
-  }
-  const pct = Math.round(TYPES.dominantBonus * 100);
-  return `+${pct} % de dégâts contre son type dominé, +${pct} % subis face à qui la domine.`;
+  return type === 'equilibre'
+    ? t('type.bonus.equilibre', { pct: Math.round(TYPES.equilibreBonus * 100) })
+    : t('type.bonus.dominant', { pct: Math.round(TYPES.dominantBonus * 100) });
 }
 
 interface SalleGroup {
-  label: string;
+  start: number;
+  end: number;
   type: TopType;
 }
 
@@ -31,17 +30,22 @@ interface SalleGroup {
  *  sans ce regroupement la contre-pioche se lirait comme dix lignes répétitives
  *  au lieu d'une composition qu'on saisit d'un regard. */
 function chapterGroups(chapter: number): SalleGroup[] {
-  const groups: { start: number; end: number; type: TopType }[] = [];
+  const groups: SalleGroup[] = [];
   for (let salle = 1; salle <= SALLES_PER_CHAPTER; salle++) {
     const type = botTypeFor(chapter, salle);
     const last = groups[groups.length - 1];
     if (last && last.type === type) last.end = salle;
     else groups.push({ start: salle, end: salle, type });
   }
-  return groups.map((g) => ({
-    label: g.start === g.end ? `Salle ${g.start}` : `Salles ${g.start}-${g.end}`,
-    type: g.type,
-  }));
+  return groups;
+}
+
+/** Les bornes restent des nombres dans les données, le mot vient du catalogue :
+ *  la clé React suit la plage et non la langue. */
+function groupLabel(g: SalleGroup): string {
+  return g.start === g.end
+    ? t('toupies.salle', { n: g.start })
+    : t('toupies.salles', { a: g.start, b: g.end });
 }
 
 function cardStyle(border: string) {
@@ -89,40 +93,36 @@ export function ToupiesScreen({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>
       <h2 style={{ font: '600 20px Oswald, ui-sans-serif, sans-serif', margin: 0, letterSpacing: '.02em' }}>
-        Toupies
+        {t('toupies.title')}
       </h2>
 
       {waiting ? (
         <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)' }}>
-          {dead ? (
-            <>
-              <span style={{ color: 'var(--text)' }}>{toupieLabel(pending.id)}</span> monte sur le ring dès que
-              tu relances la descente.
-            </>
-          ) : (
-            <>
-              Tu pilotes <span style={{ color: 'var(--ember)' }}>{toupieLabel(piloted.id)}</span> jusqu'au bout
-              de la descente. <span style={{ color: 'var(--text)' }}>{toupieLabel(pending.id)}</span> prend le
-              relais à la mort ou au boss vaincu.
-            </>
-          )}
+          {dead
+            ? tx('toupies.waiting.dead', {
+                pending: <span style={{ color: 'var(--text)' }}>{toupieLabel(pending.id)}</span>,
+              })
+            : tx('toupies.waiting.alive', {
+                piloted: <span style={{ color: 'var(--ember)' }}>{toupieLabel(piloted.id)}</span>,
+                pending: <span style={{ color: 'var(--text)' }}>{toupieLabel(pending.id)}</span>,
+              })}
         </p>
       ) : null}
 
       <section style={cardStyle('var(--line)')}>
         <p style={{ margin: 0, font: '500 15px Oswald, ui-sans-serif, sans-serif' }}>
-          Chapitre 1 — composition
+          {t('toupies.composition.title')}
         </p>
         <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
-          Attaque bat Endurance, qui bat Défense, qui bat Attaque : +{Math.round(TYPES.dominantBonus * 100)} %
-          de dégâts infligés au type battu, subis en retour face au type qui bat. Équilibre ne domine ni
-          n'est dominé : +{Math.round(TYPES.equilibreBonus * 100)} % de dégâts sur chaque coup, jamais subis
-          en retour.
+          {t('toupies.composition.body', {
+            dominant: Math.round(TYPES.dominantBonus * 100),
+            equilibre: Math.round(TYPES.equilibreBonus * 100),
+          })}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {groups.map((g) => (
-            <div key={g.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-              <span style={{ color: 'var(--muted)' }}>{g.label}</span>
+            <div key={`${g.start}-${g.end}`} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+              <span style={{ color: 'var(--muted)' }}>{groupLabel(g)}</span>
               <span style={{ color: `var(--type-${g.type})` }}>{typeLabel(g.type)}</span>
             </div>
           ))}
@@ -132,28 +132,28 @@ export function ToupiesScreen({
       {giftAvailable ? (
         <section style={cardStyle('var(--ember)')}>
           <p style={{ margin: 0, font: '600 15px Oswald, ui-sans-serif, sans-serif', color: 'var(--ember)' }}>
-            Tu as franchi le mur !
+            {t('toupies.gift.title')}
           </p>
           <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)' }}>
-            Choisis ton Fondateur — réclame-le sur l'une des fiches ci-dessous.
+            {t('toupies.gift.body')}
           </p>
         </section>
       ) : null}
 
-      {TOUPIES.map((t) => {
-        const owned = meta.toupies.unlocked.includes(t.id);
-        const isPiloted = t.id === piloted.id;
-        const isPending = t.id === pending.id;
-        const profile = CHASSIS[t.id] ?? {};
+      {TOUPIES.map((toupie) => {
+        const owned = meta.toupies.unlocked.includes(toupie.id);
+        const isPiloted = toupie.id === piloted.id;
+        const isPending = toupie.id === pending.id;
+        const profile = CHASSIS[toupie.id] ?? {};
         const axes = AXIS_ORDER.filter((a) => profile[a] !== undefined);
         const affordable = meta.gems >= TOUPIE_SHOP.priceGems;
 
         return (
-          <section key={t.id} style={cardStyle(isPiloted ? 'var(--ember)' : 'var(--line)')}>
+          <section key={toupie.id} style={cardStyle(isPiloted ? 'var(--ember)' : 'var(--line)')}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
               <div>
-                <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif' }}>{toupieLabel(t.id)}</p>
-                <p style={{ margin: 0, fontSize: 12.5, color: `var(--type-${t.type})` }}>{typeLabel(t.type)}</p>
+                <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif' }}>{toupieLabel(toupie.id)}</p>
+                <p style={{ margin: 0, fontSize: 12.5, color: `var(--type-${toupie.type})` }}>{typeLabel(toupie.type)}</p>
               </div>
               {owned && (isPiloted || isPending) ? (
                 <span
@@ -165,7 +165,7 @@ export function ToupiesScreen({
                     font: '600 12px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.03em',
                   }}
                 >
-                  {isPiloted ? 'Pilotée' : 'Au prochain run'}
+                  {t(isPiloted ? 'toupies.badge.piloted' : 'toupies.badge.next')}
                 </span>
               ) : null}
             </div>
@@ -173,7 +173,7 @@ export function ToupiesScreen({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {axes.length === 0 ? (
                 <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                  Profil de châssis neutre — aucun bonus ni malus de stats.
+                  {t('toupies.neutralChassis')}
                 </span>
               ) : axes.map((a) => (
                 <span
@@ -183,28 +183,28 @@ export function ToupiesScreen({
                   {axisLine(a, profile[a]!)}
                 </span>
               ))}
-              <span style={{ fontSize: 12, color: `var(--type-${t.type})` }}>
-                {typeBonusLine(t.type)}
+              <span style={{ fontSize: 12, color: `var(--type-${toupie.type})` }}>
+                {typeBonusLine(toupie.type)}
               </span>
             </div>
 
             {owned && isPending ? null : owned ? (
               // La carte pilotée n'apparaît ici que si un autre châssis attend :
               // y appuyer revient à renoncer au changement, pas à « équiper ».
-              <button onClick={() => mutate(setActiveToupie, t.id)} style={actionButtonStyle(true)}>
-                {isPiloted ? 'Annuler le changement' : 'Équiper'}
+              <button onClick={() => mutate(setActiveToupie, toupie.id)} style={actionButtonStyle(true)}>
+                {t(isPiloted ? 'toupies.cancelSwap' : 'action.equip')}
               </button>
             ) : giftAvailable ? (
-              <button onClick={() => mutate(claimFounderGift, t.id)} style={actionButtonStyle(true)}>
-                Réclamer
+              <button onClick={() => mutate(claimFounderGift, toupie.id)} style={actionButtonStyle(true)}>
+                {t('toupies.claim')}
               </button>
             ) : (
               <button
                 disabled={!affordable}
-                onClick={() => mutate(buyToupie, t.id)}
+                onClick={() => mutate(buyToupie, toupie.id)}
                 style={actionButtonStyle(affordable)}
               >
-                Acheter · {formatCredits(TOUPIE_SHOP.priceGems)} 💎
+                {t('toupies.buy', { n: formatCredits(TOUPIE_SHOP.priceGems) })}
               </button>
             )}
           </section>

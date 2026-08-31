@@ -5,13 +5,14 @@ import type { PieceInstance } from '../sim/piece';
 import { rankColor, rankLabel } from './rank';
 import { modelLabel } from './contentLabels';
 import { CHESTS } from '../sim/config';
-import { formatCredits } from '../i18n';
+import { formatCredits, t, tn, type MessageKey } from '../i18n';
+import { tx, txn } from '../i18n/tx';
 import type { ChestKind, MetaState } from '../sim/types';
 
-const CHEST_LIST: { kind: ChestKind; name: string; blurb: string }[] = [
-  { kind: 'bronze', name: 'Coffre Bronze', blurb: 'Disques et Pointes, du Commun au Rare.' },
-  { kind: 'arene', name: "Coffre d'Arène", blurb: 'Les quatre emplacements, du Bon à l’Excellent.' },
-  { kind: 'mythique', name: 'Coffre Mythique', blurb: 'Les quatre emplacements, de l’Excellent à la Légende.' },
+const CHEST_LIST: { kind: ChestKind; name: MessageKey; blurb: MessageKey }[] = [
+  { kind: 'bronze', name: 'chest.bronze.name', blurb: 'chest.bronze.blurb' },
+  { kind: 'arene', name: 'chest.arene.name', blurb: 'chest.arene.blurb' },
+  { kind: 'mythique', name: 'chest.mythique.name', blurb: 'chest.mythique.blurb' },
 ];
 
 const REVEAL_MS = 90;
@@ -56,7 +57,7 @@ export function ChestScreen({
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', minHeight: 0 }}>
         <h2 style={{ font: '600 20px Oswald, ui-sans-serif, sans-serif', margin: 0, letterSpacing: '.02em' }}>
-          {pulls.length === 1 ? 'Ton tirage' : `Tes ${pulls.length} tirages`}
+          {tn('chest.pulls', pulls.length)}
         </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>
           {pulls.slice(0, revealed).map((piece, i) => (
@@ -79,7 +80,9 @@ export function ChestScreen({
         </div>
         {revealed >= pulls.length ? (
           <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)' }}>
-            Meilleur rang obtenu : <span style={{ color: rankColor(best) }}>{rankLabel(best)}</span>. Tout est rangé dans ton inventaire, onglet Forge.
+            {tx('chest.bestRank', {
+              rank: <span style={{ color: rankColor(best) }}>{rankLabel(best)}</span>,
+            })}
           </p>
         ) : null}
         <button
@@ -89,7 +92,7 @@ export function ChestScreen({
             background: 'var(--ember)', color: 'var(--ink)', font: '600 15px Oswald, ui-sans-serif, sans-serif',
           }}
         >
-          Continuer
+          {t('chest.continue')}
         </button>
       </div>
     );
@@ -98,7 +101,7 @@ export function ChestScreen({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}>
       <h2 style={{ font: '600 20px Oswald, ui-sans-serif, sans-serif', margin: 0, letterSpacing: '.02em' }}>
-        Coffres
+        {t('chest.title')}
       </h2>
       {pendingTotal(meta) > 0 ? (
         <section
@@ -108,7 +111,7 @@ export function ChestScreen({
           }}
         >
           <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif', color: 'var(--ember)' }}>
-            Butin — {pendingTotal(meta)} coffre{pendingTotal(meta) > 1 ? 's' : ''}
+            {tn('chest.loot', pendingTotal(meta))}
           </p>
           {CHEST_LIST.filter(({ kind }) => meta.pending[kind] > 0).map(({ kind, name }) => (
             <button
@@ -122,7 +125,7 @@ export function ChestScreen({
                 padding: '0 12px', gap: 10,
               }}
             >
-              <span>{name}</span>
+              <span>{t(name)}</span>
               <span style={{ color: 'var(--ember)', fontVariantNumeric: 'tabular-nums' }}>
                 ×{meta.pending[kind]}
               </span>
@@ -134,7 +137,8 @@ export function ChestScreen({
         const def = CHESTS[kind];
         const unit = chestPrice(kind, 1);
         const ten = chestPrice(kind, 10);
-        const label = unit.currency === 'credits' ? 'crédits' : 'gemmes';
+        const currency = t(unit.currency === 'credits' ? 'currency.credits' : 'currency.gems');
+        const remaining = def.pityThreshold - meta.pity[kind];
         return (
           <section
             key={kind}
@@ -144,15 +148,18 @@ export function ChestScreen({
             }}
           >
             <div>
-              <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif' }}>{name}</p>
-              <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)' }}>{blurb}</p>
+              <p style={{ margin: 0, font: '500 17px Oswald, ui-sans-serif, sans-serif' }}>{t(name)}</p>
+              <p style={{ margin: 0, fontSize: 12.5, color: 'var(--muted)' }}>{t(blurb)}</p>
               {def.pityThreshold > 0 ? (
                 <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--muted)' }}>
-                  {rankLabel(def.pityRank)} garanti dans{' '}
-                  <span style={{ color: 'var(--ember)', fontVariantNumeric: 'tabular-nums' }}>
-                    {def.pityThreshold - meta.pity[kind]}
-                  </span>{' '}
-                  tirage{def.pityThreshold - meta.pity[kind] > 1 ? 's' : ''}
+                  {txn('chest.pity', remaining, {
+                    rank: rankLabel(def.pityRank),
+                    n: (
+                      <span style={{ color: 'var(--ember)', fontVariantNumeric: 'tabular-nums' }}>
+                        {remaining}
+                      </span>
+                    ),
+                  })}
                 </p>
               ) : null}
             </div>
@@ -173,9 +180,9 @@ export function ChestScreen({
                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
                     }}
                   >
-                    <span>Ouvrir ×{count}</span>
+                    <span>{t('chest.open', { n: count })}</span>
                     <span style={{ fontSize: 11.5, color: affordable ? 'var(--ember)' : 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>
-                      {formatCredits(price.amount)} {label}
+                      {formatCredits(price.amount)} {currency}
                     </span>
                   </button>
                 );
