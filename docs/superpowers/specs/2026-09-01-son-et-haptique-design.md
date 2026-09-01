@@ -88,7 +88,6 @@ export interface Audio {
   setSpin(ratio: number | null): void;
   settings(): AudioSettings;
   setSetting(key: keyof AudioSettings, on: boolean): void;
-  destroy(): void;
 }
 ```
 
