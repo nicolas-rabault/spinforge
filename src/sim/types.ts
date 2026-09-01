@@ -113,6 +113,11 @@ export interface MetaState {
    *  jamais : c'est la référence de farm du jalon 3, et un joueur qui redescend
    *  un chapitre déjà validé ne doit pas la perdre en jouant. */
   bestChapter: number;
+  /** Dernier instant où le joueur a été vu, en millisecondes epoch ; 0 tant
+   *  qu'il ne l'a jamais été. Écrit par `src/storage/`, JAMAIS par `src/sim/`,
+   *  qui n'a pas le droit de lire `Date` — même discipline que `rngState` : la
+   *  donnée vit dans le méta, la source vit dehors. */
+  lastSeenAt: number;
   /** Les toupies possédées et celle qu'on pilote. `unlocked` est une liste et
    *  non un `Set` : elle doit se sérialiser en JSON. */
   toupies: { unlocked: ToupieId[]; active: ToupieId };

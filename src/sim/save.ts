@@ -15,8 +15,11 @@ import type { PieceInstance, PieceStack } from './piece';
  *  gemmes, équipement, inventaire et pity.
  *  Le passage au schéma 5 remplace `chapterValidated: boolean` par
  *  `bestChapter: number`. La migration tient dans `hydrate` : un blob antérieur
- *  est, par construction, un méta auquel il manque le champ. */
-export const SAVE_SCHEMA = 5;
+ *  est, par construction, un méta auquel il manque le champ.
+ *  Le passage au schéma 6 ajoute `lastSeenAt: number`, écrit par `src/storage/`
+ *  pour mesurer l'absence hors-ligne. Même mécanisme : un blob antérieur en est
+ *  simplement dépourvu, `hydrate` le complète à 0. */
+export const SAVE_SCHEMA = 6;
 
 interface Envelope {
   v: number;
@@ -101,6 +104,12 @@ function hydrate(partial: Record<string, unknown>): MetaState {
     bestChapter: typeof partial.bestChapter === 'number'
       ? Math.max(0, Math.trunc(partial.bestChapter))
       : (partial.chapterValidated === true ? 1 : 0),
+    // Migration 5 → 6 : un blob antérieur est un méta auquel il manque le champ.
+    // Normalisé comme bestChapter : un horodatage négatif ou fractionnaire
+    // produirait une absence absurde, donc des gains hors-ligne absurdes.
+    lastSeenAt: typeof partial.lastSeenAt === 'number'
+      ? Math.max(0, Math.trunc(partial.lastSeenAt))
+      : 0,
     toupies: hydrateToupies(partial.toupies),
     founderGiftClaimed: partial.founderGiftClaimed === true,
   };
@@ -155,6 +164,7 @@ function isComplete(m: Record<string, unknown>): boolean {
     typeof m.credits === 'number' &&
     typeof m.gems === 'number' &&
     typeof m.bestChapter === 'number' &&
+    typeof m.lastSeenAt === 'number' &&
     Array.isArray(m.inventory) && m.inventory.every(isValidStack) &&
     typeof pity === 'object' && pity !== null &&
     chestKinds.every((k) => typeof pity[k] === 'number') &&

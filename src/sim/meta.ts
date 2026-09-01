@@ -20,6 +20,7 @@ export function createInitialMeta(seed: number): MetaState {
     pity: { bronze: 0, arene: 0, mythique: 0 },
     pending: { bronze: 0, arene: 0, mythique: 0 },
     bestChapter: 0,
+    lastSeenAt: 0,
     toupies: { unlocked: [STARTER_TOUPIE], active: STARTER_TOUPIE },
     founderGiftClaimed: false,
   };

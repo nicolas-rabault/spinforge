@@ -178,6 +178,34 @@ describe('migration', () => {
     const negatif = { ...filled(), bestChapter: -3 };
     expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta: negatif }))!.bestChapter).toBe(0);
   });
+
+  it('migre un blob du schéma 5 en posant lastSeenAt à 0', () => {
+    const v5 = JSON.parse(serializeMeta(createInitialMeta(1)));
+    v5.v = 5;
+    delete v5.meta.lastSeenAt;
+    const meta = deserializeMeta(JSON.stringify(v5));
+    expect(meta).not.toBeNull();
+    expect(meta!.lastSeenAt).toBe(0);
+  });
+
+  it('normalise un lastSeenAt absurde', () => {
+    const blob = JSON.parse(serializeMeta(createInitialMeta(1)));
+    blob.v = 5;                      // schéma antérieur : hydrate normalise
+    blob.meta.lastSeenAt = -42.7;
+    expect(deserializeMeta(JSON.stringify(blob))!.lastSeenAt).toBe(0);
+  });
+
+  it('refuse un blob courant sans lastSeenAt', () => {
+    const blob = JSON.parse(serializeMeta(createInitialMeta(1)));
+    delete blob.meta.lastSeenAt;     // schéma COURANT amputé : isComplete refuse
+    expect(deserializeMeta(JSON.stringify(blob))).toBeNull();
+  });
+
+  it('conserve un lastSeenAt valide', () => {
+    const meta = createInitialMeta(1);
+    meta.lastSeenAt = 1_700_000_000_000;
+    expect(deserializeMeta(serializeMeta(meta))!.lastSeenAt).toBe(1_700_000_000_000);
+  });
 });
 
 describe('isComplete renforcée', () => {
