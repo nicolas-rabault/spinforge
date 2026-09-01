@@ -84,7 +84,7 @@ export interface Balance {
   };
   bot: {
     base: { accel: number; maxSpeed: number; radius: number; spinMax: number; spinDecay: number; attack: number; defense: number };
-    scaling: { spinPerSalle: number; attackPerSalle: number };
+    scaling: { spinPerSalle: number; attackPerSalle: number; spinPerChapter: number; attackPerChapter: number };
     spawnRing: number;
     ai: { retargetEveryTicks: number; aimJitter: number };
   };

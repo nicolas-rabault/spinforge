@@ -43,7 +43,12 @@
   },
   "bot": {
     "base": { "accel": 500, "maxSpeed": 140, "radius": 12, "spinMax": 1200, "spinDecay": 12, "attack": 18, "defense": 6 },
-    "scaling": { "spinPerSalle": 0.15, "attackPerSalle": 0.08 },
+    "scaling": {
+      "spinPerSalle": 0.15,
+      "attackPerSalle": 0.08,
+      "spinPerChapter": 1.2,
+      "attackPerChapter": 1.1
+    },
     "spawnRing": 0.6,
     "ai": { "retargetEveryTicks": 10, "aimJitter": 1.2 }
   },

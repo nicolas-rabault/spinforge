@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { botCountFor, botTypeFor, makeBot, spawnSalle } from './salle';
-import { BOSS, BOT_BASE, SALLES_PER_CHAPTER } from './config';
+import { BOSS, BOT_BASE, BOT_SCALING, SALLES_PER_CHAPTER } from './config';
 
 describe('botCountFor', () => {
   it('suit la table de la spec : 1-3→1, 4-6→2, 7-9→3, 10→1 boss', () => {
@@ -30,6 +30,29 @@ describe('makeBot', () => {
   it('le boss est lourd, le bot ordinaire ne l’est pas', () => {
     expect(makeBot(1, SALLES_PER_CHAPTER, 0, 0).mass).toBe(BOSS.mass);
     expect(makeBot(1, 1, 0, 0).mass).toBe(1);
+  });
+
+  // Vérifié par mutation : remplacer l'exposant `chapter - 1` par `chapter` fait
+  // rougir ce test. C'est lui qui rend exacte la comparaison des garde-fous du
+  // chapitre 1 avant/après ce lot.
+  it('le chapitre 1 est inchangé par le facteur de chapitre', () => {
+    // Le facteur n'apparaît nulle part dans les attendus : c'est le point. Au
+    // chapitre 1 l'exposant vaut 0, donc la formule est exactement celle du
+    // palier de salle, quelle que soit la valeur du facteur.
+    for (const salle of [1, 5, 9]) {
+      expect(makeBot(1, salle, 0, 0).spinMax, `salle ${salle}`).toBeCloseTo(
+        BOT_BASE.spinMax * (1 + BOT_SCALING.spinPerSalle * (salle - 1)), 6);
+      expect(makeBot(1, salle, 0, 0).attack, `salle ${salle}`).toBeCloseTo(
+        BOT_BASE.attack * (1 + BOT_SCALING.attackPerSalle * (salle - 1)), 6);
+    }
+  });
+
+  it('le facteur de chapitre est géométrique et se compose avec le palier de salle', () => {
+    const salle = 5;
+    const c1 = makeBot(1, salle, 0, 0);
+    const c3 = makeBot(3, salle, 0, 0);
+    expect(c3.spinMax / c1.spinMax).toBeCloseTo(Math.pow(BOT_SCALING.spinPerChapter, 2), 6);
+    expect(c3.attack / c1.attack).toBeCloseTo(Math.pow(BOT_SCALING.attackPerChapter, 2), 6);
   });
 });
 

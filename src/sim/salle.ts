@@ -18,8 +18,13 @@ export function botTypeFor(chapter: number, salle: number): TopType {
 
 export function makeBot(chapter: number, salle: number, index: number, angle: number): Top {
   const boss = salle === SALLES_PER_CHAPTER;
-  const spinScale = 1 + BOT_SCALING.spinPerSalle * (salle - 1);
-  const attackScale = 1 + BOT_SCALING.attackPerSalle * (salle - 1);
+  // Linéaire par salle, géométrique par chapitre — les deux se multiplient. À
+  // l'exposant 0, le chapitre 1 est bit à bit inchangé quelle que soit la valeur
+  // du facteur : c'est ce qui rend exacts les garde-fous de non-régression.
+  const spinScale = (1 + BOT_SCALING.spinPerSalle * (salle - 1))
+    * Math.pow(BOT_SCALING.spinPerChapter, chapter - 1);
+  const attackScale = (1 + BOT_SCALING.attackPerSalle * (salle - 1))
+    * Math.pow(BOT_SCALING.attackPerChapter, chapter - 1);
   const spinMax = BOT_BASE.spinMax * spinScale * (boss ? BOSS.spinMult : 1);
   const dist = ARENA_RADIUS * BOT_SPAWN_RING;
   return {
