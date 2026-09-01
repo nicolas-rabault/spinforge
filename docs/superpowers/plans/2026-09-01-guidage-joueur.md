@@ -1220,9 +1220,27 @@ pas** : il faut voir les écrans soi-même.
 npm run calibrate
 ```
 
-Attendu, à l'identique d'avant le lot : chapitre 1 à **23 runs / 1,91 h**, premier
-coffre d'Arène **0,78 h** après validation, **salle 10 la plus meurtrière**. Toute
-dérive signale qu'on a modifié la simulation par accident — arrêter et chercher.
+**Ligne de base mesurée sur `2cc72c5` avant le lot** (et non citée de mémoire —
+les valeurs qui circulaient, « 23 runs / 1,91 h », étaient périmées) :
+
+```
+Validation du chapitre 1 : médiane 0.32 h
+Premier coffre ouvert    : médiane 0.00 h
+Runs jusqu’à validation  : médiane 9.00
+Salle la plus meurtrière : [10,23]
+salle 10 : 64.80 s  (vidée 10 fois, morts 23)
+```
+
+Ces cinq lignes doivent sortir **identiques** après le lot. Toute dérive signale
+qu'on a modifié la simulation par accident — arrêter et chercher.
+
+**Le script casse ensuite**, à la section « Comparatif châssis » :
+`c.label.padEnd is not a function` (`scripts/calibrate.mjs:265`). C'est une panne
+**préexistante** sur `main`, sans rapport avec ce lot : la refonte i18n a retiré le
+texte des catalogues de `src/content/`, et `toupie.label` n'existe plus. Ne pas la
+corriger ici — `jalon-3-lot-a` modifie ce fichier en ce moment (28 lignes), et une
+correction dans cette branche créerait un conflit pour un gain nul. Le garde-fou de
+ce lot est la première section, qui s'affiche en entier avant le crash.
 
 - [ ] **Step 2: Vérifier qu'aucun fichier interdit n'a bougé**
 
