@@ -1,13 +1,15 @@
-// Autopilote de calibration. Conservé volontairement : le jalon 3 en redemandera.
-// La simulation étant pure et sans DOM, aucun navigateur n'est nécessaire.
+// Harnais de calibration headless — la simulation étant pure, aucun navigateur
+// n'est nécessaire. L'autopilote qu'il pilotait vit désormais dans
+// `src/sim/autopilot.ts` : le jalon 3 (le farm) en a besoin, ce fichier l'importe.
 import { maxPlayableChapter, startRun, syncRunStats, tick } from '../src/sim/sim.ts';
 import { addPiece, applyRunReward, createInitialMeta, setActiveToupie } from '../src/sim/meta.ts';
 import { tryUpgrade, upgradeCost } from '../src/sim/economy.ts';
 import { canOpen, grantChests, openChest } from '../src/sim/chest.ts';
-import { ARENA_RADIUS, MAX_CHAPTER, TICK_S, SALLES_PER_CHAPTER } from '../src/sim/config.ts';
+import { MAX_CHAPTER, TICK_S, SALLES_PER_CHAPTER } from '../src/sim/config.ts';
 import { botTypeFor } from '../src/sim/salle.ts';
 import { typeMult } from '../src/sim/typeChart.ts';
 import { TOUPIES } from '../src/content/toupies.ts';
+import { steerWithTerrain } from '../src/sim/autopilot.ts';
 // `src/content/` ne porte plus de texte : les noms de toupies vivent dans les
 // catalogues i18n. On lit le catalogue français *directement* — `src/i18n/fr.ts`
 // n'importe rien et reste donc pur ; `src/i18n/index.ts`, lui, touche
@@ -23,22 +25,6 @@ const MAX_TICKS = 60 * 60 * 20 / TICK_S; // garde-fou : 20 h de jeu simulé
 // par le test de déterminisme de la simulation.
 const CHEST_KINDS = ['bronze', 'arene', 'mythique'];
 
-/** Brèche dont le centre est angulairement le plus proche de ce point. Retourne
- *  `null` avant la salle où les brèches apparaissent. */
-function nearestBreach(arena, pos) {
-  const angle = Math.atan2(pos.y, pos.x);
-  let best = null;
-  let bestGap = Infinity;
-  for (const breach of arena.breaches) {
-    // Écart signé replié dans [-π, π], comme `inBreach` : sans ce repli, 6,2 rad
-    // et 0,05 rad — le même endroit à 2π près — sembleraient opposés.
-    const raw = angle - breach.angle;
-    const gap = Math.abs(Math.atan2(Math.sin(raw), Math.cos(raw)));
-    if (gap < bestGap) { bestGap = gap; best = breach; }
-  }
-  return best;
-}
-
 /**
  * Le châssis qui domine le mieux le type d'une salle : on maximise le rapport
  * entre ce qu'on inflige et ce qu'on subit, le triangle jouant des deux côtés.
@@ -53,40 +39,6 @@ function counterFor(chapter, salle) {
     if (ratio > bestRatio) { bestRatio = ratio; best = t; }
   }
   return best.id;
-}
-
-/** Politique « terrain » : pousser la cible vers la brèche la plus proche d'elle,
- *  et couper vers l'éclat quand on en est le plus près. Sans elle, l'autopilote
- *  mesurerait un jeu que personne ne joue. */
-function steerWithTerrain(run) {
-  const me = run.player.pos;
-  const shard = run.arena.shard;
-  if (shard) {
-    const mine = Math.hypot(shard.x - me.x, shard.y - me.y);
-    const contested = run.bots.some((b) => Math.hypot(shard.x - b.pos.x, shard.y - b.pos.y) < mine);
-    if (!contested) return { x: shard.x - me.x, y: shard.y - me.y };
-  }
-  let target = null;
-  let best = Infinity;
-  for (const bot of run.bots) {
-    const d = Math.hypot(bot.pos.x - me.x, bot.pos.y - me.y);
-    if (d < best) { best = d; target = bot; }
-  }
-  if (!target) return null;
-  const breach = nearestBreach(run.arena, target.pos);
-  if (!breach) return { x: target.pos.x - me.x, y: target.pos.y - me.y };
-  // Se placer sur la ligne brèche → cible, du côté opposé à la brèche, pour que
-  // le choc pousse la cible dehors.
-  const bx = Math.cos(breach.angle) * ARENA_RADIUS;
-  const by = Math.sin(breach.angle) * ARENA_RADIUS;
-  const dx = target.pos.x - bx;
-  const dy = target.pos.y - by;
-  const len = Math.hypot(dx, dy) || 1;
-  const spot = { x: target.pos.x + (dx / len) * 26, y: target.pos.y + (dy / len) * 26 };
-  const toSpot = Math.hypot(spot.x - me.x, spot.y - me.y);
-  return toSpot > 18
-    ? { x: spot.x - me.x, y: spot.y - me.y }
-    : { x: target.pos.x - me.x, y: target.pos.y - me.y };
 }
 
 /** Vide la file de butin, comme un joueur qui ouvre ses coffres au fur et à
