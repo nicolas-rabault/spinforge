@@ -74,6 +74,14 @@ describe('salleReward — butin', () => {
     expect(boss.boss).toBe(true);
     expect(boss.chapter).toBe(3);
   });
+
+  it('le revenu monte géométriquement d’un chapitre à l’autre', () => {
+    const c1 = salleReward(1, 4, false, 1).reward.credits;
+    const c3 = salleReward(3, 4, false, 1).reward.credits;
+    expect(c3 / c1).toBeCloseTo(Math.pow(ECON.rewardPerChapter, 2), 6);
+    // Le chapitre 1 ne bouge pas : l'exposant y vaut 0.
+    expect(c1).toBeCloseTo(ECON.rewardBase * Math.pow(ECON.rewardGrowth, 3), 5);
+  });
 });
 
 describe('pièces', () => {

@@ -91,7 +91,7 @@ export interface Balance {
   boss: { spinMult: number; attackMult: number; radius: number; mass: number };
   econ: {
     upgradeBase: number; upgradeGrowth: number;
-    rewardBase: number; rewardGrowth: number; bossRewardMult: number;
+    rewardBase: number; rewardGrowth: number; rewardPerChapter: number; bossRewardMult: number;
     bossGems: number;
   };
   toupieShop: { priceGems: number };

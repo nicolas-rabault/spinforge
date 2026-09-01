@@ -19,7 +19,11 @@ export function salleReward(
   boss: boolean,
   rngState: number,
 ): { reward: RunReward; rngState: number } {
-  const base = ECON.rewardBase * Math.pow(ECON.rewardGrowth, salle - 1);
+  // Sans ce facteur, un chapitre plus dur paierait pareil : le joueur n'aurait
+  // aucune raison d'y descendre, et le farm du lot B rien à farmer.
+  const base = ECON.rewardBase
+    * Math.pow(ECON.rewardGrowth, salle - 1)
+    * Math.pow(ECON.rewardPerChapter, chapter - 1);
   const rule = boss ? LOOT.boss : LOOT.bySalle;
   const chests: ChestKind[] = [rule.chest];
   const r = nextRandom(rngState);
