@@ -557,7 +557,7 @@ entier se rejoue en quelques millisecondes hors navigateur.
 
 - **Écart entre stratégies** : boucler `tick()` avec un `steer` calculé (passif,
   charge, interception, kite), racheter gloutonnement à chaque mort, compter les
-  runs jusqu'à `chapterValidated`. 5 seeds, moyenne.
+  runs jusqu'à `bestChapter`. 5 seeds, moyenne.
 - **Cadence sonore** : rejouer `takeSnapshot` / `observe` autour de chaque `tick()`
   et compter les `hits` retenus par le filtre de `CombatScreen`.
 - **Rendu** : `npm run dev` puis Playwright (voir `scripts/shots.mjs`) — c'est le

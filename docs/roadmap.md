@@ -582,7 +582,8 @@ de ces points n'est bloquant.
   « ch.3 nettement plus coûteux » ; la mesure donne ch. 2 à +0,15 h et ch. 3 à +0,10 h — le
   chapitre 3 est *moins cher* que le 2 — pendant que le chapitre 4 est à +0,36 h. La spec se
   contredisait déjà elle-même sur ce point : sa section `botTypes` (§ 5) argumente que le
-  chapitre 4, où la contre-pioche cesse de payer, est « le bon endroit pour le mur ». La
+  chapitre 4, où la contre-pioche cesse de suffire, est « le bon endroit pour que le mur
+  cesse d'être négociable autrement qu'en pilotant et en s'équipant ». La
   mesure a tranché en faveur du chapitre 4. La cible « chapitre 3 nettement plus coûteux » est
   structurellement hors de portée de `rewardPerChapter` seul : la seule valeur du balayage qui
   la produit (1,19) avait ses deux voisines qui inversaient la marche et une marge d'une seule
