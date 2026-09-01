@@ -70,13 +70,17 @@ export function App() {
       onPointerDownCapture={(e) => {
         // Le contexte audio ne peut naître qu'au premier geste, et il doit naître
         // ICI : porté par `CombatScreen`, il laissait sans aucun son un joueur qui
-        // démarre l'application sur l'onglet Coffres.
+        // démarre l'application sur l'onglet Coffres. Reste avant le filtre
+        // ci-dessous : ce premier geste peut tomber sur un bouton grisé.
         audio.start();
-        // Un seul écouteur plutôt que seize `onClick` : les boutons `disabled`
-        // n'émettent aucun événement de pointeur, ils se taisent tout seuls, et
-        // le prochain bouton ajouté sonnera sans qu'on y pense.
+        // Un seul écouteur plutôt que seize `onClick`, mais un bouton `disabled`
+        // ne se tait pas tout seul : mesuré sur « Fusionner » désactivé, un clic
+        // dont la cible est un enfant du bouton (un `<span>` d'icône) traverse
+        // quand même jusqu'à la racine — seul l'élément visé directement est
+        // supprimé. Sans ce garde, un bouton grisé confirmait une action qui
+        // n'avait pas eu lieu.
         const button = (e.target as HTMLElement).closest('button');
-        if (!button) return;
+        if (!button || button.disabled) return;
         const kind = button.dataset.sfx;
         audio.tap(kind === 'chest' || kind === 'fuse' || kind === 'upgrade' ? kind : 'tap');
       }}
