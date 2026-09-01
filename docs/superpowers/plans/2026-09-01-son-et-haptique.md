@@ -1502,7 +1502,6 @@ Dans `src/i18n/fr.ts`, **retirer** `'header.mute'` et `'header.unmute'`, et ajou
   'audio.music': 'Musique',
   'audio.sfx': 'Bruitages',
   'audio.haptics': 'Vibration',
-  'audio.close': 'Fermer',
 ```
 
 Dans `src/i18n/en.ts`, retirer les deux mêmes et ajouter :
@@ -1512,7 +1511,6 @@ Dans `src/i18n/en.ts`, retirer les deux mêmes et ajouter :
   'audio.music': 'Music',
   'audio.sfx': 'Sound effects',
   'audio.haptics': 'Vibration',
-  'audio.close': 'Close',
 ```
 
 - [ ] **Étape 2 : vérifier que le filet i18n fonctionne**

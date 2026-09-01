@@ -264,7 +264,7 @@ la musique en gardant les chocs est impossible aujourd'hui.
 - **Migration** : `spinforge.muted === '1'` ⇒ les trois à faux, puis l'ancienne clé
   est retirée. Clé absente ou JSON corrompu ⇒ les trois à vrai, sans exception.
 - **Icône** : 🔊 tant que musique **ou** bruitages est actif, 🔇 sinon.
-- **i18n** — cinq clés nouvelles, `header.mute` et `header.unmute` disparaissent :
+- **i18n** — quatre clés nouvelles, `header.mute` et `header.unmute` disparaissent :
 
 | Clé | fr | en |
 |---|---|---|
@@ -272,7 +272,6 @@ la musique en gardant les chocs est impossible aujourd'hui.
 | `audio.music` | Musique | Music |
 | `audio.sfx` | Bruitages | Sound effects |
 | `audio.haptics` | Vibration | Vibration |
-| `audio.close` | Fermer | Close |
 
 `en.ts` est un `Record<MessageKey, string>` : une clé oubliée casse le build, une clé
 en trop aussi. C'est le filet.
