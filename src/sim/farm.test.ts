@@ -176,10 +176,13 @@ describe('offlineSeconds', () => {
   it('accorde le bonus de retour au-delà du seuil, pas en deçà', () => {
     const seuil = OFFLINE.winbackAfterHours * H;
     const plafond = OFFLINE.capHours * H;
-    const juste = offlineSeconds(seuil);
     const avant = offlineSeconds(seuil - 1);
-    expect(juste).toBeCloseTo(plafond * OFFLINE.rate * OFFLINE.winbackMult, 6);
+    const juste = offlineSeconds(seuil);
+    // Le plafond SEUL, sans bonus : cette assertion ne dépend que du plafond.
     expect(avant).toBeCloseTo(plafond * OFFLINE.rate, 6);
+    // Les deux appels partagent le même `capped`, donc leur RAPPORT ne dépend
+    // que du bonus : cette assertion ne peut échouer que si le bonus a bougé.
+    expect(juste / avant).toBeCloseTo(OFFLINE.winbackMult, 6);
     expect(juste).toBeGreaterThan(avant);
   });
 });
