@@ -1,10 +1,10 @@
 // Autopilote de calibration. Conservé volontairement : le jalon 3 en redemandera.
 // La simulation étant pure et sans DOM, aucun navigateur n'est nécessaire.
-import { startRun, syncRunStats, tick } from '../src/sim/sim.ts';
+import { maxPlayableChapter, startRun, syncRunStats, tick } from '../src/sim/sim.ts';
 import { addPiece, applyRunReward, createInitialMeta, setActiveToupie } from '../src/sim/meta.ts';
 import { tryUpgrade, upgradeCost } from '../src/sim/economy.ts';
 import { canOpen, grantChest, openChest } from '../src/sim/chest.ts';
-import { ARENA_RADIUS, TICK_S, SALLES_PER_CHAPTER } from '../src/sim/config.ts';
+import { ARENA_RADIUS, MAX_CHAPTER, TICK_S, SALLES_PER_CHAPTER } from '../src/sim/config.ts';
 import { botTypeFor } from '../src/sim/salle.ts';
 import { typeMult } from '../src/sim/typeChart.ts';
 import { TOUPIES } from '../src/content/toupies.ts';
@@ -132,7 +132,7 @@ function spend(meta, { buyChests }) {
  * La vraie alternative d'un joueur qui ne triche pas est ailleurs — le meilleur
  * châssis fixe du tableau ci-dessus.
  */
-function simulate(seed, { buyChests, steer, toupieId, counterPick }) {
+function simulate(seed, { buyChests, steer, toupieId, counterPick, upTo = MAX_CHAPTER }) {
   const meta = createInitialMeta(seed);
   if (toupieId) {
     meta.toupies.unlocked = [toupieId];
@@ -146,59 +146,57 @@ function simulate(seed, { buyChests, steer, toupieId, counterPick }) {
   let ticks = 0;
   let runs = 1;
   let salleTicks = 0;
-  let ticksToValidate = null;
-  let runsToValidate = null;
   let ticksToFirstChest = null;
-  const deathsBySalle = new Map();
-  const salleDurations = new Map();
+  // Un relevé par chapitre : les médianes d'un chapitre ne disent rien de celles
+  // d'un autre, et le garde-fou de la salle 10 doit tenir dans chacun.
+  const chapters = new Map();
+  const statsFor = (n) => {
+    if (!chapters.has(n)) {
+      chapters.set(n, { ticks: null, runs: null, runsStarted: 1, salleDurations: new Map(), deathsBySalle: new Map() });
+    }
+    return chapters.get(n);
+  };
 
-  while (ticks < MAX_TICKS && ticksToValidate === null) {
+  while (ticks < MAX_TICKS && meta.bestChapter < upTo) {
     const salleBefore = run.salle;
+    const st = statsFor(run.chapter);
     const reward = tick(run, { steer: steer(run) });
     ticks++;
     salleTicks++;
     if (reward) {
       applyRunReward(meta, reward);
-      if (!salleDurations.has(salleBefore)) salleDurations.set(salleBefore, []);
-      salleDurations.get(salleBefore).push(salleTicks);
+      if (!st.salleDurations.has(salleBefore)) st.salleDurations.set(salleBefore, []);
+      st.salleDurations.get(salleBefore).push(salleTicks);
       salleTicks = 0;
-      // Le butin de salle (file `pending`) et l'achat sont deux sources de coffres
-      // distinctes ; le premier coffre mesuré est celui qui arrive en premier,
-      // peu importe laquelle des deux le fournit.
       const lootOpened = openLoot(meta);
       const purchaseOpened = spend(meta, { buyChests });
       if ((lootOpened || purchaseOpened) && ticksToFirstChest === null) ticksToFirstChest = ticks;
-      // Sans ce recopiage, une amélioration achetée en cours de run ne prendrait
-      // effet qu'au run suivant — l'autopilote sous-mesurerait la progression.
       syncRunStats(run, meta);
-      // Le contournement d'avant le verrou : se remettre du bon côté du triangle
-      // à chaque salle, `syncRunStats` l'appliquant dans la seconde. Depuis le
-      // verrou, seul `startRun` fait monter ce choix sur la toupie — la série
-      // « descente » ne choisit donc plus qu'à la relance, en bas de boucle.
-      if (counterPick === 'salle') {
+      if (counterPick && (counterPick === 'salle' || run.salle === 1)) {
         setActiveToupie(meta, counterFor(run.chapter, run.salle));
         syncRunStats(run, meta);
       }
-      if (meta.bestChapter >= 1 && ticksToValidate === null) {
-        ticksToValidate = ticks;
-        runsToValidate = runs;
+      if (reward.boss && st.ticks === null) {
+        st.ticks = ticks;          // cumulé depuis le départ de la partie
+        st.runs = st.runsStarted;  // descentes ouvertes dans ce chapitre
       }
     }
+    // Mort ou boss vaincu : la descente est close, on en ouvre une autre. Le
+    // harnais joue toujours le chapitre le plus haut qu'il ait le droit de jouer.
     if (run.phase !== 'fighting') {
-      if (run.phase === 'dead') deathsBySalle.set(run.salle, (deathsBySalle.get(run.salle) ?? 0) + 1);
+      if (run.phase === 'dead') st.deathsBySalle.set(run.salle, (st.deathsBySalle.get(run.salle) ?? 0) + 1);
       runs++;
-      if (counterPick) setActiveToupie(meta, counterFor(1, 1));
-      run = startRun(meta, 1, seed + runs);
+      const next = Math.min(maxPlayableChapter(meta), upTo);
+      if (counterPick) setActiveToupie(meta, counterFor(next, 1));
+      run = startRun(meta, next, seed + runs);
+      statsFor(next).runsStarted++;
       salleTicks = 0;
     }
   }
 
   return {
-    hoursToValidate: ticksToValidate === null ? null : (ticksToValidate * TICK_S) / 3600,
     hoursToFirstChest: ticksToFirstChest === null ? null : (ticksToFirstChest * TICK_S) / 3600,
-    runs: runsToValidate,
-    salleDurations,
-    deathsBySalle,
+    chapters,
   };
 }
 
@@ -207,55 +205,70 @@ const median = (xs) => {
   return ok.length === 0 ? null : ok[ok.length >> 1];
 };
 
+/** Agrège un champ d'un chapitre sur toutes les graines. */
+const chapterField = (rs, chapter, key) =>
+  median(rs.map((r) => r.chapters.get(chapter)?.[key] ?? null));
+
+/** Heures cumulées depuis le départ jusqu'à la validation d'un chapitre. */
+const hoursOf = (rs, chapter) => {
+  const t = chapterField(rs, chapter, 'ticks');
+  return t === null ? null : (t * TICK_S) / 3600;
+};
+
+/** Morts cumulées d'un chapitre sur toutes les graines : sur une seule, le
+ *  classement des salles tient à une poignée de runs. */
+function deathsOf(rs, chapter) {
+  const d = new Map();
+  for (const r of rs) {
+    for (const [salle, n] of r.chapters.get(chapter)?.deathsBySalle ?? []) d.set(salle, (d.get(salle) ?? 0) + n);
+  }
+  return d;
+}
+
 const results = SEEDS.map((seed) => simulate(seed, { buyChests: true, steer: steerWithTerrain }));
 // Garde-fou : ne jamais toucher l'écran doit rester très nettement plus lent.
-const passive = SEEDS.map((seed) => simulate(seed, { buyChests: true, steer: () => null }));
+const passive = SEEDS.map((seed) => simulate(seed, { buyChests: true, steer: () => null, upTo: 1 }));
 
 const fmt = (x) => (x === null ? 'jamais' : x.toFixed(2));
 const medianOf = (rs, key) => median(rs.map((r) => r[key]));
 
-// Morts cumulées sur toutes les graines : sur une seule, le classement des salles
-// tient à une poignée de runs et changerait de bouton en bouton sans rien dire.
-const deaths = new Map();
-for (const r of results) {
-  for (const [salle, n] of r.deathsBySalle) deaths.set(salle, (deaths.get(salle) ?? 0) + n);
-}
-const deadliest = [...deaths.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
-
 console.log('=== Calibration — %d graines ===', SEEDS.length);
-console.log('Validation du chapitre 1 : médiane %s h', fmt(medianOf(results, 'hoursToValidate')));
 console.log('Premier coffre ouvert    : médiane %s h', fmt(medianOf(results, 'hoursToFirstChest')));
-console.log('Runs jusqu’à validation  : médiane %s', fmt(medianOf(results, 'runs')));
-console.log('Salle la plus meurtrière : %j', deadliest);
-console.log('Durée médiane par salle (cible : 1-3 ≈ 12 s, 4-9 ≈ 25 s, boss < 60 s) :');
-for (let salle = 1; salle <= SALLES_PER_CHAPTER; salle++) {
-  const all = results.flatMap((r) => r.salleDurations.get(salle) ?? []);
-  const dead = deaths.get(salle) ?? 0;
-  if (all.length === 0 && dead === 0) continue;
-  console.log('  salle %d : %s s  (vidée %d fois, morts %d)',
-    salle, all.length === 0 ? 'jamais vidée' : fmt(median(all) * TICK_S), all.length, dead);
+
+for (let chapter = 1; chapter <= MAX_CHAPTER; chapter++) {
+  const heures = hoursOf(results, chapter);
+  const deaths = deathsOf(results, chapter);
+  const deadliest = [...deaths.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+  console.log('\n--- Chapitre %d : %s h cumulées · %s descentes · salle la plus meurtrière %j',
+    chapter, fmt(heures), fmt(chapterField(results, chapter, 'runs')), deadliest);
+  // Garde-fou : « le mur n'est jamais un bug, c'est le produit » doit tenir dans
+  // CHAQUE chapitre, pas seulement dans le premier.
+  console.log('    salle 10 la plus meurtrière : %s', deadliest && deadliest[0] === SALLES_PER_CHAPTER ? 'oui' : 'NON');
+  for (let salle = 1; salle <= SALLES_PER_CHAPTER; salle++) {
+    const all = results.flatMap((r) => r.chapters.get(chapter)?.salleDurations.get(salle) ?? []);
+    const dead = deaths.get(salle) ?? 0;
+    if (all.length === 0 && dead === 0) continue;
+    console.log('    salle %d : %s s  (vidée %d fois, morts %d)',
+      salle, all.length === 0 ? 'jamais vidée' : fmt(median(all) * TICK_S), all.length, dead);
+  }
 }
-const passivite = medianOf(passive, 'hoursToValidate');
-console.log('Garde-fou passivité      : %s — doit rester très au-dessus de la référence',
-  passivite === null ? 'jamais' : fmt(passivite) + ' h');
+
+const passivite = chapterField(passive, 1, 'ticks');
+console.log('\nGarde-fou passivité      : %s — doit rester très au-dessus de la référence',
+  passivite === null ? 'jamais' : fmt((passivite * TICK_S) / 3600) + ' h');
 
 // Comparatif des quatre châssis, chapitre 1. Même autopilote « terrain », mêmes
 // graines : seul le châssis actif change d'une série à l'autre. N'affecte pas la
 // mesure principale ci-dessus (`simulate` appelée sans `toupieId`).
 const chassisResults = TOUPIES.map((toupie) => {
   const runsFor = SEEDS.map((seed) =>
-    simulate(seed, { buyChests: true, steer: steerWithTerrain, toupieId: toupie.id }));
-  // Morts cumulées sur toutes les graines, comme la mesure principale : sur une
-  // seule, le classement des salles ne dit rien.
-  const d = new Map();
-  for (const r of runsFor) {
-    for (const [salle, n] of r.deathsBySalle) d.set(salle, (d.get(salle) ?? 0) + n);
-  }
+    simulate(seed, { buyChests: true, steer: steerWithTerrain, toupieId: toupie.id, upTo: 1 }));
+  const d = deathsOf(runsFor, 1);
   return {
     label: toupie.label,
     type: toupie.type,
-    runs: median(runsFor.map((r) => r.runs)),
-    hours: median(runsFor.map((r) => r.hoursToValidate)),
+    runs: chapterField(runsFor, 1, 'runs'),
+    hours: hoursOf(runsFor, 1),
     deadliestSalle: [...d.entries()].sort((a, b) => b[1] - a[1])[0] ?? null,
   };
 });
@@ -288,8 +301,8 @@ console.log('Écart meilleur/pire (runs) : %s/%s = ×%s (cible : < ×2)',
 // Carapace Abyssale, dans le tableau ci-dessus. C'est de ce chiffre-là qu'il faut
 // mesurer le gain réel du contournement, pas de celui-ci.
 const pickSeries = ['salle', 'descente'].map((when) => {
-  const rs = SEEDS.map((seed) => simulate(seed, { buyChests: true, steer: steerWithTerrain, counterPick: when }));
-  return { when, runs: median(rs.map((r) => r.runs)), hours: median(rs.map((r) => r.hoursToValidate)) };
+  const rs = SEEDS.map((seed) => simulate(seed, { buyChests: true, steer: steerWithTerrain, counterPick: when, upTo: 1 }));
+  return { when, runs: chapterField(rs, 1, 'runs'), hours: hoursOf(rs, 1) };
 });
 
 console.log('\n=== Verrou du châssis — contre-pioche du triangle (%d graines) ===', SEEDS.length);
