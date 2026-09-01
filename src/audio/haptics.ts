@@ -3,9 +3,16 @@ import { BUZZ, MIX } from './mix';
 export type BuzzKind = keyof typeof BUZZ;
 export type Emit = (pattern: number[]) => void;
 
-/** Les deux événements qui priment sur l'intervalle minimum : ils concluent une
- *  animation, les décaler ou les perdre casserait le lien avec ce qu'on voit. */
-const URGENT: ReadonlySet<BuzzKind> = new Set<BuzzKind>(['chestDone', 'bossDown']);
+/** Les événements qui priment sur l'intervalle minimum : ils concluent une
+ *  action, les décaler ou les perdre casserait le lien avec ce qu'on voit ou ce
+ *  qu'on vient de demander. Mesuré au navigateur sur une fusion réussie : le
+ *  clic du bouton vibre en premier (`tap`), sa conclusion (`fuse`) arrive
+ *  quelques millisecondes plus tard — bien avant les 60 ms de
+ *  `hapticMinGapMs` — et se faisait avaler par l'appui. `fuse` et `equip`
+ *  concluent une action tout comme `chestDone` et `bossDown` : mêmes deux
+ *  motifs par seconde ajoutés au budget (73 ms sur les `hapticBudgetMs`
+ *  disponibles), qui reste le seul garde-fou qu'un urgent ne franchit jamais. */
+const URGENT: ReadonlySet<BuzzKind> = new Set<BuzzKind>(['chestDone', 'bossDown', 'fuse', 'equip']);
 
 export interface HapticsState {
   lastAt: number;

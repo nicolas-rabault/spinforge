@@ -64,4 +64,17 @@ describe('la façade haptique', () => {
     expect(() => haptics.buzz('chestDone', 0)).not.toThrow();
     expect(() => haptics.hit(1, 0)).not.toThrow();
   });
+
+  // Mesuré au navigateur sur une fusion réussie : le clic du bouton vibre à
+  // t≈0, sa conclusion arrive quelques millisecondes plus tard — bien avant
+  // les 60 ms de `hapticMinGapMs` — et se faisait avaler par l'appui. `fuse`
+  // et `equip` concluent une action tout comme `chestDone` et `bossDown` :
+  // elles doivent passer, sans quoi une réussite ne se sent plus.
+  it("laisse passer la conclusion d'une action même juste après son appui", () => {
+    const emit = vi.fn();
+    const haptics = createHaptics(emit, true);
+    haptics.buzz('tap', 0);
+    haptics.buzz('fuse', 30);
+    expect(emit).toHaveBeenCalledTimes(2);
+  });
 });
