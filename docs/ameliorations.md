@@ -561,24 +561,57 @@ de la Forge qu'il faut calculer soi-même pour la connaître.
 La remarque couvre deux chantiers de tailles très différentes, découpés en deux
 lots.
 
-### Lot 1 — le guidage · 🔧 spec écrite
+### Lot 1 — le guidage · ✅ livré
 
-Spec : `docs/superpowers/specs/2026-09-01-guidage-joueur-design.md`.
+Spec : `docs/superpowers/specs/2026-09-01-guidage-joueur-design.md` ·
+plan : `docs/superpowers/plans/2026-09-01-guidage-joueur.md`.
 
-- 🔧 **La Forge en pile.** Cinq lignes pleine largeur dans l'ordre du portrait —
-  Châssis (en-tête, mène à l'onglet Toupies), Lame, Noyau, Disque, Pointe.
-- 🔧 **Le point rouge.** Un marqueur unique à tous les étages — onglet, section,
+- ✅ **La Forge en pile.** Cinq lignes pleine largeur dans l'ordre du portrait —
+  Châssis (en-tête, mène à l'onglet Toupies), Lame, Noyau, Disque, Pointe. L'ordre
+  n'est pas celui du modèle de données (`lame, disque, pointe, noyau`) mais celui
+  des hauteurs de `drawToupiePortrait` : c'est tout l'intérêt.
+- ✅ **Le point rouge.** Un marqueur unique à tous les étages — onglet, section,
   filtre, vignette, ligne d'emplacement. Il ne marque que le **gratuit** : coffres
   à ouvrir, fusions possibles, pièces dominantes à équiper, Fondateur à réclamer.
   Jamais un achat : les crédits rentrent en continu, un point « tu peux payer »
   serait allumé en permanence, et un point toujours allumé ne dit plus rien.
-- 🔧 **« Plus forte » se mesure, ne se devine pas.** Une pièce mérite son point
+- ✅ **« Plus forte » se mesure, ne se devine pas.** Une pièce mérite son point
   quand l'échange ne fait reculer **aucune** des sept stats et en relève au moins
   une. Le rang seul mentirait : une pièce de rang supérieur au niveau 0 est
   souvent plus faible qu'une équipée montée au niveau 8.
-- 🔧 **Rien n'est stocké.** Le point est dérivé de l'état à chaque rendu : il
+- ✅ **Rien n'est stocké.** Le point est dérivé de l'état à chaque rendu : il
   s'éteint parce que l'action est faite, jamais parce qu'on a regardé l'écran.
-  Donc aucun champ de sauvegarde, aucun changement de schéma.
+  Donc aucun champ de sauvegarde, aucun changement de schéma — et donc aucune
+  collision avec le chantier des chapitres, qui réécrivait la sauvegarde en même temps.
+
+**Deux corrections décidées en cours de route, contre le plan lui-même :**
+
+- Le point d'une ligne d'emplacement est posé **à côté** du bouton d'amélioration,
+  pas dedans. Le bouton se grise à 55 % d'opacité quand les crédits manquent ; le
+  point, lui, annonce une action *gratuite* (équiper une pièce déjà possédée) et
+  doit rester vif exactement à ce moment-là. Vérifié à l'écran, crédits à zéro.
+- La pastille chiffrée est en texte sombre sur le rouge, pas en texte clair. La
+  spec demandait l'inverse : 2,94:1 de contraste à 11 px, sous le seuil AA. Le
+  texte sombre donne 5,36:1 — et c'était déjà la convention des pastilles du jeu.
+
+**Vérifié en navigateur** (24 contrôles, sauvegarde injectée : 3 coffres en attente,
+un Disque dominant, un trio fusionnable, zéro crédit, un Fondateur non réclamé) :
+ordre de la pile, point sur la seule ligne concernée, point survivant au grisement,
+filtres et vignettes, butin marqué et cartes d'achat intactes, extinction après
+ouverture, navigation depuis la ligne Châssis, bascule FR/EN. `npm run calibrate`
+rend exactement la ligne de base d'avant le lot (0,32 h · 9 runs · salle 10 la plus
+meurtrière).
+
+- 📋 **À trier — les étiquettes de points sur les boutons qui ont déjà un
+  `aria-label`.** Un `aria-label` explicite sur un bouton l'emporte sur le nom
+  dérivé de son contenu : sur les filtres d'inventaire et sur la ligne Châssis, un
+  lecteur d'écran n'annonce donc pas l'étiquette du point imbriqué. Sur la barre
+  d'onglets, où les boutons n'ont pas d'`aria-label` explicite, l'étiquette **est**
+  annoncée — constaté à l'exécution (« Forge quelque chose à faire »). Les deux
+  sites à corriger ensemble, ou pas du tout.
+- 📋 **Les points du butin flottent un peu.** Les décalages négatifs qui les
+  sortent de la vignette de coffre les détachent nettement du dessin. Lisible, mais
+  à resserrer si ça gêne à l'usage.
 
 ### Lot 2 — la boucle de progression continue · 📋 à spécifier
 
