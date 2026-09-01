@@ -26,7 +26,11 @@
   },
   "combat": { "damageK": 1.3, "chargeBonus": 0.3, "healBetweenSalles": 0.2 },
   "types": { "dominantBonus": 0.25, "equilibreBonus": 0.1 },
-  "chapter": { "sallesPerChapter": 10, "botsPerSalle": [1, 1, 1, 2, 2, 2, 3, 3, 3, 1] },
+  "chapter": {
+    "sallesPerChapter": 10,
+    "maxChapter": 4,
+    "botsPerSalle": [1, 1, 1, 2, 2, 2, 3, 3, 3, 1]
+  },
   "botTypes": {
     "1": ["endurance", "endurance", "endurance", "defense", "defense", "defense", "attaque", "attaque", "attaque", "attaque"]
   },

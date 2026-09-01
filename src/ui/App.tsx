@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createRun } from '../sim/sim';
+import { maxPlayableChapter, startRun } from '../sim/sim';
 import { pendingTotal } from '../sim/meta';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
 import { createAudio } from '../audio/audio';
@@ -13,13 +13,16 @@ import { TabBar, type Tab } from './TabBar';
 export function App() {
   const [loaded] = useState(() => loadMeta());
   const metaRef = useRef(loaded.meta);
-  // `useState(() => …)` et non `useRef(createRun(…))` : l'argument d'un useRef est
-  // réévalué à chaque rendu, or App se re-rend à chaque tick — createRun tournerait
+  // `useState(() => …)` et non `useRef(startRun(…))` : l'argument d'un useRef est
+  // réévalué à chaque rendu, or App se re-rend à chaque tick — startRun tournerait
   // une dizaine de fois par seconde, et muterait le méta le jour où il y touchera.
   // La graine du run est dérivée de celle du méta : prises dans la même milliseconde,
   // les deux seraient identiques, et le premier tirage de coffre reproduirait
   // exactement le premier angle de spawn. Deux flux séparés doivent l'être vraiment.
-  const [initialRun] = useState(() => createRun(loaded.meta, (Date.now() ^ 0x9e3779b9) >>> 0));
+  // Le joueur reprend là où il poussait : son chapitre le plus haut. Il en change
+  // entre deux descentes, dans le panneau de l'écran de combat.
+  const [initialRun] = useState(() =>
+    startRun(loaded.meta, maxPlayableChapter(loaded.meta), (Date.now() ^ 0x9e3779b9) >>> 0));
   const runRef = useRef(initialRun);
   const [tab, setTab] = useState<Tab>('combat');
   const [, setFrame] = useState(0);

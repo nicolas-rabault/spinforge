@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { lerp, snapshotById, takeSnapshot } from './snapshot';
 import { createInitialMeta } from '../sim/meta';
-import { createRun } from '../sim/sim';
+import { startRun } from '../sim/sim';
 import { decayPerTick } from '../sim/combat';
 import { ZONES } from '../sim/config';
 
 describe('takeSnapshot', () => {
   it('reprend salle, phase, identité, position, spin et le drapeau joueur', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     const snap = takeSnapshot(run);
 
     expect(snap.salle).toBe(run.salle);
@@ -24,7 +24,7 @@ describe('takeSnapshot', () => {
 
   it('les bots suivent le joueur, dans le même ordre que run.bots', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     expect(run.bots.length).toBeGreaterThan(0); // sinon ce test ne prouve rien
 
     const snap = takeSnapshot(run);
@@ -41,7 +41,7 @@ describe('takeSnapshot', () => {
 
   it('decayPerTick vaut la décroissance nominale pour une toupie ordinaire', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     // Talents neutres au rang de départ : spinDecayMult = 1, la valeur
     // nominale et la valeur brute spinDecay coïncident encore ici — le test
     // suivant (talent qui module) est celui qui les distingue vraiment.
@@ -53,7 +53,7 @@ describe('takeSnapshot', () => {
 
   it('decayPerTick vaut 0 quand la décroissance du joueur est suspendue (Relance)', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     run.player.decayPauseTicks = 5;
 
     const snap = takeSnapshot(run);
@@ -62,7 +62,7 @@ describe('takeSnapshot', () => {
 
   it('decayPerTick porte la valeur modulée par un talent (Cœur Gyre), pas la valeur brute spinDecay', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     run.player.talents = { ...run.player.talents, spinDecayMult: 0.5 };
 
     const snap = takeSnapshot(run);
@@ -74,7 +74,7 @@ describe('takeSnapshot', () => {
   });
 
   it('emporte le type de chaque toupie', () => {
-    const run = createRun(createInitialMeta(1), 1);
+    const run = startRun(createInitialMeta(1), 1, 1);
     const s = takeSnapshot(run);
     expect(s.tops[0].type).toBe('equilibre');
     expect(s.tops[1].type).toBe('endurance');
@@ -84,7 +84,7 @@ describe('takeSnapshot', () => {
     // observer.ts déduit la puissance d'un choc du spin perdu MOINS cette valeur :
     // sans la perte de zone, une toupie posée sur des pointes produirait des
     // étincelles et une secousse en continu, sans qu'aucun contact ait eu lieu.
-    const run = createRun(createInitialMeta(1), 1);
+    const run = startRun(createInitialMeta(1), 1, 1);
     run.arena.zones = [
       { kind: 'pointes', x: run.player.pos.x, y: run.player.pos.y, radius: ZONES.pointes.radius },
     ];
@@ -100,7 +100,7 @@ describe('takeSnapshot', () => {
   // invisible à `npm run test`.
   it('reprend le tableau ejected de run.ejected', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     run.ejected = ['bot-1'];
 
     const snap = takeSnapshot(run);
@@ -111,7 +111,7 @@ describe('takeSnapshot', () => {
 describe('snapshotById', () => {
   it('indexe les instantanés par id', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     const snap = takeSnapshot(run);
 
     const byId = snapshotById(snap);

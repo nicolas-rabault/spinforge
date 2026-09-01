@@ -27,7 +27,6 @@ export interface RenderEvents {
   deaths: DeathEvent[];
   salleChanged: boolean;
   bossEntered: boolean;
-  chapterValidated: boolean;
 }
 
 function nearest(from: TopSnapshot, tops: TopSnapshot[]): { nx: number; ny: number } {
@@ -99,6 +98,5 @@ export function observe(before: Snapshot, after: Snapshot): RenderEvents {
     deaths,
     salleChanged: before.salle !== after.salle,
     bossEntered: before.salle !== SALLES_PER_CHAPTER && after.salle === SALLES_PER_CHAPTER,
-    chapterValidated: before.salle === SALLES_PER_CHAPTER && after.salle === 1,
   };
 }

@@ -32,9 +32,10 @@ export function ForgeScreen({
 }) {
   const meta = metaRef.current;
   // La Forge chiffre la toupie sur laquelle l'achat va porter : celle de l'arène
-  // tant que le run vit, celle qui attend une fois la descente perdue — `resetRun`
-  // la montera au clic sur « Retenter », et c'est là qu'on fait ses courses.
-  const toupie = runRef.current.phase === 'dead'
+  // tant que la descente vit, celle qui attend une fois la descente fermée —
+  // `startRun` la montera au clic sur « Nouvelle descente », et c'est entre deux
+  // descentes qu'on fait ses courses. Mort ou boss vaincu : les deux ferment.
+  const toupie = runRef.current.phase !== 'fighting'
     ? metaRef.current.toupies.active
     : runRef.current.toupie;
   const before = playerStats(meta, toupie);

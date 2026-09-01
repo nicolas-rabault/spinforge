@@ -283,7 +283,7 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
         // phase à 'dead', il ne le retire jamais) : reviver sans condition annulerait
         // kill() à l'image même où il vient d'être appelé, et l'agonie ne jouerait
         // jamais. spin > 0 distingue exactement les deux cas : une toupie morte a un
-        // spin nul ou négatif, une toupie relancée par « Retenter » repart à son spin
+        // spin nul ou négatif, une toupie relancée par « Nouvelle descente » repart à son spin
         // maximum. Les bots sont déjà filtrés sur spin > 0 par la simulation
         // (state.bots = state.bots.filter(b => b.spin > 0)), donc leur comportement
         // ici est inchangé — ils passaient déjà cette condition.

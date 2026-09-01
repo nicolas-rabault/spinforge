@@ -115,19 +115,10 @@ describe('observe — progression', () => {
     expect(r.bossEntered).toBe(true);
   });
 
-  it('signale la validation du chapitre au retour de la salle 10 vers la salle 1', () => {
-    const p = topSnap();
-    const boss = snapshot([p], { salle: SALLES_PER_CHAPTER });
-    const restart = snapshot([p], { salle: 1 });
-    expect(observe(boss, restart).chapterValidated).toBe(true);
-    // Une seule fois : l'événement tient à la transition, pas à un drapeau qui resterait levé.
-    expect(observe(restart, restart).chapterValidated).toBe(false);
-  });
-
   it('ne signale rien quand rien ne bouge', () => {
     const p = topSnap();
     const r = observe(snapshot([p]), snapshot([p]));
-    expect(r).toEqual({ hits: [], deaths: [], salleChanged: false, bossEntered: false, chapterValidated: false });
+    expect(r).toEqual({ hits: [], deaths: [], salleChanged: false, bossEntered: false });
   });
 });
 

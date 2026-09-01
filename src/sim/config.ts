@@ -74,7 +74,7 @@ export interface Balance {
   };
   combat: { damageK: number; chargeBonus: number; healBetweenSalles: number };
   types: { dominantBonus: number; equilibreBonus: number };
-  chapter: { sallesPerChapter: number; botsPerSalle: number[] };
+  chapter: { sallesPerChapter: number; maxChapter: number; botsPerSalle: number[] };
   /** Type des bots, par chapitre puis par salle. Un chapitre absent retombe
    *  sur le chapitre 1 — les chapitres 2 à 8 arrivent aux jalons 3 et 4. */
   botTypes: Record<string, TopType[]>;
@@ -140,6 +140,7 @@ export const CHARGE_BONUS = BALANCE.combat.chargeBonus;
 export const HEAL_BETWEEN_SALLES = BALANCE.combat.healBetweenSalles;
 export const TYPES = BALANCE.types;
 export const SALLES_PER_CHAPTER = BALANCE.chapter.sallesPerChapter;
+export const MAX_CHAPTER = BALANCE.chapter.maxChapter;
 export const BOTS_PER_SALLE = BALANCE.chapter.botsPerSalle;
 export const BOT_TYPES = BALANCE.botTypes;
 export const PLAYER_SPAWN = BALANCE.player.spawn;

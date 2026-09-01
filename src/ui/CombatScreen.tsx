@@ -3,7 +3,7 @@ import { createArena } from '../render/arena';
 import { useGameLoop } from './useGameLoop';
 import { chapterOf } from '../content/chapters';
 import { SALLES_PER_CHAPTER } from '../sim/config';
-import { resetRun } from '../sim/sim';
+import { startRun } from '../sim/sim';
 import { botTypeFor } from '../sim/salle';
 import { TYPE_LABELS } from './typeLabels';
 import type { MetaState, RunState, Vec } from '../sim/types';
@@ -82,9 +82,10 @@ export function CombatScreen({
             );
             window.setTimeout(() => setBanner(null), 2100);
           }
-          // Le rotor se tait à la mort : sans ce `null`, l'oscillateur tenait sa
-          // dernière fréquence par-dessus l'écran de défaite.
-          audio.setSpin(run.phase === 'dead' ? null : run.player.spin / run.player.spinMax);
+          // Le rotor se tait dès que la descente est fermée — morte ou gagnée :
+          // sans ce `null`, l'oscillateur tenait sa dernière fréquence par-dessus
+          // l'écran de fin.
+          audio.setSpin(run.phase !== 'fighting' ? null : run.player.spin / run.player.spinMax);
         }
         onTick();
       },
@@ -208,15 +209,21 @@ export function CombatScreen({
         </div>
       </div>
 
-      {s.phase === 'dead' ? (
+      {s.phase !== 'fighting' ? (
         <button
-          onClick={() => { resetRun(runRef.current, metaRef.current); onTick(); }}
+          onClick={() => {
+            // La graine continue le flux de la descente précédente : deux runs
+            // consécutifs ne rejouent pas les mêmes gabarits d'arène, et aucune
+            // horloge n'entre dans la simulation.
+            runRef.current = startRun(metaRef.current, s.chapter, s.rngState);
+            onTick();
+          }}
           style={{
             minHeight: 48, borderRadius: 11, cursor: 'pointer', border: '1px solid var(--ember)',
             background: 'var(--ember)', color: 'var(--ink)', font: '600 15px Oswald, ui-sans-serif, sans-serif',
           }}
         >
-          Ta toupie s'est arrêtée — Retenter
+          {s.phase === 'won' ? 'Chapitre validé — Nouvelle descente' : 'Ta toupie s’est arrêtée — Nouvelle descente'}
         </button>
       ) : null}
     </div>

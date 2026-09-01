@@ -48,7 +48,7 @@ export interface Stats {
   mass: number;
 }
 
-export type Phase = 'fighting' | 'dead';
+export type Phase = 'fighting' | 'dead' | 'won';
 
 export interface Input {
   steer: Vec | null;
@@ -80,9 +80,10 @@ export interface RunState {
   rngState: number;
   chapter: number;
   salle: number;
-  /** Le châssis de cette descente. Figé du départ au boss : c'est ce qui empêche
-   *  de contre-piocher salle par salle. Le choix en attente vit dans
-   *  `meta.toupies.active` et ne monte qu'à `equipPendingToupie`. */
+  /** Le châssis de cette descente. Lu une seule fois, par `startRun`, et jamais
+   *  relu ensuite : c'est ce qui empêche de contre-piocher salle par salle. Le
+   *  choix en attente vit dans `meta.toupies.active` et ne monte qu'à la
+   *  descente suivante. */
   toupie: ToupieId;
   player: Top;
   bots: Top[];

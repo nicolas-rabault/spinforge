@@ -17,7 +17,7 @@ export interface TopView {
   /** Démarre l'agonie : la toupie se couche, racle, s'immobilise. */
   kill(): void;
   isFinished(): boolean;
-  /** Ramène une vue en pleine agonie à l'état vivant (ex. après un Retenter). Sans effet si la vue n'agonise pas. */
+  /** Ramène une vue en pleine agonie à l'état vivant (ex. après une nouvelle descente). Sans effet si la vue n'agonise pas. */
   revive(): void;
   destroy(): void;
 }

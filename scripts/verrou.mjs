@@ -1,8 +1,9 @@
 // Vérification du verrou de châssis, en vrai navigateur. C'est la seule couverture
-// de son point d'application dans l'app — l'appel à `equipPendingToupie` depuis
-// `src/ui/useGameLoop.ts` quand le boss tombe. Ni les tests unitaires ni
-// `npm run calibrate` ne franchissent cette frontière (voir la dette du verrou dans
-// `docs/roadmap.md`), et la mutation le prouve : l'appel retiré, la passe 1 rougit.
+// de sa frontière dans l'app : le boss vaincu ferme la descente, et c'est la
+// descente suivante — `startRun`, appelée par le bouton « Nouvelle descente » de
+// `src/ui/CombatScreen.tsx` — qui fait monter le châssis en attente. Ni les tests
+// unitaires ni `npm run calibrate` ne franchissent cette frontière (voir la dette
+// du verrou dans `docs/roadmap.md`).
 //
 // Nécessite un `npm run dev` déjà lancé. Le port de Vite change s'il en trouve un
 // occupé — lire la ligne « Local: » qu'il affiche et la passer ici :
@@ -89,16 +90,19 @@ const cy = box.y + box.height / 2;
 await page.mouse.move(cx, cy);
 await page.mouse.down();
 let boss = false;
-let looped = false;
-for (let i = 0; i < 2000 && !looped; i++) {
+let closed = false;
+for (let i = 0; i < 2000 && !closed; i++) {
   await page.mouse.move(cx + Math.cos((i / 14) * 6.283) * 70, cy + Math.sin((i / 14) * 6.283) * 70);
   await page.waitForTimeout(120);
-  const text = await hud(page);
-  if (text.includes('SALLE 10')) boss = true;
-  else if (boss && text.includes('SALLE 1 /')) looped = true;
+  if ((await hud(page)).includes('SALLE 10')) boss = true;
+  // Le boss vaincu ferme la descente : c'est le bouton de relance qui l'atteste,
+  // plus le retour en salle 1 qui n'existe plus.
+  closed = boss && (await page.getByRole('button', { name: /Nouvelle descente/ }).count()) > 0;
 }
 await page.mouse.up();
-check('un tour de chapitre complet a été joué', looped);
+check('le boss vaincu a fermé la descente', closed);
+await page.getByRole('button', { name: /Nouvelle descente/ }).click();
+await page.waitForTimeout(400);
 await page.getByRole('button', { name: 'Toupies' }).click();
 await page.waitForTimeout(300);
 check('Carapace est devenue « Pilotée »',
@@ -116,7 +120,7 @@ await page.getByRole('button', { name: 'Combat' }).click();
 let dead = false;
 for (let i = 0; i < 400 && !dead; i++) {
   await page.waitForTimeout(150);
-  dead = (await page.getByRole('button', { name: 'Retenter' }).count()) > 0;
+  dead = (await page.getByText('arrêtée').count()) > 0;
 }
 check('la toupie nue est morte', dead);
 await page.getByRole('button', { name: 'Toupies' }).click();
@@ -126,11 +130,11 @@ check('le texte d’attente parle de relancer, pas de « jusqu’au bout »',
   && (await page.getByText('jusqu\'au bout').count()) === 0);
 await page.getByRole('button', { name: 'Combat' }).click();
 await page.waitForTimeout(300);
-await page.getByRole('button', { name: 'Retenter' }).click();
+await page.getByRole('button', { name: /Nouvelle descente/ }).click();
 await page.waitForTimeout(400);
 await page.getByRole('button', { name: 'Toupies' }).click();
 await page.waitForTimeout(300);
-check('Tigre Foudre est « Pilotée » après « Retenter »',
+check('Tigre Foudre est « Pilotée » après la nouvelle descente',
   (await card(page, 'Tigre Foudre').innerText()).includes('Pilotée'));
 check('plus aucune ligne d’attente',
   (await page.getByText('prend le relais').count()) === 0

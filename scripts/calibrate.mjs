@@ -1,6 +1,6 @@
 // Autopilote de calibration. Conservé volontairement : le jalon 3 en redemandera.
 // La simulation étant pure et sans DOM, aucun navigateur n'est nécessaire.
-import { createRun, syncRunStats, tick } from '../src/sim/sim.ts';
+import { startRun, syncRunStats, tick } from '../src/sim/sim.ts';
 import { addPiece, applyRunReward, createInitialMeta, setActiveToupie } from '../src/sim/meta.ts';
 import { tryUpgrade, upgradeCost } from '../src/sim/economy.ts';
 import { canOpen, grantChest, openChest } from '../src/sim/chest.ts';
@@ -142,7 +142,7 @@ function simulate(seed, { buyChests, steer, toupieId, counterPick }) {
     meta.toupies.unlocked = TOUPIES.map((t) => t.id);
     setActiveToupie(meta, counterFor(1, 1));
   }
-  let run = createRun(meta, seed);
+  let run = startRun(meta, 1, seed);
   let ticks = 0;
   let runs = 1;
   let salleTicks = 0;
@@ -173,21 +173,22 @@ function simulate(seed, { buyChests, steer, toupieId, counterPick }) {
       syncRunStats(run, meta);
       // Le contournement d'avant le verrou : se remettre du bon côté du triangle
       // à chaque salle, `syncRunStats` l'appliquant dans la seconde. Depuis le
-      // verrou, seul `equipPendingToupie` fait monter ce choix sur la toupie.
-      if (counterPick && (counterPick === 'salle' || run.salle === 1)) {
+      // verrou, seul `startRun` fait monter ce choix sur la toupie — la série
+      // « descente » ne choisit donc plus qu'à la relance, en bas de boucle.
+      if (counterPick === 'salle') {
         setActiveToupie(meta, counterFor(run.chapter, run.salle));
         syncRunStats(run, meta);
       }
-      if (meta.chapterValidated && ticksToValidate === null) {
+      if (meta.bestChapter >= 1 && ticksToValidate === null) {
         ticksToValidate = ticks;
         runsToValidate = runs;
       }
     }
-    if (run.phase === 'dead') {
-      deathsBySalle.set(run.salle, (deathsBySalle.get(run.salle) ?? 0) + 1);
+    if (run.phase !== 'fighting') {
+      if (run.phase === 'dead') deathsBySalle.set(run.salle, (deathsBySalle.get(run.salle) ?? 0) + 1);
       runs++;
       if (counterPick) setActiveToupie(meta, counterFor(1, 1));
-      run = createRun(meta, seed + runs);
+      run = startRun(meta, 1, seed + runs);
       salleTicks = 0;
     }
   }
@@ -276,10 +277,11 @@ console.log('Écart meilleur/pire (runs) : %s/%s = ×%s (cible : < ×2)',
 // d'avis salle par salle ne peut plus rien rapporter : les deux lignes doivent
 // être identiques.
 //
-// Vérifié par mutation, dans les deux directions : `syncRunStats` relisant
-// `meta.toupies.active`, et `equipPendingToupie` appelée à chaque salle au lieu du
-// seul boss. Les deux font tomber « à chaque salle » à 6 runs / 0,19 h contre
-// 19 / 0,46 h, et crier la ligne de verdict.
+// Vérifié par mutation : `syncRunStats` relisant `meta.toupies.active` fait
+// tomber « à chaque salle » à 6 runs / 0,19 h contre 19 / 0,46 h, et crier la
+// ligne de verdict. C'est désormais la seule mutation qui rouvre la brèche : le
+// châssis n'ayant plus qu'un point de montage — `startRun` —, il n'existe plus
+// d'appel à passer trop souvent.
 //
 // Attention en lisant l'écart : le témoin ci-dessous n'est PAS ce que ferait un
 // joueur honnête à quatre toupies — celui-là prendrait le meilleur châssis fixe,

@@ -1,4 +1,4 @@
-import { BOT_AI, PLAYER_BASE, PLAYER_SPAWN, SALLES_PER_CHAPTER } from './config';
+import { BOT_AI, MAX_CHAPTER, PLAYER_BASE, PLAYER_SPAWN, SALLES_PER_CHAPTER } from './config';
 import { salleReward, playerStats } from './economy';
 import { decaySpin, resolveCollision } from './combat';
 import { applySteering, clampToArena, moveAndBounce } from './physics';
@@ -46,12 +46,30 @@ function startSalle(run: RunState): void {
   run.player.decayPauseTicks = 0;
 }
 
-export function createRun(meta: MetaState, seed: number): RunState {
+/** Le plus haut chapitre que le joueur peut choisir : celui qu'il vient de
+ *  débloquer, jamais au-delà du contenu qui existe. */
+export function maxPlayableChapter(meta: MetaState): number {
+  return Math.min(meta.bestChapter + 1, MAX_CHAPTER);
+}
+
+/**
+ * Ouvre une descente. Porte unique du cycle de vie d'un run : elle remplace
+ * `createRun`, `resetRun` et `equipPendingToupie`.
+ *
+ * Le châssis est lu **ici, une fois**. Aucun autre chemin de code du run ne
+ * relit `meta.toupies.active` — c'est ce qui rend le verrou du châssis
+ * structurel plutôt que conventionnel : il n'y a plus d'appel à oublier. Les
+ * pièces, elles, continuent de prendre effet dans la seconde par `syncRunStats`.
+ *
+ * Le chapitre est borné ici pour la même raison : une règle que seul l'appelant
+ * respecte est une règle qu'un appelant peut oublier.
+ */
+export function startRun(meta: MetaState, chapter: number, seed: number): RunState {
   const toupie = meta.toupies.active;
   const run: RunState = {
     tick: 0,
     rngState: seed >>> 0 || 1,
-    chapter: 1,
+    chapter: Math.max(1, Math.min(chapter, maxPlayableChapter(meta))),
     salle: 1,
     toupie,
     player: makePlayer(meta, toupie),
@@ -65,16 +83,6 @@ export function createRun(meta: MetaState, seed: number): RunState {
   };
   startSalle(run);
   return run;
-}
-
-export function resetRun(run: RunState, meta: MetaState): void {
-  run.salle = 1;
-  run.phase = 'fighting';
-  run.secondSouffleUsed = false;
-  run.ejected = [];
-  run.toupie = meta.toupies.active;
-  run.player = makePlayer(meta, run.toupie);
-  startSalle(run);
 }
 
 /**
@@ -103,21 +111,6 @@ export function syncRunStats(run: RunState, meta: MetaState): void {
   run.player.type = toupieById(run.toupie).type;
   run.player.accel = stats.accel;
   run.player.mass = stats.mass * talents.mass;
-}
-
-/**
- * Le châssis en attente monte sur la toupie. Une descente des dix salles = un
- * run : c'est ici, et nulle part ailleurs, que le choix prend effet — à la mort
- * (`resetRun`) et au tour de chapitre bouclé. `tick` ne peut pas s'en charger,
- * le méta étant hors de sa portée.
- *
- * Ne soigne pas : `syncRunStats` borne le spin vers le bas seulement, donc
- * troquer un châssis contre un plus endurant au passage du boss ne rend rien.
- */
-export function equipPendingToupie(run: RunState, meta: MetaState): void {
-  if (run.toupie === meta.toupies.active) return;
-  run.toupie = meta.toupies.active;
-  syncRunStats(run, meta);
 }
 
 function refreshBotAims(run: RunState): void {
@@ -199,8 +192,14 @@ export function tick(run: RunState, input: Input): RunReward | null {
     const boss = run.salle === SALLES_PER_CHAPTER;
     const rolled = salleReward(run.chapter, run.salle, boss, run.rngState);
     run.rngState = rolled.rngState;
-    if (boss) run.salle = 1;
-    else run.salle++;
+    // Le boss vaincu ferme la descente : ni salle suivante, ni retour en salle 1.
+    // C'est la frontière de run que le verrou du châssis et le farm réclament ;
+    // la garde d'entrée de `tick` fait le reste.
+    if (boss) {
+      run.phase = 'won';
+      return rolled.reward;
+    }
+    run.salle++;
     run.player.spin = Math.min(
       run.player.spinMax,
       run.player.spin + run.player.talents.healBetweenSalles * run.player.spinMax,

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { createRun, equipPendingToupie, resetRun, syncRunStats, tick } from './sim';
+import { maxPlayableChapter, startRun, syncRunStats, tick } from './sim';
 import { applyRunReward, createInitialMeta, setActiveToupie } from './meta';
 import { salleReward } from './economy';
 import { spawnSalle, botCountFor } from './salle';
-import { ARENA_RADIUS, CHASSIS, MODELS_PROFILE, PLAYER_BASE, SALLES_PER_CHAPTER, TALENTS } from './config';
+import { ARENA_RADIUS, CHASSIS, MAX_CHAPTER, MODELS_PROFILE, PLAYER_BASE, SALLES_PER_CHAPTER, TALENTS } from './config';
 import { openChest } from './chest';
 
 function play(seed: number, n: number, clearEvery: number | null, clearBreaches = false): string {
   const meta = createInitialMeta(seed);
-  const run = createRun(meta, seed);
+  const run = startRun(meta, 1, seed);
   for (let i = 0; i < n; i++) {
     if (clearEvery !== null && i % clearEvery === clearEvery - 1) for (const b of run.bots) b.spin = 0.0001;
     const reward = tick(run, { steer: i % 20 < 10 ? { x: 1, y: 0.5 } : null });
@@ -33,9 +33,9 @@ const runTicksThroughSalles = (seed: number, n: number) => play(seed, n, 25, tru
 // à travers une éjection, alors que c'est le risque central du jalon 2.5.
 const runTicksThroughBreaches = (seed: number, n: number) => play(seed, n, 25);
 
-describe('createRun', () => {
+describe('ouverture de la descente', () => {
   it('démarre chapitre 1, salle 1, phase fighting, avec les bots de la salle 1', () => {
-    const run = createRun(createInitialMeta(42), 42);
+    const run = startRun(createInitialMeta(42), 1, 42);
     expect(run.chapter).toBe(1);
     expect(run.salle).toBe(1);
     expect(run.phase).toBe('fighting');
@@ -44,7 +44,7 @@ describe('createRun', () => {
   });
 
   it('chaque salle reçoit son gabarit d’arène', () => {
-    const run = createRun(createInitialMeta(1), 1);
+    const run = startRun(createInitialMeta(1), 1, 1);
     expect(run.arena.zones.length).toBeGreaterThan(0);
     expect(run.arena.shard).toBeNull();
   });
@@ -89,7 +89,7 @@ describe('déterminisme', () => {
     const playWithChests = (openChests: boolean) => {
       const meta = createInitialMeta(42);
       meta.credits = 10_000_000;
-      const run = createRun(meta, 42);
+      const run = startRun(meta, 1, 42);
       for (let i = 0; i < 300; i++) {
         if (i % 25 === 24) {
           for (const b of run.bots) b.spin = 0.0001;
@@ -108,7 +108,7 @@ describe('déterminisme', () => {
 describe('progression', () => {
   it('vider une salle retourne la récompense et fait avancer', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     for (const b of run.bots) b.spin = 0.0001; // le decay du prochain tick les achève
     const reward = tick(run, { steer: null });
     expect(reward?.credits).toBeCloseTo(salleReward(1, 1, false, 1).reward.credits, 5);
@@ -119,7 +119,7 @@ describe('progression', () => {
   });
 
   it('vider une salle rapporte au moins un coffre', () => {
-    const run = createRun(createInitialMeta(1), 1);
+    const run = startRun(createInitialMeta(1), 1, 1);
     let reward = null;
     for (let i = 0; i < 6000 && reward === null; i++) {
       reward = tick(run, { steer: run.bots[0] ? { x: run.bots[0].pos.x - run.player.pos.x, y: run.bots[0].pos.y - run.player.pos.y } : null });
@@ -130,7 +130,7 @@ describe('progression', () => {
 
   it('l’entrée dans une nouvelle salle remet à zéro la suspension de décroissance du joueur', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     for (const b of run.bots) b.spin = 0.0001;
     run.player.decayPauseTicks = 5; // suspension en cours (ex. talent Relance)
     tick(run, { steer: null });
@@ -139,9 +139,9 @@ describe('progression', () => {
     expect(run.player.decayPauseTicks).toBe(0);
   });
 
-  it('vider la salle 10 valide le chapitre et repart en salle 1', () => {
+  it('vider la salle 10 pose la phase « won » et ne repart pas en salle 1', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     run.salle = SALLES_PER_CHAPTER;
     const spawned = spawnSalle(run.chapter, SALLES_PER_CHAPTER, run.rngState);
     run.bots = spawned.bots;
@@ -149,31 +149,35 @@ describe('progression', () => {
     for (const b of run.bots) b.spin = 0.0001;
     const reward = tick(run, { steer: null })!;
     applyRunReward(meta, reward);
+    expect(reward.boss).toBe(true);
     expect(meta.bestChapter).toBe(1);
-    expect(run.salle).toBe(1);
+    expect(run.phase).toBe('won');
+    // La descente est fermée : la salle ne revient pas à 1 et plus rien n'avance.
+    expect(run.salle).toBe(SALLES_PER_CHAPTER);
+    expect(tick(run, { steer: null })).toBeNull();
     expect(meta.credits).toBeCloseTo(salleReward(1, SALLES_PER_CHAPTER, true, 1).reward.credits, 5);
     expect(meta.gems).toBe(salleReward(1, SALLES_PER_CHAPTER, true, 1).reward.gems);
   });
 
-  it('spin à zéro ⇒ mort ; resetRun repart salle 1 en gardant les crédits', () => {
+  it('spin à zéro ⇒ mort ; la descente suivante repart salle 1 en gardant les crédits', () => {
     const meta = createInitialMeta(1);
     meta.credits = 500;
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     run.player.spin = 0.0001;
     tick(run, { steer: null });
     expect(run.phase).toBe('dead');
-    resetRun(run, meta);
-    expect(run.phase).toBe('fighting');
-    expect(run.salle).toBe(1);
+    const suivant = startRun(meta, 1, run.rngState);
+    expect(suivant.phase).toBe('fighting');
+    expect(suivant.salle).toBe(1);
     expect(meta.credits).toBe(500);
-    expect(run.player.spin).toBe(run.player.spinMax);
+    expect(suivant.player.spin).toBe(suivant.player.spinMax);
   });
 });
 
 describe('syncRunStats', () => {
   it('applique l’amélioration au joueur du run en cours', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     const before = run.player.attack;
     meta.equipped.lame.level = 5;
     syncRunStats(run, meta);
@@ -182,7 +186,7 @@ describe('syncRunStats', () => {
 
   it('borne le spin vers le bas et ne soigne jamais', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     run.player.spin = 100;
     meta.equipped.noyau.level = 10; // spinMax augmente
     syncRunStats(run, meta);
@@ -196,17 +200,17 @@ describe('syncRunStats', () => {
 });
 
 describe('talents du joueur', () => {
-  it('createRun pose sur le joueur les talents de l’équipement de départ', () => {
+  it('startRun pose sur le joueur les talents de l’équipement de départ', () => {
     const meta = createInitialMeta(1);
     meta.equipped.lame.rank = 4; // Excellent — débloque Estoc
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     expect(run.player.talents.estocThreshold).toBe(TALENTS.estoc.speedThreshold);
     expect(run.player.talents.estocBonus).toBe(TALENTS.estoc.damageBonus);
   });
 
   it('syncRunStats recalcule les talents du joueur d’un run déjà démarré', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     expect(run.player.talents.impulseTaken).toBe(1); // rang 1 : Ancrage pas encore débloqué
 
     meta.equipped.disque.rank = 4; // Excellent — débloque Ancrage
@@ -222,15 +226,15 @@ describe('type et masse du joueur', () => {
     // autre toupie, d'un autre type, pour ne pas retomber par hasard dessus.
     meta.toupies.unlocked.push('tigre-foudre');
     setActiveToupie(meta, 'tigre-foudre');
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     expect(run.player.type).toBe('endurance');
   });
 
-  it('createRun applique l’accélération du châssis sans passer par syncRunStats — le chemin de l’app au chargement (App.tsx) et au clic « rejouer » (CombatScreen)', () => {
+  it('startRun applique l’accélération du châssis sans passer par syncRunStats — le chemin de l’app au chargement (App.tsx) et au clic « rejouer » (CombatScreen)', () => {
     const meta = createInitialMeta(1);
     meta.toupies.unlocked.push('typhon-primal');
     setActiveToupie(meta, 'typhon-primal');
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     // Si makePlayer recopiait PLAYER_BASE.accel en dur au lieu de stats.accel,
     // cette assertion resterait sur la valeur neutre au lieu de la valeur du
     // châssis : aucun syncRunStats n'intervient ici pour rattraper l'écart.
@@ -238,7 +242,7 @@ describe('type et masse du joueur', () => {
   });
 
   it('makePlayer multiplie la masse du profil par celle du talent Masse', () => {
-    const sansTalent = createRun(createInitialMeta(1), 1);
+    const sansTalent = startRun(createInitialMeta(1), 1, 1);
     expect(sansTalent.player.mass).toBe(1);
 
     const meta = createInitialMeta(1);
@@ -247,13 +251,13 @@ describe('type et masse du joueur', () => {
     // `talents.mass` seul — le rang débloque aussi le talent Masse au passage.
     meta.equipped.disque.model = 'disque.colosse';
     meta.equipped.disque.rank = TALENTS.masse.rank;
-    const avecTalent = createRun(meta, 1);
+    const avecTalent = startRun(meta, 1, 1);
     expect(avecTalent.player.mass).toBeCloseTo(MODELS_PROFILE['disque.colosse'].mass! * TALENTS.masse.mass, 6);
   });
 
   it('syncRunStats fige le châssis de la descente et laisse passer les pièces', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1); // Brasier Solaire, profil de châssis neutre
+    const run = startRun(meta, 1, 1); // Brasier Solaire, profil de châssis neutre
     const attackBefore = run.player.attack;
 
     // Le contournement mesuré avant le verrou : changer de châssis à chaque salle
@@ -266,7 +270,7 @@ describe('type et masse du joueur', () => {
     // si `syncRunStats` ne faisait plus rien du tout.
     meta.equipped.lame.level = 5;
     // Perturbés d'abord : sans ça, les trois assertions ci-dessous porteraient sur
-    // les valeurs que `createRun` a déjà écrites, et passeraient encore si
+    // les valeurs que `startRun` a déjà écrites, et passeraient encore si
     // `syncRunStats` cessait purement et simplement d'écrire ces champs.
     run.player.type = 'attaque';
     run.player.accel = 0;
@@ -280,59 +284,46 @@ describe('type et masse du joueur', () => {
   });
 });
 
-describe('resetRun', () => {
-  it('adopte le châssis choisi pendant le run perdu', () => {
+describe('startRun', () => {
+  // Vérifié par mutation : faire relire `meta.toupies.active` à `syncRunStats`
+  // fait rougir ce test.
+  it('fixe le châssis de la descente, et le run ne le relit jamais', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1); // Brasier Solaire
-    // Le joueur change d'avis en cours de descente : le choix attend la mort.
-    meta.toupies.unlocked.push('typhon-primal');
-    setActiveToupie(meta, 'typhon-primal');
+    meta.toupies.unlocked = ['brasier-solaire', 'carapace-abyssale'];
+    const run = startRun(meta, 1, 1); // Brasier Solaire, type équilibre
     expect(run.toupie).toBe('brasier-solaire');
-
-    resetRun(run, meta);
-
-    expect(run.toupie).toBe('typhon-primal');
-    expect(run.player.type).toBe('attaque');
-  });
-});
-
-describe('equipPendingToupie', () => {
-  it('monte le châssis en attente et recopie type, accel et masse', () => {
-    const meta = createInitialMeta(1);
-    const run = createRun(meta, 1); // Brasier Solaire, profil neutre
-    meta.toupies.unlocked.push('carapace-abyssale');
     setActiveToupie(meta, 'carapace-abyssale');
-    meta.equipped.disque.rank = TALENTS.masse.rank;
-
-    equipPendingToupie(run, meta);
-
-    expect(run.toupie).toBe('carapace-abyssale');
-    expect(run.player.type).toBe('defense');
-    // Carapace pèse sur l'accélération (×0,80) et la masse (×1,40) : ces deux
-    // assertions retomberaient sur les valeurs neutres si l'adoption ne
-    // repassait pas par `syncRunStats`.
-    expect(run.player.accel).toBeCloseTo(PLAYER_BASE.accel * CHASSIS['carapace-abyssale'].accel!, 6);
-    expect(run.player.mass).toBeCloseTo(CHASSIS['carapace-abyssale'].mass! * TALENTS.masse.mass, 6);
+    syncRunStats(run, meta);
+    for (const b of run.bots) b.spin = 0.0001;
+    tick(run, { steer: null });
+    expect(run.salle).toBe(2); // une frontière de salle a bien été franchie
+    expect(run.toupie).toBe('brasier-solaire');
+    expect(run.player.type).toBe('equilibre');
+    // Le choix en attente ne monte qu'à la descente suivante.
+    expect(startRun(meta, 1, 2).toupie).toBe('carapace-abyssale');
   });
 
-  it('ne soigne pas : passer à un châssis plus endurant ne remplit pas la barre', () => {
+  // Vérifié par mutation : retirer la borne de `startRun` fait rougir ce test.
+  it('borne le chapitre jouable par bestChapter + 1', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1); // Brasier Solaire, spinMax neutre
-    const spinMaxAvant = run.player.spinMax;
-    run.player.spin = spinMaxAvant; // barre pleine sur l'ancien châssis
+    expect(maxPlayableChapter(meta)).toBe(1);
+    expect(startRun(meta, 4, 1).chapter).toBe(1);
+    meta.bestChapter = 1;
+    expect(maxPlayableChapter(meta)).toBe(2);
+    expect(startRun(meta, 2, 1).chapter).toBe(2);
+    expect(startRun(meta, 3, 1).chapter).toBe(2);
+    // Jamais au-delà du contenu qui existe.
+    meta.bestChapter = 99;
+    expect(maxPlayableChapter(meta)).toBe(MAX_CHAPTER);
+    expect(startRun(meta, 99, 1).chapter).toBe(MAX_CHAPTER);
+  });
 
-    // Carapace Abyssale est le seul châssis qui monte le spin max (×1,15) : la
-    // barre grandit donc sous la toupie. Sans la borne vers le bas de
-    // `syncRunStats`, ou avec un soin à la place, le spin suivrait le nouveau
-    // plafond et l'adoption au boss serait une potion gratuite.
-    meta.toupies.unlocked.push('carapace-abyssale');
-    setActiveToupie(meta, 'carapace-abyssale');
-
-    equipPendingToupie(run, meta);
-
-    expect(run.player.spinMax).toBeCloseTo(spinMaxAvant * CHASSIS['carapace-abyssale'].spinMax!, 6);
-    expect(run.player.spin).toBe(spinMaxAvant);
-    expect(run.player.spin).toBeLessThan(run.player.spinMax);
+  it('normalise une graine nulle', () => {
+    // `startSalle` a déjà consommé le flux quand `startRun` rend la main : la
+    // normalisation ne s'observe donc pas sur la graine elle-même, mais sur le
+    // fait que la descente de graine 0 est exactement celle de la graine 1.
+    expect(startRun(createInitialMeta(1), 1, 0).rngState)
+      .toBe(startRun(createInitialMeta(1), 1, 1).rngState);
   });
 });
 
@@ -340,7 +331,7 @@ describe('talent Second souffle', () => {
   it('accorde un sursis au lieu de la mort, une seule fois par run', () => {
     const meta = createInitialMeta(1);
     meta.equipped.noyau.rank = 7; // Épique : Réserve + Second souffle
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
 
     run.player.spin = 0.0001;
     tick(run, { steer: null });
@@ -353,18 +344,18 @@ describe('talent Second souffle', () => {
     expect(run.phase).toBe('dead');
   });
 
-  it('resetRun réarme le sursis', () => {
+  it('la descente suivante réarme le sursis', () => {
     const meta = createInitialMeta(1);
     meta.equipped.noyau.rank = 7;
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     run.secondSouffleUsed = true;
-    resetRun(run, meta);
-    expect(run.secondSouffleUsed).toBe(false);
+    const run2 = startRun(meta, 1, run.rngState);
+    expect(run2.secondSouffleUsed).toBe(false);
   });
 
   it('sans le talent, spin à zéro tue toujours', () => {
     const meta = createInitialMeta(1);
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     run.player.spin = 0.0001;
     tick(run, { steer: null });
     expect(run.phase).toBe('dead');
@@ -375,7 +366,7 @@ describe('talent Réserve', () => {
   it('rend davantage de spin entre deux salles', () => {
     const meta = createInitialMeta(1);
     meta.equipped.noyau.rank = 4; // Excellent : Réserve
-    const run = createRun(meta, 1);
+    const run = startRun(meta, 1, 1);
     run.player.spin = 100;
     for (const b of run.bots) b.spin = 0.0001;
     tick(run, { steer: null });
@@ -386,7 +377,7 @@ describe('talent Réserve', () => {
 
 describe('éjection', () => {
   it('une éjection met le spin à zéro et se signale au rendu', () => {
-    const run = createRun(createInitialMeta(1), 1);
+    const run = startRun(createInitialMeta(1), 1, 1);
     run.arena.breaches = [{ angle: 0, halfWidth: 0.6 }];
     const bot = run.bots[0];
     bot.pos = { x: ARENA_RADIUS - bot.radius - 1, y: 0 };
@@ -400,7 +391,7 @@ describe('éjection', () => {
   });
 
   it('vide la liste des éjectés à chaque tick', () => {
-    const run = createRun(createInitialMeta(1), 1);
+    const run = startRun(createInitialMeta(1), 1, 1);
     run.ejected = ['fantome'];
     tick(run, { steer: null });
     expect(run.ejected).not.toContain('fantome');
@@ -409,7 +400,7 @@ describe('éjection', () => {
 
 describe('éclat', () => {
   it('un bot plus proche de l’éclat que du joueur va le chercher', () => {
-    const run = createRun(createInitialMeta(1), 1);
+    const run = startRun(createInitialMeta(1), 1, 1);
     const bot = run.bots[0];
     // Éclat à gauche, joueur à droite : le signe de aim.x tranche entre les deux.
     bot.pos = { x: 0, y: 0 };
