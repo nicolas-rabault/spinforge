@@ -142,20 +142,25 @@ function simulate(seed, { buyChests, steer, toupieId, counterPick, upTo = MAX_CH
     meta.toupies.unlocked = TOUPIES.map((t) => t.id);
     setActiveToupie(meta, counterFor(1, 1));
   }
+  // Un relevé par chapitre : les médianes d'un chapitre ne disent rien de celles
+  // d'un autre, et le garde-fou de la salle 10 doit tenir dans chacun. Le relevé
+  // naît à zéro descente : le créer et en ouvrir une sont deux choses distinctes,
+  // sinon un chapitre dont le relevé naît de la ligne de relance compterait sa
+  // première descente deux fois.
+  const chapters = new Map();
+  const statsFor = (n) => {
+    if (!chapters.has(n)) {
+      chapters.set(n, { ticks: null, runs: null, runsStarted: 0, salleDurations: new Map(), deathsBySalle: new Map() });
+    }
+    return chapters.get(n);
+  };
+
   let run = startRun(meta, 1, seed);
+  statsFor(1).runsStarted++;
   let ticks = 0;
   let runs = 1;
   let salleTicks = 0;
   let ticksToFirstChest = null;
-  // Un relevé par chapitre : les médianes d'un chapitre ne disent rien de celles
-  // d'un autre, et le garde-fou de la salle 10 doit tenir dans chacun.
-  const chapters = new Map();
-  const statsFor = (n) => {
-    if (!chapters.has(n)) {
-      chapters.set(n, { ticks: null, runs: null, runsStarted: 1, salleDurations: new Map(), deathsBySalle: new Map() });
-    }
-    return chapters.get(n);
-  };
 
   while (ticks < MAX_TICKS && meta.bestChapter < upTo) {
     const salleBefore = run.salle;
@@ -172,7 +177,7 @@ function simulate(seed, { buyChests, steer, toupieId, counterPick, upTo = MAX_CH
       const purchaseOpened = spend(meta, { buyChests });
       if ((lootOpened || purchaseOpened) && ticksToFirstChest === null) ticksToFirstChest = ticks;
       syncRunStats(run, meta);
-      if (counterPick && (counterPick === 'salle' || run.salle === 1)) {
+      if (counterPick === 'salle') {
         setActiveToupie(meta, counterFor(run.chapter, run.salle));
         syncRunStats(run, meta);
       }
@@ -239,8 +244,16 @@ for (let chapter = 1; chapter <= MAX_CHAPTER; chapter++) {
   const heures = hoursOf(results, chapter);
   const deaths = deathsOf(results, chapter);
   const deadliest = [...deaths.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
-  console.log('\n--- Chapitre %d : %s h cumulées · %s descentes · salle la plus meurtrière %j',
-    chapter, fmt(heures), fmt(chapterField(results, chapter, 'runs')), deadliest);
+  // `median` écarte les nulls : sans l'effectif, un chapitre validé par une seule
+  // graine se lirait comme une médiane sur dix — et le chapitre 4 semblerait plus
+  // facile que le 3.
+  const validated = results.filter((r) => r.chapters.get(chapter)?.ticks !== null && r.chapters.get(chapter)?.ticks !== undefined).length;
+  // `hoursOf` cumule depuis le départ de la partie ; le coût propre du chapitre est
+  // la marche, et c'est elle que les passes de calibration règlent.
+  const precedent = chapter === 1 ? 0 : hoursOf(results, chapter - 1);
+  const marginal = heures === null || precedent === null ? null : heures - precedent;
+  console.log('\n--- Chapitre %d : validé par %d/%d graines · %s h cumulées (+%s h) · %s descentes · salle la plus meurtrière %j',
+    chapter, validated, SEEDS.length, fmt(heures), fmt(marginal), fmt(chapterField(results, chapter, 'runs')), deadliest);
   // Garde-fou : « le mur n'est jamais un bug, c'est le produit » doit tenir dans
   // CHAQUE chapitre, pas seulement dans le premier.
   console.log('    salle 10 la plus meurtrière : %s', deadliest && deadliest[0] === SALLES_PER_CHAPTER ? 'oui' : 'NON');
