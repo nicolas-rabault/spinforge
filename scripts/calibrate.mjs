@@ -252,17 +252,33 @@ for (let chapter = 1; chapter <= MAX_CHAPTER; chapter++) {
   // la marche, et c'est elle que les passes de calibration règlent.
   const precedent = chapter === 1 ? 0 : hoursOf(results, chapter - 1);
   const marginal = heures === null || precedent === null ? null : heures - precedent;
+  // Une salle par ligne, avec sa létalité PAR TENTATIVE (morts / (vidée + morts)) —
+  // le pendant du décompte absolu ci-dessus : le décompte dit où les morts
+  // s'accumulent vu que l'autopilote ne recule jamais vers un chapitre plus facile ;
+  // le taux dit le risque une fois dans la salle. Un entonnoir a beaucoup de
+  // tentatives et un taux modéré ; un mur en a peu et un taux proche de 100 %.
+  const salleStats = [];
+  for (let salle = 1; salle <= SALLES_PER_CHAPTER; salle++) {
+    const durations = results.flatMap((r) => r.chapters.get(chapter)?.salleDurations.get(salle) ?? []);
+    const dead = deaths.get(salle) ?? 0;
+    const attempts = durations.length + dead; // vidée + morts : une salle est l'un ou l'autre.
+    if (attempts === 0) continue;
+    salleStats.push({ salle, durations, dead, rate: (dead / attempts) * 100 });
+  }
+  const deadliestRate = salleStats.reduce((best, s) => (best === null || s.rate > best.rate ? s : best), null);
+
   console.log('\n--- Chapitre %d : validé par %d/%d graines · %s h cumulées (+%s h) · %s descentes · salle la plus meurtrière %j',
     chapter, validated, SEEDS.length, fmt(heures), fmt(marginal), fmt(chapterField(results, chapter, 'runs')), deadliest);
   // Garde-fou : « le mur n'est jamais un bug, c'est le produit » doit tenir dans
-  // CHAQUE chapitre, pas seulement dans le premier.
+  // CHAQUE chapitre, pas seulement dans le premier. Le verdict reste sur le
+  // décompte absolu — la lecture par tentative ci-dessous ne le fait jamais basculer.
   console.log('    salle 10 la plus meurtrière : %s', deadliest && deadliest[0] === SALLES_PER_CHAPTER ? 'oui' : 'NON');
-  for (let salle = 1; salle <= SALLES_PER_CHAPTER; salle++) {
-    const all = results.flatMap((r) => r.chapters.get(chapter)?.salleDurations.get(salle) ?? []);
-    const dead = deaths.get(salle) ?? 0;
-    if (all.length === 0 && dead === 0) continue;
-    console.log('    salle %d : %s s  (vidée %d fois, morts %d)',
-      salle, all.length === 0 ? 'jamais vidée' : fmt(median(all) * TICK_S), all.length, dead);
+  console.log('    (lecture par tentative : %s)',
+    deadliestRate ? `salle ${deadliestRate.salle}, ${Math.round(deadliestRate.rate)} % de létalité` : 'jamais mesurée');
+  for (const s of salleStats) {
+    console.log('    salle %d : %s s  (vidée %d fois, morts %d) · %d %% létalité/tentative',
+      s.salle, s.durations.length === 0 ? 'jamais vidée' : fmt(median(s.durations) * TICK_S), s.durations.length, s.dead,
+      Math.round(s.rate));
   }
 }
 
