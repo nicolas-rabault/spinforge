@@ -565,6 +565,107 @@ avec 23 morts, premier coffre immédiat, passivité jamais validée).
 
 ---
 
+## Session du 2026-09-01 — la refonte du son
+
+### ✅ 5. Le son, deuxième passe
+
+> « Les bruitages sont vraiment compliqués, les sons de la toupie sont très prenants
+> et désagréables. Appuie plutôt sur les chocs entre toupies. Il faut bien sûr créer
+> des sons pour l'appui sur les boutons. Exploite aussi la vibration du téléphone :
+> à chaque gain, on doit sentir les pièces qui rentrent dans la caisse. »
+
+La session du 2026-08-25 avait traité les défauts **mesurables** du son — le bourdon
+de scie sauteuse, la mitraille d'impacts, les clics, la saturation — et se terminait
+sur « à valider à l'oreille ». Ce verdict est tombé, et il ne portait pas sur un
+défaut mais sur un **rapport de forces** : le rotor occupait 95 % du temps sonore et
+les chocs 4 %. Le son continu portait tout le temps et aucune information.
+
+**Le principe retenu : un son = un événement.** Le seul son tenu devient la musique ;
+tout le reste est une ponctuation, et chaque ponctuation qui représente un choc ou un
+gain a son jumeau haptique.
+
+#### Ce qui a été mesuré
+
+Toutes les mesures ci-dessous portent sur le son **réellement produit** : un
+`AnalyserNode` intercalé avant la sortie via `page.addInitScript`, et non une relecture
+des recettes censées le produire. Scripts jetables, méthode conservée plus bas.
+
+**Le choc a maintenant un corps.** Répartition de l'énergie sur 260 ms :
+
+| puissance | crête dBFS | sub < 300 Hz | corps 300-1200 Hz | aigu > 3 kHz |
+|---|---|---|---|---|
+| 0,15 | −22,8 | 3 % | 42 % | **54 %** |
+| 0,50 | −15,9 | 9 % | 49 % | 42 % |
+| 1,00 | −16,2 | 10 % | **54 %** | 36 % |
+
+Un choc faible claque, un choc plein pèse : la fondamentale **descend** avec la
+puissance (`520 − 180·p` Hz), comme un vrai impact. 9,4 dB de dynamique entre les
+deux extrêmes. Le rotor, lui, passe de 0,055 à 0,018 de gain et s'efface de 65 %
+pendant 200 ms sous chaque choc fort — mesuré à −71,7 dBFS, soit ~39 dB sous un choc
+plein. **Un son tenu qui s'interrompt cesse d'être un son tenu.**
+
+**La musique.** Boucle de 8 mesures en ré phrygien, 92 BPM constants, cinq couches
+dont la densité suit le contexte. Tempo vérifié : intervalle médian de 1307,6 ms
+entre frappes du pouls contre 1304 ms attendus (0,3 % d'écart, la résolution de la
+mesure). Ducking vérifié : −37,6 → −40,6 dBFS après un choc plein. À la mort,
+−71,7 dBFS — le plancher.
+
+**Les hauteurs sont toutes des degrés du mode**, vérifié au calcul ET à la mesure :
+révélation d'une pièce 621 / 785 / 932 / 1172 Hz par palier de rareté (attendus
+622 / 784 / 932 / 1175), boss vaincu 146 Hz (ré3), couvercle qui cède 293 Hz (ré4),
+amélioration 393 Hz (sol4). Une note hors mode aurait frotté contre la musique.
+
+**La vibration**, vérifiée de bout en bout avant tout test sur téléphone, en
+remplaçant `navigator.vibrate` par un mouchard (Chromium de bureau n'a pas de vibreur,
+mais ce que le jeu *demande* est observable) :
+
+| déclencheur | motif obtenu |
+|---|---|
+| choc 0,34 → 0,35 | rien → `[12]` — le seuil tombe pile |
+| choc 0,60 / 1,00 | `[14]` / `[18]` |
+| mêlée de 12 chocs | 9 vibrations, 74 ms — les garde-fous filtrent |
+| récompense de salle | `[12, 40, 12]` |
+| coffre ouvert | `[18]` puis `[30, 60, 18, 40, 45]` à la fin de l'animation |
+
+Taux en jeu : 11 motifs pour 110 ms vibrés sur 20 s de combat piloté. Le harnais de
+simulation pure donne la borne haute avec un autopilote parfait — 2,16 chocs sonores
+par seconde dont 86,7 % au-dessus du seuil, soit 1,87 vibration/s, ~30 ms vibrés par
+seconde sur les 220 autorisés. Aucun risque de saturation.
+
+#### Deux défauts que seule la mesure pouvait trouver
+
+1. **Un bouton grisé sonnait et vibrait.** La spec affirmait qu'un `<button disabled>`
+   n'émet aucun événement de pointeur. C'est **faux** : le clic tombe sur un `<span>`
+   enfant, l'événement part normalement, et `closest('button')` remonte au bouton
+   désactivé. « Ouvrir ×10 » sans les crédits confirmait donc par un son *et* une
+   vibration l'action qu'il venait de refuser. Ni l'implémentation ni la relecture ne
+   pouvaient le voir — le code était fidèle à une affirmation fausse.
+2. **La vibration de fusion n'arrivait jamais.** Le son partait, mais le motif
+   `[20, 50, 45]` était refusé par le garde-fou de 60 ms entre deux vibrations : la
+   vibration de l'appui, quelques millisecondes plus tôt, le mangeait. `fuse` et
+   `equip` rejoignent les motifs prioritaires, comme le coffre terminé.
+
+#### Ce qui reste à valider à l'oreille
+
+- **Le passage Forge → combat ne s'entend presque pas.** Mesuré en énergie absolue par
+  bande : les couches « enclume » et « motif » ne montent que de 1,8 et 3,7 dB entre
+  les deux, là où il en faut ~6 pour qu'une couche se lise comme *ajoutée*. Elles sont
+  25 dB sous le bourdon. Le passage combat → boss, lui, fonctionne franchement
+  (+12,3 dB sur la bande du motif). Leviers : `MUSIC.anvil.gain` et `MUSIC.motif.gain`
+  (0,05 chacun, contre 0,16 pour le pouls).
+- **Le clic de bouton est peut-être inaudible** sur un téléphone : −50,3 dBFS de crête,
+  soit 34 dB sous un choc moyen. Levier : `SFX.tap.gain`.
+- **Le rotor est-il « très discret » ou « absent » ?** La mesure dit qu'il est 39 dB
+  sous un choc ; elle ne dit pas s'il s'entend encore. Levier : `MIX.whirrGain`.
+- **La vibration sur un vrai Android.** Tout ce qui précède prouve que les bons motifs
+  sont *demandés* au bon moment ; rien ne dit ce qu'ils *font sentir*.
+
+Le banc d'essai `/spinforge/soundboard.html` (servi par `npm run dev`, jamais construit)
+existe pour ces quatre verdicts : chaque son a son bouton, la puissance du choc,
+l'intensité musicale et le palier de rareté ont leur curseur.
+
+---
+
 ## En attente d'arbitrage
 
 - 💭 **Un simple mute suffit-il ?** Le bouton actuel est tout ou rien. Un réglage de
@@ -594,6 +695,21 @@ entier se rejoue en quelques millisecondes hors navigateur.
   runs jusqu'à `chapterValidated`. 5 seeds, moyenne.
 - **Cadence sonore** : rejouer `takeSnapshot` / `observe` autour de chaque `tick()`
   et compter les `hits` retenus par le filtre de `CombatScreen`.
+- **Son** : intercaler un `AnalyserNode` juste avant la sortie, depuis un
+  `page.addInitScript` qui enveloppe `AudioContext` et redéfinit son `destination`.
+  Tout ce que le jeu envoie aux haut-parleurs passe alors par la sonde, et on mesure
+  **le son réellement produit** — pas la recette censée le produire. `getFloatTimeDomainData`
+  donne la crête et le RMS, `getFloatFrequencyData` la répartition par bande et la
+  fréquence dominante ; l'enveloppe image par image donne la chronologie et le tempo.
+  C'est ce qui a permis de vérifier qu'une hauteur annoncée est bien celle qu'on
+  entend, et qu'un réglage coupé coupe vraiment (−∞ dBFS, pas une atténuation).
+  Piège : `getFloatFrequencyData` rend des décibels **négatifs** — chercher le maximum
+  en partant de zéro ne trouve jamais rien. Autre piège : laisser mourir le son
+  précédent avant de mesurer, sinon sa traînée devient le résultat.
+- **Vibration** : remplacer `navigator.vibrate` par un mouchard dans le même
+  `addInitScript`. Chromium de bureau n'a pas de vibreur, mais ce que le jeu *demande*
+  est parfaitement observable — motifs, instants, budget consommé. C'est ainsi qu'on
+  vérifie le câblage haptique **avant** de sortir un téléphone.
 - **Rendu** : `npm run dev` puis Playwright (voir `scripts/shots.mjs`) — c'est le
   seul moyen de juger un repère visuel.
 - **Vérifier en navigateur un mécanisme qui n'arrive qu'au bout d'une descente**
