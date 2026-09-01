@@ -32,8 +32,10 @@ type Pitch = readonly [string, number];
  *   `SFX.fuse.rise`, les grains de `SFX.reward`. Une coupure de filtre n'est pas
  *   une hauteur ;
  * - les coupures de filtre proprement dites (`MUSIC.tension.filterHz`,
- *   `MUSIC.drone.noiseFilterHz`, `MIX.whirrFreq*`, `MIX.subFreq*`,
- *   `MIX.hitClickHz`) ;
+ *   `MUSIC.drone.noiseFilterHz`, `MIX.whirrFreq*`, `MIX.hitClickHz`) ;
+ * - `MIX.subFreq*`, qui est bien un oscillateur et non un filtre, mais dont la
+ *   fréquence suit le spin en continu entre 48 et 96 Hz : un continuum piloté,
+ *   comme le corps du choc ci-dessous, jamais une note tenue ;
  * - le corps du choc, `MIX.hitBodyHz + MIX.hitBodySpan · p` : un continuum qui
  *   suit la puissance, jamais une note ;
  * - les partiels de timbre exprimés en ratio de leur fondamentale
