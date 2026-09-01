@@ -39,7 +39,19 @@ const save = (maxed) => JSON.stringify({
 });
 
 const card = (page, label) => page.locator('section').filter({ hasText: label }).last();
-const hud = (page) => page.locator('section').first().innerText();
+/** Salle en cours et mort du joueur, en un seul aller-retour. Depuis la refonte
+ *  graphique le HUD n'affiche plus « SALLE 4 / 10 » : les dix pastilles de
+ *  `PipTrack` n'ont pas de texte, et le numéro ne se lit plus que sur leur
+ *  libellé accessible. */
+const etat = (page) => page.evaluate(() => {
+  const label = [...document.querySelectorAll('[role="img"]')]
+    .map((el) => el.getAttribute('aria-label') ?? '')
+    .find((l) => /^Salle \d+ sur \d+$/.test(l));
+  return {
+    salle: label ? Number(label.match(/\d+/)[0]) : 0,
+    mort: [...document.querySelectorAll('button')].some((b) => b.textContent?.includes('Retenter')),
+  };
+});
 
 let failures = 0;
 function check(label, ok) {
@@ -94,15 +106,19 @@ await page.mouse.move(cx, cy);
 await page.mouse.down();
 let boss = false;
 let looped = false;
-for (let i = 0; i < 2000 && !looped; i++) {
+let mort = 0;
+for (let i = 0; i < 2000 && !looped && !mort; i++) {
   await page.mouse.move(cx + Math.cos((i / 14) * 6.283) * 70, cy + Math.sin((i / 14) * 6.283) * 70);
   await page.waitForTimeout(120);
-  const text = await hud(page);
-  if (text.includes('SALLE 10')) boss = true;
-  else if (boss && text.includes('SALLE 1 /')) looped = true;
+  const { salle, mort: perdu } = await etat(page);
+  if (salle === 10) boss = true;
+  else if (boss && salle === 1) looped = true;
+  // Sans ce garde, une toupie morte laissait la boucle tourner ses 2000 tours —
+  // quatre minutes — pour échouer ensuite sans dire ce qui s'était passé.
+  if (perdu) mort = salle;
 }
 await page.mouse.up();
-check('un tour de chapitre complet a été joué', looped);
+check(mort ? `un tour de chapitre complet a été joué (la descente est morte en salle ${mort})` : 'un tour de chapitre complet a été joué', looped);
 await page.getByRole('button', { name: 'Toupies' }).click();
 await page.waitForTimeout(300);
 check('Carapace est devenue « Pilotée »',
