@@ -12,6 +12,7 @@ import { tx } from '../i18n/tx';
 import { CHEST_QUAKE, CHEST_QUAKE_LIFE, REVEAL } from '../render/feel';
 import { quake } from './screenShake';
 import { ChestIcon } from './art/ChestIcon';
+import { AlertDot } from './art/AlertDot';
 import { PieceIcon } from './art/PieceIcon';
 import { Sparks } from './art/Sparks';
 import { RingMeter } from './art/RingMeter';
@@ -262,6 +263,7 @@ export function ChestScreen({
                 >
                   {meta.pending[kind]}
                 </span>
+                <AlertDot label={t('alert.todo')} top={-2} right={-4} />
               </button>
             ))}
           </div>

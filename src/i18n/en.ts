@@ -14,6 +14,11 @@ export const en: Record<MessageKey, string> = {
   'tab.chestsBadge.one': '{n} chest to open',
   'tab.chestsBadge.other': '{n} chests to open',
 
+  'alert.todo': 'something to do',
+  'alert.better': 'better than equipped',
+  'alert.fusable': 'ready to fuse',
+  'alert.gift': 'a Founder is waiting',
+
   'header.credits': 'Credits',
   'header.gems': 'Gems',
   'header.switchLang': 'Switch to French',
@@ -32,6 +37,7 @@ export const en: Record<MessageKey, string> = {
   'combat.retry': 'Retry',
 
   'forge.level': 'lv. {n}',
+  'forge.changeToupie': 'Change top',
 
   'chest.continue': 'Continue',
   'chest.open': 'Open ×{n}',
@@ -68,6 +74,7 @@ export const en: Record<MessageKey, string> = {
   'slot.disque': 'Disc',
   'slot.pointe': 'Tip',
   'slot.noyau': 'Core',
+  'slot.chassis': 'Chassis',
 
   'filter.all': 'All',
   'filter.lame': 'Blades',

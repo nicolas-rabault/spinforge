@@ -17,6 +17,13 @@ export const fr = {
   'tab.chestsBadge.one': '{n} coffre à ouvrir',
   'tab.chestsBadge.other': '{n} coffres à ouvrir',
 
+  // Étiquettes du point rouge. Il porte une information, pas un décor : sans
+  // `aria-label`, un lecteur d'écran ne voit rien du tout.
+  'alert.todo': 'quelque chose à faire',
+  'alert.better': 'meilleure que celle équipée',
+  'alert.fusable': 'fusionnable',
+  'alert.gift': "un Fondateur t'attend",
+
   'header.credits': 'Crédits',
   'header.gems': 'Gemmes',
   // Nomme la langue vers laquelle le bouton fait basculer, pas la langue lue.
@@ -36,6 +43,7 @@ export const fr = {
   'combat.retry': 'Retenter',
 
   'forge.level': 'niv. {n}',
+  'forge.changeToupie': 'Changer de toupie',
 
   'chest.continue': 'Continuer',
   'chest.open': 'Ouvrir ×{n}',
@@ -73,6 +81,7 @@ export const fr = {
   'slot.disque': 'Disque',
   'slot.pointe': 'Pointe',
   'slot.noyau': 'Noyau',
+  'slot.chassis': 'Châssis',
 
   // Pluriels de l'Inventaire — distincts des `slot.*` singuliers de la Forge.
   'filter.all': 'Tous',

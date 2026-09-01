@@ -21,6 +21,20 @@ export const PROFILE_AXES: ProfileAxis[] = [
   'attack', 'defense', 'maxSpeed', 'spinMax', 'accel', 'mass', 'spinDecay',
 ];
 
+/** Le sens de chaque axe. Six montent ; `spinDecay` descend — c'est une perte de
+ *  spin par seconde, donc moins vaut mieux. Source unique : `ui/profileAxes.isGain`
+ *  la lit pour colorer un profil, `sim/upgrade.ts` pour comparer deux montages.
+ *  Un piège écrit à deux endroits finit corrigé à un seul. */
+export const HIGHER_IS_BETTER: Record<ProfileAxis, boolean> = {
+  attack: true,
+  defense: true,
+  maxSpeed: true,
+  spinMax: true,
+  accel: true,
+  mass: true,
+  spinDecay: false,
+};
+
 export const NEUTRAL_PROFILE: Record<ProfileAxis, number> = Object.fromEntries(
   PROFILE_AXES.map((a) => [a, 1]),
 ) as Record<ProfileAxis, number>;

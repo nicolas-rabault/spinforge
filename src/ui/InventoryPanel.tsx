@@ -15,6 +15,8 @@ import { rankTier } from '../theme';
 import { AXIS_ORDER, axisLine, isGain } from './profileAxes';
 import { PieceIcon } from './art/PieceIcon';
 import { StatRadar } from './art/StatRadar';
+import { AlertDot } from './art/AlertDot';
+import { stackKey, type Attention } from './attention';
 import type { MetaState } from '../sim/types';
 
 const SLOTS: Slot[] = ['lame', 'disque', 'pointe', 'noyau'];
@@ -49,9 +51,10 @@ function RecipeDots({ have, need, color }: { have: number; need: number; color: 
 }
 
 export function InventoryPanel({
-  metaRef, onChanged,
+  metaRef, att, onChanged,
 }: {
   metaRef: { current: MetaState };
+  att: Attention;
   onChanged: () => void;
 }) {
   const [filter, setFilter] = useState<Slot | 'tous'>('tous');
@@ -96,6 +99,7 @@ export function InventoryPanel({
         <button
           onClick={() => setFilter('tous')}
           style={{
+            position: 'relative',
             minHeight: 40, padding: '0 12px', borderRadius: 9, cursor: 'pointer',
             border: `1px solid ${filter === 'tous' ? 'var(--ember)' : 'var(--line)'}`,
             background: filter === 'tous' ? 'var(--ember)' : 'var(--panel)',
@@ -104,6 +108,7 @@ export function InventoryPanel({
           }}
         >
           {t('filter.all')}
+          {att.stacks.size > 0 ? <AlertDot label={t('alert.todo')} top={2} right={2} /> : null}
         </button>
         {SLOTS.map((slot) => (
           <button
@@ -111,6 +116,7 @@ export function InventoryPanel({
             onClick={() => setFilter(slot)}
             aria-label={t(SLOT_NAMES[slot])}
             style={{
+              position: 'relative',
               flex: '1 1 0', minHeight: 40, borderRadius: 9, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               border: `1px solid ${filter === slot ? 'var(--ember)' : 'var(--line)'}`,
@@ -119,6 +125,7 @@ export function InventoryPanel({
             }}
           >
             <PieceIcon model={SLOT_EMBLEM[slot]} rank={1} size={26} />
+            {att.markedSlots.has(slot) ? <AlertDot label={t('alert.todo')} top={2} right={2} /> : null}
           </button>
         ))}
       </div>
@@ -134,7 +141,7 @@ export function InventoryPanel({
           const fusable = canFuse(meta, s.model, s.rank);
           return (
             <button
-              key={`${s.model}:${s.rank}`}
+              key={stackKey(s.model, s.rank)}
               onClick={() => setSelected({ model: s.model, rank: s.rank })}
               aria-label={tn('inventory.copies', s.levels.length, {
                 name: modelLabel(s.model), rank: rankLabel(s.rank),
@@ -167,6 +174,9 @@ export function InventoryPanel({
                     border: '2px solid var(--zoneBoost)', pointerEvents: 'none',
                   }}
                 />
+              ) : null}
+              {att.stacks.has(stackKey(s.model, s.rank)) ? (
+                <AlertDot label={t(fusable ? 'alert.fusable' : 'alert.better')} top={2} right={4} />
               ) : null}
             </button>
           );
