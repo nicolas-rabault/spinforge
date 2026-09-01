@@ -32,7 +32,10 @@
     "botsPerSalle": [1, 1, 1, 2, 2, 2, 3, 3, 3, 1]
   },
   "botTypes": {
-    "1": ["endurance", "endurance", "endurance", "defense", "defense", "defense", "attaque", "attaque", "attaque", "attaque"]
+    "1": ["endurance", "endurance", "endurance", "defense", "defense", "defense", "attaque", "attaque", "attaque", "attaque"],
+    "2": ["defense", "defense", "defense", "attaque", "attaque", "attaque", "endurance", "endurance", "endurance", "endurance"],
+    "3": ["attaque", "attaque", "attaque", "endurance", "endurance", "endurance", "defense", "defense", "defense", "defense"],
+    "4": ["attaque", "endurance", "defense", "equilibre", "equilibre", "equilibre", "attaque", "endurance", "defense", "equilibre"]
   },
   "player": {
     "spawn": { "x": 0, "y": 80 },

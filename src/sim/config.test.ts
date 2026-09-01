@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ARENA, BALANCE, BOTS_PER_SALLE, BREACH, CHESTS, FUSION, LAYOUTS, LOOT, PLAYER_SPAWN,
-  RARITY, SALLES_PER_CHAPTER, SHARD, TALENTS, TOUPIE_SHOP, TYPES, ZONES,
+  ARENA, BALANCE, BOTS_PER_SALLE, BOT_TYPES, BREACH, CHESTS, FUSION, LAYOUTS, LOOT,
+  MAX_CHAPTER, PLAYER_SPAWN, RARITY, SALLES_PER_CHAPTER, SHARD, TALENTS, TOUPIE_SHOP,
+  TYPES, ZONES,
 } from './config';
 import { PROFILE_AXES } from './profile';
 import { TOUPIES } from '../content/toupies';
 import { MODELS } from '../content/pieces';
 
 const SLOTS = ['lame', 'disque', 'pointe', 'noyau'];
+const TOP_TYPES = ['attaque', 'defense', 'endurance', 'equilibre'];
 
 describe('balance.json', () => {
   it('a autant d’entrées de bots que de salles par chapitre', () => {
@@ -63,6 +65,18 @@ describe('balance.json', () => {
     expect(table).toHaveLength(BALANCE.chapter.sallesPerChapter);
     const valid = ['attaque', 'endurance', 'defense', 'equilibre'];
     for (const t of table) expect(valid).toContain(t);
+  });
+
+  it('chaque chapitre jouable a une table de types complète', () => {
+    for (let chapter = 1; chapter <= MAX_CHAPTER; chapter++) {
+      const table = BOT_TYPES[String(chapter)];
+      // Sans cette garde, une table trop courte ferait silencieusement retomber
+      // le boss sur le type de la dernière salle décrite (`botTypeFor` borne
+      // l'index) — un chapitre dont le mur change de type sans que rien ne le dise.
+      expect(table, `chapitre ${chapter}`).toBeDefined();
+      expect(table, `chapitre ${chapter}`).toHaveLength(SALLES_PER_CHAPTER);
+      for (const type of table) expect(TOP_TYPES, `chapitre ${chapter}`).toContain(type);
+    }
   });
 
   it('a un profil de châssis par toupie et laisse la toupie de départ neutre', () => {

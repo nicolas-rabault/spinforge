@@ -23,7 +23,7 @@ export function makeBot(chapter: number, salle: number, index: number, angle: nu
   const spinMax = BOT_BASE.spinMax * spinScale * (boss ? BOSS.spinMult : 1);
   const dist = ARENA_RADIUS * BOT_SPAWN_RING;
   return {
-    id: `bot-${salle}-${index}`,
+    id: `bot-${chapter}-${salle}-${index}`,
     isPlayer: false,
     aim: null,
     pos: { x: Math.cos(angle) * dist, y: Math.sin(angle) * dist },
