@@ -6,7 +6,7 @@ Ce n'est pas la roadmap (`docs/roadmap.md`, qui découpe les jalons) ni la dette
 technique (même fichier, sections « Dette connue ») — ici on parle de ce que le
 joueur ressent.
 
-Statuts : ✅ corrigé · 🔧 en cours · 📋 à faire · 💭 à arbitrer
+Statuts : ✅ corrigé · 🔧 en cours · 📋 à faire · 💭 à arbitrer · 🔒 tranché — à ne pas rouvrir
 
 ---
 
@@ -949,14 +949,14 @@ paragraphe « Décision annulée en cours de route »).
   jeu normal. Voisin des quêtes déjà prévues au lot C du même jalon (`docs/roadmap.md`) — même
   sous-système de fond (une boucle de récompenses de progression), à spécifier avec elles
   plutôt qu'en double.
-- 💭 **Décision retirée — la difficulté ne doit pas scaler avec le niveau du joueur.** L'auteur
-  avait d'abord demandé que la difficulté des niveaux augmente avec la puissance du joueur,
-  puis a explicitement annulé cette demande au profit d'une difficulté **fixe** : chaque salle
-  et chaque chapitre gardent leur propre palier de difficulté (`bot.scaling`, indexé sur la
-  salle et le chapitre, jamais sur les stats ou l'équipement du joueur), et c'est au joueur de
-  progresser pour passer le palier suivant — la croissance doit rester assez douce pour qu'il
-  se sente progresser à tout instant. C'est déjà le comportement livré, il n'y a donc rien à
-  changer ici. Consigné pour la seule raison qui compte : une décision retirée qu'on ne note
+- 🔒 **Demande retirée par son auteur — « la difficulté doit scaler avec le niveau du
+  joueur ».** Formulée pendant le brainstorming du lot B, puis explicitement annulée par
+  l'auteur lui-même au profit d'une difficulté **fixe** : chaque salle et chaque chapitre
+  gardent leur propre palier (`bot.scaling`, indexé sur la salle et le chapitre, jamais sur
+  les stats ou l'équipement du joueur), et c'est au joueur de progresser pour passer le
+  palier suivant — la croissance doit rester assez douce pour qu'il se sente progresser à
+  tout instant. C'est déjà le comportement livré, il n'y a donc rien à changer. Tranché,
+  et marqué comme tel pour la seule raison qui compte : une décision retirée qu'on ne note
   pas est une décision qui revient.
 
 ---
