@@ -145,7 +145,12 @@ export function App() {
       <div style={{ position: 'absolute', inset: 0, display: combat ? 'block' : 'none' }}>
         <CombatScreen runRef={runRef} metaRef={metaRef} running={tab === 'combat'} onTick={redraw} onMetaChanged={metaChanged} audio={audioRef.current} />
       </div>
-      {tab === 'forge' ? <ForgeScreen metaRef={metaRef} runRef={runRef} att={att} onChanged={metaChanged} /> : null}
+      {tab === 'forge' ? (
+        <ForgeScreen
+          metaRef={metaRef} runRef={runRef} att={att}
+          onGoToToupies={() => setTab('toupies')} onChanged={metaChanged}
+        />
+      ) : null}
       {tab === 'coffres' ? <ChestScreen metaRef={metaRef} onChanged={metaChanged} /> : null}
       {tab === 'toupies' ? <ToupiesScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
 

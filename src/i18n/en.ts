@@ -34,6 +34,7 @@ export const en: Record<MessageKey, string> = {
   'combat.retry': 'Retry',
 
   'forge.level': 'lv. {n}',
+  'forge.changeToupie': 'Change top',
 
   'chest.continue': 'Continue',
   'chest.open': 'Open ×{n}',
@@ -70,6 +71,7 @@ export const en: Record<MessageKey, string> = {
   'slot.disque': 'Disc',
   'slot.pointe': 'Tip',
   'slot.noyau': 'Core',
+  'slot.chassis': 'Chassis',
 
   'filter.all': 'All',
   'filter.lame': 'Blades',

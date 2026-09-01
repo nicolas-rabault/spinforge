@@ -40,6 +40,7 @@ export const fr = {
   'combat.retry': 'Retenter',
 
   'forge.level': 'niv. {n}',
+  'forge.changeToupie': 'Changer de toupie',
 
   'chest.continue': 'Continuer',
   'chest.open': 'Ouvrir ×{n}',
@@ -77,6 +78,7 @@ export const fr = {
   'slot.disque': 'Disque',
   'slot.pointe': 'Pointe',
   'slot.noyau': 'Noyau',
+  'slot.chassis': 'Châssis',
 
   // Pluriels de l'Inventaire — distincts des `slot.*` singuliers de la Forge.
   'filter.all': 'Tous',
