@@ -10,6 +10,79 @@ Statuts : ✅ corrigé · 🔧 en cours · 📋 à faire · 💭 à arbitrer
 
 ---
 
+## Session du 2026-09-01 — calibration des chapitres et vérification du lot A
+
+Pas un test joueur : les deux passes de calibration du jalon 3, lot A (combat, puis économie
+— jamais dans le même commit), et la vérification en navigateur qui a suivi l'implémentation
+de la frontière de run et de `bestChapter`. Spec :
+`docs/superpowers/specs/2026-08-31-jalon-3-lot-a-progression-chapitres-design.md`. Les deux
+balayages complets (26 puis 33 mesures, dix graines chacune) :
+`docs/superpowers/plans/2026-09-01-calibration-chapitres.md`.
+
+**Valeurs retenues** : `bot.scaling.spinPerChapter` **1,02** (provisoire depuis la tâche 6 :
+1,2) · `bot.scaling.attackPerChapter` **1,10** (provisoire 1,1, inchangée par la mesure) ·
+`econ.rewardPerChapter` **1,15** (provisoire 1,25).
+
+| | validé | coût cumulé | coût marginal | descentes | plus meurtrière (absolu) | garde-fou 1 | par tentative |
+|---|---|---|---|---|---|---|---|
+| ch. 1 | 10/10 | 0,32 h | +0,32 h | 9 | salle 10, 23 morts | oui | salle 10, 70 % |
+| ch. 2 | 10/10 | 0,47 h | +0,15 h | 3 | salle 10, 8 morts | oui | salle 10, 44 % |
+| ch. 3 | 10/10 | 0,58 h | +0,10 h | 2 | salle 10, 5 morts | oui | salle 10, 33 % |
+| ch. 4 | 10/10 | 0,94 h | +0,36 h | 6 | salle 10, 18 morts | oui | salle 10, 64 % |
+
+Premier coffre à 0,00 h, passivité jamais validée en 20 h simulées, verrou du châssis actif,
+écart entre châssis ×3,80 — inchangés sur les cinquante-neuf mesures des deux balayages, parce
+que le chapitre 1 y porte l'exposant 0 dans les deux facteurs : chaque mesure l'a vérifié
+ligne à ligne (heures, descentes, vecteur de morts par salle `0,0,1,0,10,9,21,18,15,23`, durées
+par salle, écart châssis), ce qui transforme les quatre garde-fous du projet d'une comparaison
+approximative en une comparaison **exacte**. Le mur, lui, a atterri au chapitre 4 : +0,36 h,
+3,6 fois le coût marginal du chapitre 3 (+0,10 h, moins cher que le chapitre 2) — la spec
+demandait « chapitre 3 nettement plus coûteux », la mesure a tranché pour le chapitre 4 (voir
+la dette « jalon 3, lot A » dans `docs/roadmap.md`).
+
+### Les facteurs de combat ne peuvent pas réparer le chapitre 4 — prouvé, pas supposé
+
+Au plancher `1,00 / 1,00`, où `Math.pow(1, n) = 1` rend les bots du chapitre 4 **bit à bit
+identiques** à ceux du chapitre 1 — le joueur y arrivant en plus avec trois chapitres
+d'équipement en plus —, le chapitre 4 restait un mur : salle 1 vidée **2 881 fois** contre
+**51** au chapitre 3, à bots rigoureusement égaux. La difficulté ne vient donc pas du facteur
+de chapitre : elle vient de la composition `botTypes["4"]`, seule autre différence entre les
+deux chapitres — trois salles Équilibre plus le boss, où le châssis de mesure perd son
+avantage de type (`typeMult` rend +10 % aux deux camps plutôt qu'au seul joueur). Descendre
+sous le plancher n'aide pas davantage : à `0,90 / 0,90` le chapitre 4 valide enfin 10/10, mais
+le jeu devient si mou que le garde-fou casse d'un coup dans les chapitres 2, 3 **et** 4 — un
+échec échangé contre trois.
+
+### Un joueur plus riche n'ouvre pas le chapitre 4 — un joueur moins vite équipé, si
+
+La passe économique a testé l'hypothèse inverse — *un joueur mieux équipé franchit le mur* —
+et trouvé le signe retourné. Au-dessus de `rewardPerChapter = 1,21` le chapitre 4 s'effondre ;
+à 2,00 c'est le **chapitre 3** qui n'est plus jamais validé. Le mécanisme est mesuré, pas
+supposé : à 2,00, chapitre 3, **zéro mort sur 18 105 passages** aux salles 1 et 2, puis **68 %
+de létalité** à la salle 3 — exactement `arena.breach.fromSalle`. Le joueur ne meurt pas au
+combat, il **sort de l'arène**. Les crédits partent régulièrement sur la Pointe, dont le
+niveau multiplie `maxSpeed` ; l'autopilote « terrain » vise un point fixe sans jamais tenir
+compte de sa propre vitesse et, passé un certain seuil, dépasse sa consigne et se jette
+lui-même dans la brèche. **La richesse achète de la vitesse, et dans un jeu à éjection la
+vitesse non maîtrisée tue** — un couplage réel entre l'économie et le terrain, jamais mesuré
+avant cette passe. C'est aussi une limite du harnais : un joueur humain freine, l'autopilote
+de mesure ne sait pas le faire (dette, `docs/roadmap.md`).
+
+### Vérifié en navigateur, par moi et pas par délégation
+
+`npm run dev` tournait déjà sur ce worktree ; horloge accélérée comme dans
+`scripts/verrou.mjs`. Constaté de mes yeux : le boss vaincu **arrête** le combat au lieu de
+relancer la salle 1, et **le panneau de victoire ferme la descente** ; il propose la
+descente 2 ; lancer la descente 2 démarre bien au chapitre 2 ; **le chapitre 3 reste fermé**
+tant que le 2 n'est pas validé. `npm run verrou` passe **9/9**, y compris la vérification de
+la frontière du boss — « le boss vaincu a fermé la descente » — qui exige désormais une vraie
+victoire (`RunState.phase === 'won'`) plutôt qu'une reconstitution de salle, **vérifiée par
+mutation** : le châssis de la nouvelle descente gelé dans le gestionnaire du bouton de
+`src/ui/CombatScreen.tsx`, les deux passes rougissent ; rétabli ensuite pour confirmer le
+vert.
+
+---
+
 ## Session du 2026-08-30 — intégration du jalon 2.5 dans le jalon 2b
 
 Pas un test joueur : le jalon 2b (toupies, triangle des forces) et le jalon 2.5 (terrain,

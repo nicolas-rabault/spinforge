@@ -93,9 +93,73 @@ le pilotage.
 
 ## Jalon 3 — L'idle
 
-Farm hors-ligne plafonné (4 h) par fast-forward de ticks + formule fermée, écran « Pendant ton absence », mode AUTO sur chapitres validés (jamais de progression), murs calibrés, chapitres 1-4 avec gimmicks, atout temporaire par salle, quêtes quotidiennes, sauvegarde IndexedDB + export.
+Farm hors-ligne plafonné (4 h) par fast-forward de ticks + formule fermée, écran « Pendant ton absence », mode AUTO sur chapitres validés (jamais de progression), murs calibrés, chapitres 1-4 avec gimmicks, atout temporaire par salle, quêtes quotidiennes, sauvegarde IndexedDB + export. Quatre lots : **A** (le socle — livré ci-dessous), **B** (le farm), **C** (le contenu), **D** (la sauvegarde).
 
 **Critères** : fermer l'app 1 h ⇒ gains exacts et plafonnés ; l'AUTO ne franchit jamais une salle non validée (testé).
+
+### Lot A — la progression des chapitres ✦ spec : `docs/superpowers/specs/2026-08-31-jalon-3-lot-a-progression-chapitres-design.md` · plan : `docs/superpowers/plans/2026-09-01-jalon-3-lot-a-progression-chapitres.md` · calibration : `docs/superpowers/plans/2026-09-01-calibration-chapitres.md`
+
+Le jeu ne savait jouer qu'un seul chapitre : le boss vaincu remettait `run.salle` à 1 et la
+descente repartait aussitôt, sans écran de victoire ni chapitre 2. Ce lot pose la frontière de
+run qui manquait et la mémoire numérotée de ce qu'on a validé.
+
+Livré : `RunState.phase` gagne `'won'` — le boss vaincu ferme la descente au lieu de relancer
+la salle 1 · `startRun(meta, chapitre, graine)` devient la seule porte du cycle de vie d'un
+run, absorbant `createRun`, `resetRun` et `equipPendingToupie`, qui disparaissent — le châssis
+de la descente n'est plus lu qu'une fois, le verrou du châssis devient structurel plutôt que
+conventionnel · `MetaState.chapterValidated: boolean` devient `bestChapter: number` (schéma de
+sauvegarde 4 → 5, migré dans `hydrate`) · un panneau « Choisis ta descente » remplace le
+bouton « Retenter » sur l'écran de combat, entre 1 et `min(bestChapter + 1, 4)` · les
+chapitres 2 à 4 reçoivent leur propre composition de `botTypes`, le triangle tournant d'un
+chapitre à l'autre pour que la contre-pioche qui marchait cesse de marcher · deux facteurs
+géométriques par chapitre arrivent, un pour la difficulté (`bot.scaling.spinPerChapter`,
+`bot.scaling.attackPerChapter`) et un pour le revenu (`econ.rewardPerChapter`), chacun
+calibré dans sa propre passe et son propre commit — jamais le combat et l'économie ensemble,
+ce projet l'a payé deux fois (jalons 1.5 et 2b).
+
+**Mesuré au harnais `npm run calibrate`, dix graines** (`bot.scaling.spinPerChapter` **1,02**
+· `bot.scaling.attackPerChapter` **1,10** · `econ.rewardPerChapter` **1,15**) :
+
+| | validé | coût cumulé | coût marginal | descentes | plus meurtrière (absolu) | garde-fou 1 | par tentative |
+|---|---|---|---|---|---|---|---|
+| ch. 1 | 10/10 | 0,32 h | +0,32 h | 9 | salle 10, 23 morts | oui | salle 10, 70 % |
+| ch. 2 | 10/10 | 0,47 h | +0,15 h | 3 | salle 10, 8 morts | oui | salle 10, 44 % |
+| ch. 3 | 10/10 | 0,58 h | +0,10 h | 2 | salle 10, 5 morts | oui | salle 10, 33 % |
+| ch. 4 | 10/10 | 0,94 h | +0,36 h | 6 | salle 10, 18 morts | oui | salle 10, 64 % |
+
+Premier coffre 0,00 h · passivité jamais validée en 20 h simulées · verrou du châssis actif ·
+écart entre châssis ×3,80 (dette inchangée, portée par le chapitre 1). **Le chapitre 1 est bit
+à bit inchangé** par tout le lot — son exposant vaut 0 dans les deux facteurs — vérifié à
+chaque mesure des deux passes (heures, descentes, vecteur de morts par salle
+`0,0,1,0,10,9,21,18,15,23`, écart châssis, série contre-pioche) : c'est ce qui a transformé les
+quatre garde-fous du projet d'une comparaison approximative en une comparaison exacte. Détail
+des deux balayages : `docs/superpowers/plans/2026-09-01-calibration-chapitres.md`.
+
+**Deux résultats mesurés valent plus que les valeurs retenues.**
+
+1. **Les facteurs de combat ne peuvent pas réparer le chapitre 4 — prouvé, pas supposé.** Au
+   plancher `1,00 / 1,00`, où les bots du chapitre 4 sont bit à bit identiques à ceux du
+   chapitre 1 et où le joueur arrive avec trois chapitres d'équipement en plus, le chapitre 4
+   restait un mur : salle 1 vidée 2 881 fois contre 51 au chapitre 3. Sa difficulté vient de
+   la composition `botTypes["4"]`, qui refuse au châssis de mesure son avantage de type sur
+   quatre salles. Descendre sous le plancher n'aide pas non plus : à `0,90 / 0,90` le
+   garde-fou casse dans les chapitres 2, 3 **et** 4 au lieu du seul 4.
+2. **Un joueur plus riche n'ouvre pas le chapitre 4 — un joueur moins vite équipé, si.** Le
+   balayage économique a testé l'hypothèse inverse et trouvé le signe retourné. Au-dessus de
+   `rewardPerChapter = 1,21` le chapitre 4 s'effondre ; à 2,00 c'est le chapitre 3 qui n'est
+   plus jamais validé — mécanisme mesuré, pas supposé : zéro mort sur 18 105 passages aux
+   salles 1-2, puis 68 % de létalité à la salle 3, exactement `arena.breach.fromSalle`. Les
+   crédits achètent des niveaux de Pointe, la Pointe multiplie `maxSpeed`, et l'autopilote
+   s'éjecte lui-même. **La richesse achète de la vitesse, et la vitesse tue dans un jeu à
+   éjection** — un couplage entre économie et terrain que personne n'avait mesuré.
+
+Ferme sept dettes, listées où elles vivaient : « `RenderEvents.chapterValidated` mort-né »
+(jalon 2a), « deux sites dérivent le boss » et « une seule direction du verrou est couverte »
+(verrou du châssis), « `chapterGroups(1)` code le chapitre 1 en dur » et « `viewFor` ne
+distingue pas les chapitres » (jalon 2b), « les tables de types des chapitres 2 à 8 sont
+absentes » (jalon 2b, partiellement — 2 à 4 seulement) et « les identités d'arène des
+chapitres 2 à 8 sont inatteignables » (jalon 2.5, partiellement). Dette ouverte par ce lot :
+voir « Dette connue (jalon 3, lot A) » en bas de page.
 
 ## Jalon 4 — Le long terme
 
@@ -163,8 +227,10 @@ Détail : `docs/superpowers/specs/2026-08-24-jalon-1-5-habillage-design.md` § 6
 **Simulation**
 - Les bots restent inertes 3 à 4 ticks après un spawn (`aim === null` jusqu'au prochain
   retarget). Non corrigé : borné, et cela joue en faveur du joueur.
-- `chapterValidated` n'est jamais remis à zéro. **Voulu** — le pilier « l'AUTO rejoue le
-  meilleur chapitre *jamais* validé » l'exige. À couvrir par un test au jalon 3.
+- ~~`chapterValidated` n'est jamais remis à zéro.~~ Devenu `bestChapter: number` au
+  jalon 3, lot A, qui ne descend jamais (`Math.max` dans `applyRunReward`) — le même
+  pilier, désormais **couvert par un test vérifié par mutation**
+  (`meta.test.ts`, « `bestChapter` ne descend jamais »).
 - `formatCredits` affiche `1000,00 M` au-delà d'un milliard. Inatteignable au jalon 1 ; à
   traiter avec la migration `break_infinity.js` prévue dans la spec.
 
@@ -204,7 +270,7 @@ spec), d'autres des perfectionnements de game feel reportés faute d'enjeu au ja
   ordinateur, invisible au tactile où le conteneur ne change pas de taille en continu. À
   débouncer si un test manuel confirme la gêne.
 - Le joueur reste dessiné à son lieu de mort jusqu'à ~100 ms après « Retenter » :
-  `resetRun` mute l'état hors du cycle `beforeTick`/`afterTick`/`draw`, donc la prochaine
+  `startRun` (`resetRun` avant le jalon 3, lot A) mute l'état hors du cycle `beforeTick`/`afterTick`/`draw`, donc la prochaine
   image interpole encore depuis l'instantané pris avant la mort. Effet d'un dixième de
   seconde, non corrigé faute d'un point d'accroche propre pour prévenir l'arène qu'un
   reset hors-tick vient d'avoir lieu.
@@ -336,8 +402,6 @@ la majorité des vrais coups. Refaite sur la bonne grandeur avant d'être retenu
 - La liste de révélation des tirages (`ChestScreen`) n'a pas de région `aria-live`. Niveau
   constant avec le reste du dépôt (voir `TabBar` en dette 1.5) — à traiter avec une vraie
   passe d'accessibilité, pas au fil de l'eau.
-- `RenderEvents.chapterValidated` est produit et consommé par personne — dette antérieure
-  au jalon 2a, toujours vraie.
 - `arena.ts` nomme ses paramètres `state` là où le reste du code dit `run`.
 
 **Tests**
@@ -356,18 +420,18 @@ Constatée pendant la revue de branche du jalon 2b. Aucun de ces points n'est bl
   canal d'entrée pour les déclencher (glisser pilote déjà la direction).
 - La rotation gauche n'est pas implémentée : aucun des quatre Fondateurs n'y tourne, elle
   arrive avec la Saison 1.
-- Les tables de types des chapitres 2 à 8 sont absentes de `botTypes`
-  (`src/content/balance.json`) : ces chapitres n'existent pas encore (jalons 3 et 4). Un
-  chapitre sans entrée retombe sur celle du chapitre 1 (`botTypeFor`, `src/sim/salle.ts:14`),
-  ce qui laisse la simulation valide entre-temps.
-- `chapterGroups(1)` code le chapitre 1 en dur au lieu de lire `runRef.current.chapter`
-  (`src/ui/ToupiesScreen.tsx:75`). Équivalent aujourd'hui — un seul chapitre existe — faux dès
-  que le jalon 3 ouvre le chapitre 2.
-- `viewFor` mémorise ses vues par `bot-{salle}-{index}` sans le chapitre
-  (`src/render/arena.ts:107`, id posé par `src/sim/salle.ts:26`). Une vue peut survivre ~1 s à
-  la mort de son bot ; au chapitre 2, un `bot-1-0` recréé dans cette fenêtre reprendrait la
-  teinte de type du chapitre 1. Inatteignable aujourd'hui (`createRun` fixe `chapter: 1`), à
-  corriger avec le point précédent.
+- ~~Les tables de types des chapitres 2 à 8 sont absentes de `botTypes`~~ **Chapitres 2 à 4
+  livrés au jalon 3, lot A** (`src/content/balance.json`), le triangle tournant d'un chapitre
+  à l'autre pour que la contre-pioche qui marchait cesse de marcher. Les chapitres 5 à 8
+  restent absents, pour le jalon 4 ; le repli de `botTypeFor` vers le chapitre 1
+  (`src/sim/salle.ts:14`) reste en place — délibérément cette fois : c'est lui qui leur
+  permettra d'arriver un par un sans casser la simulation entre-temps.
+- ~~`chapterGroups(1)` code le chapitre 1 en dur~~ **Corrigé au jalon 3, lot A** : lit
+  `runRef.current.chapter` (`src/ui/ToupiesScreen.tsx`).
+- ~~`viewFor` mémorise ses vues par `bot-{salle}-{index}` sans le chapitre~~ **Corrigé au
+  jalon 3, lot A** : `makeBot` pose désormais `bot-${chapter}-${salle}-${index}`
+  (`src/sim/salle.ts:31`) ; `viewFor` (`src/render/arena.ts`) n'a rien eu à changer, il
+  élaguait déjà les vues dont l'id a disparu.
 
 **Lisibilité du repère de type.**
 Le contour du repère (`typeMarkTexture`, `src/render/textures.ts`) a été renforcé (épaisseur et
@@ -477,8 +541,10 @@ bloquant.
   d'intégration ferme explicitement cette porte (§ 6, « aucune décision de design du 2b
   rouverte »). À rouvrir dans une passe qui en aura le mandat.
 - **Les identités d'arène des chapitres 2 à 8** : le jalon 2.5 a livré le système de terrain,
-  pas les huit arènes qui l'utilisent. Inatteignables tant que l'enchaînement des chapitres
-  n'existe pas (jalon 3).
+  pas les huit arènes qui l'utilisent. Les chapitres 1 à 4 sont devenus atteignables au
+  jalon 3, lot A ; leurs identités de terrain (murs élastiques, piliers mobiles, geysers…)
+  restent à poser dessus — c'est le lot C du même jalon. Les chapitres 5 à 8 restent hors de
+  portée jusqu'au jalon 4.
 
 ## Dette connue (verrou du châssis, 2026-08-28)
 
@@ -486,31 +552,66 @@ Suite directe du jalon 2b : changer de toupie était gratuit et immédiat, donc 
 contre-piochait salle par salle. Mesures, correctif et garde-fou :
 `docs/ameliorations.md`, session du 2026-08-28.
 
-**Une seule des deux directions du verrou est couverte automatiquement.**
-`npm run calibrate` attrape bien le trou dans ses deux formes : `syncRunStats` qui
-relirait `meta.toupies.active`, **et** `equipPendingToupie` appelée trop souvent (à
-chaque salle au lieu du seul boss) — les deux ramènent la série de contre-pioche à
-6 runs / 0,19 h contre 19 / 0,46 h, et font crier le verdict. Ce que rien n'attrape, c'est l'appel
-*manquant* : si `src/ui/useGameLoop.ts:60` disparaissait, le châssis en attente ne
-monterait jamais après le boss et aucun test ne rougirait — le harnais de calibration
-n'a aucune série qui change de châssis entre deux descentes, donc il ne franchit
-jamais cette frontière. C'est ce que couvre `npm run verrou` (`scripts/verrou.mjs`),
-en navigateur : il joue une descente entière et vérifie les deux frontières, la mort
-et le boss. Vérifié par mutation — l'appel retiré de `useGameLoop`, il rougit sur la
-seule assertion du boss. Il n'entre pas dans `npm run test` pour autant : il lui faut
-un `npm run dev` en marche et une minute de navigateur. À rendre automatique quand le
-jalon 3 donnera à la boucle de jeu une frontière de run explicite — le farm AUTO devra
-en avoir une de toute façon.
+**Résolu au jalon 3, lot A — il n'y a plus d'appel à oublier.** `startRun` absorbe
+`createRun`, `resetRun` et `equipPendingToupie` : il lit `meta.toupies.active` **une seule
+fois**, à l'ouverture de la descente, et aucun autre chemin de code du run ne le relit. La
+direction qui manquait — l'appel *manquant* à la frontière du boss, que rien n'attrapait
+automatiquement — n'existe plus, parce qu'il n'y a plus d'appel séparé à faire : la propriété
+est portée par la signature de `startRun`, testée par mutation (§ 9.1 de la spec du lot A). Ce
+qui reste vrai : `npm run verrou` (`scripts/verrou.mjs`) continue de couvrir le câblage de
+l'interface — que le bouton « Nouvelle descente » appelle bien `startRun` avec le bon châssis
+— et reste hors de `npm run test`, faute d'un `npm run dev` en marche et d'une minute de
+navigateur qu'aucun test unitaire ne peut fournir.
 
-**Deux sites dérivent « le boss vient de tomber ».**
-`salleJustCleared === SALLES_PER_CHAPTER` dans `applyRunReward` (`src/sim/meta.ts`), et
-`salleBefore === SALLES_PER_CHAPTER` dans `src/ui/useGameLoop.ts`. La sortie propre existe et ne coûte presque rien : `RunReward`
-gagnerait `boss: boolean`, que `salleReward` connaît déjà (`src/sim/economy.ts:11`) ;
-les deux sites liraient `reward.boss`, et `applyRunReward` perdrait son troisième
-paramètre. Rien de tout cela ne fait entrer le méta dans `sim.ts` — la règle
-d'architecture n° 1 tient. Non fait ici : cela élargit le diff à `types.ts`, `meta.ts`,
-`economy.ts` et leurs tests, c'est-à-dire précisément les fichiers que la branche du
-jalon 2.5 réécrit en parallèle. À faire juste après la fusion des deux branches.
+**Résolu au jalon 3, lot A — et c'était trois sites, pas deux.** La dette n'en comptait que
+deux ; le troisième, `before.salle === 10 && after.salle === 1` dans `src/render/observer.ts`,
+avait échappé au diagnostic. Les trois sont partis, remplacés par `RunReward.boss` — porté par
+la récompense elle-même plutôt que dérivé par chaque appelant. Le troisième site alimentait
+`RenderEvents.chapterValidated` (dette du jalon 2a, « produit et consommé par personne ») : ce
+champ ne devenait pas seulement inutile, il devenait **faux**, puisque la salle ne revient
+plus à 1 après le boss — il est supprimé plutôt que corrigé.
 
-**`chapterGroups(1)` code toujours le chapitre 1 en dur** (`src/ui/ToupiesScreen.tsx`) :
-inchangé par ce lot, déjà listé en dette du jalon 2b.
+## Dette connue (jalon 3, lot A)
+
+Constatée pendant les deux passes de calibration
+(`docs/superpowers/plans/2026-09-01-calibration-chapitres.md`) et la revue de branche. Aucun
+de ces points n'est bloquant.
+
+**Équilibrage**
+- **Le mur a atterri au chapitre 4, pas au chapitre 3.** La décision 5 de la spec demandait
+  « ch.3 nettement plus coûteux » ; la mesure donne ch. 2 à +0,15 h et ch. 3 à +0,10 h — le
+  chapitre 3 est *moins cher* que le 2 — pendant que le chapitre 4 est à +0,36 h. La spec se
+  contredisait déjà elle-même sur ce point : sa section `botTypes` (§ 5) argumente que le
+  chapitre 4, où la contre-pioche cesse de payer, est « le bon endroit pour le mur ». La
+  mesure a tranché en faveur du chapitre 4. La cible « chapitre 3 nettement plus coûteux » est
+  structurellement hors de portée de `rewardPerChapter` seul : la seule valeur du balayage qui
+  la produit (1,19) avait ses deux voisines qui inversaient la marche et une marge d'une seule
+  mort au chapitre 4 — exactement la forme du piège qu'avait laissé `rewardBase = 86`.
+- **La « salle la plus meurtrière » du harnais reste un décompte absolu.** Pour un chapitre
+  que certaines graines ne valident jamais, elle mesure la longueur de l'entonnoir plutôt que
+  la difficulté des salles. Les deux lectures sont désormais imprimées côte à côte
+  (`scripts/calibrate.mjs`), et le verdict reste délibérément sur le décompte absolu —
+  changer de statistique pour obtenir un verdict plus favorable est ce que ce projet
+  s'interdit.
+- **L'obligation de remesure s'étend désormais à cinq constantes.** `combat.damageK` et
+  `econ.rewardBase` la portaient déjà (dette du jalon 2.5) ; `bot.scaling.spinPerChapter`,
+  `bot.scaling.attackPerChapter` et `econ.rewardPerChapter` la rejoignent : si la physique de
+  collision, le contenu de la salle 10, `arena.breach.ejectSpeed`, `boss.mass` ou le jeu de
+  graines du harnais changent encore, les cinq doivent être revérifiées.
+
+**Interface**
+- Rejouer son propre meilleur chapitre affiche encore « Le chapitre N+1 s'ouvre »
+  (`CombatScreen.tsx`) : après le `Math.max` d'`applyRunReward`, une première validation et
+  une redite à la frontière sont indistinguables à partir du seul `bestChapter`. Correctif
+  d'une ligne : un état plutôt qu'un événement (« Le chapitre {N+1} t'attend. »).
+
+**Tests et harnais**
+- `scripts/calibrate.mjs` imprime `+-0.21 h` quand un coût marginal est négatif : le `+` du
+  format d'affichage est codé en dur.
+- `scripts/shots.mjs` injecte toujours un blob de sauvegarde en schéma 4 — correct
+  fonctionnellement, ça exerce la migration à chaque capture d'écran, mais ce n'est plus le
+  schéma courant.
+- La queue de `runTicksThroughSalles` (`src/sim/sim.test.ts`) est désormais inerte : le boss
+  fermant le run, les ticks au-delà de la salle 10 ne calculent plus rien.
+- Le second des deux tests de facteur de chapitre dans `src/sim/salle.test.ts` ne tue pas la
+  mutation de l'exposant `chapter - 1` → `chapter` ; son voisin la tue.
