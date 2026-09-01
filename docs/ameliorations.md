@@ -599,21 +599,36 @@ des recettes censées le produire. Scripts jetables, méthode conservée plus ba
 | 1,00 | −16,2 | 10 % | **54 %** | 36 % |
 
 Un choc faible claque, un choc plein pèse : la fondamentale **descend** avec la
-puissance (`520 − 180·p` Hz), comme un vrai impact. 9,4 dB de dynamique entre les
-deux extrêmes. Le rotor, lui, passe de 0,055 à 0,018 de gain et s'efface de 65 %
-pendant 200 ms sous chaque choc fort — mesuré à −71,7 dBFS, soit ~39 dB sous un choc
-plein. **Un son tenu qui s'interrompt cesse d'être un son tenu.**
+puissance (`520 − 180·p` Hz), comme un vrai impact. **6,6 dB** de dynamique entre les
+deux extrêmes du tableau (−22,8 et −16,2).
+
+Le rotor, lui, passe de 0,055 à 0,018 de gain, et son souffle s'efface de 65 %
+pendant **150 ms** (`MIX.duckHoldS`) sous chaque choc fort. Mesuré en branchant un
+analyseur sur la sortie de sa propre chaîne — sinon le choc le couvre — et ramené au
+niveau de sortie : **−55,9 dBFS rms en croisière contre −65,8 pendant le palier**,
+soit −9,9 dB là où le barème en promet −9,1 (`MIX.duckWhirr` = 0,35). Il passe alors
+41 dB sous un choc plein (−24,8 dBFS rms). Le sub qui double le souffle n'est pas
+ducké, lui, et c'est lui qui domine ce qu'on mesure du rotor en sortie.
+**Un son tenu qui s'interrompt cesse d'être un son tenu.**
 
 **La musique.** Boucle de 8 mesures en ré phrygien, 92 BPM constants, cinq couches
 dont la densité suit le contexte. Tempo vérifié : intervalle médian de 1307,6 ms
 entre frappes du pouls contre 1304 ms attendus (0,3 % d'écart, la résolution de la
-mesure). Ducking vérifié : −37,6 → −40,6 dBFS après un choc plein. À la mort,
-−71,7 dBFS — le plancher.
+mesure). Ducking vérifié : −37,6 → −40,6 dBFS après un choc plein. À la mort, −72,1 dBFS
+mesurés une fois le fondu de 0,6 s écoulé — 39 dB sous la musique du boss. Ce n'est
+pas le plancher de la sonde (tout coupé, elle rend −∞) mais la queue asymptotique
+d'un `setTargetAtTime`, qui approche zéro sans jamais l'atteindre.
 
-**Les hauteurs sont toutes des degrés du mode**, vérifié au calcul ET à la mesure :
-révélation d'une pièce 621 / 785 / 932 / 1172 Hz par palier de rareté (attendus
-622 / 784 / 932 / 1175), boss vaincu 146 Hz (ré3), couvercle qui cède 293 Hz (ré4),
-amélioration 393 Hz (sol4). Une note hors mode aurait frotté contre la musique.
+**Les hauteurs sont toutes des degrés du mode** — mais ce n'était pas vrai quand la
+phrase a été écrite. Quatre sons avaient été échantillonnés à la mesure (révélation
+d'une pièce 621 / 785 / 932 / 1172 Hz par palier de rareté, boss vaincu 146 Hz,
+couvercle qui cède 293 Hz, amélioration 393 Hz), tous justes, et la généralisation
+avait suivi. Deux hauteurs du catalogue étaient fausses d'un quart de ton : le fond
+de caisse de la récompense (90 Hz, fa2 +52 ¢) et le clic de dépense (160 → 120 Hz,
+qui jouait un si NATUREL — la note même que le mode exclut). Elles sont corrigées, et
+la phrase n'est plus une généralisation : `src/audio/mode.test.ts` recalcule les
+cents sur les 58 hauteurs fixes du son, musique et bruitages ensemble, et refuse plus
+de 10 cents d'écart. Cinq extrémités de glissando y sont exemptées nommément.
 
 **La vibration**, vérifiée de bout en bout avant tout test sur téléphone, en
 remplaçant `navigator.vibrate` par un mouchard (Chromium de bureau n'a pas de vibreur,
@@ -623,16 +638,24 @@ mais ce que le jeu *demande* est observable) :
 |---|---|
 | choc 0,34 → 0,35 | rien → `[12]` — le seuil tombe pile |
 | choc 0,60 / 1,00 | `[14]` / `[18]` |
-| mêlée de 12 chocs | 9 vibrations, 74 ms — les garde-fous filtrent |
+| mêlée de 12 chocs pleins à 90 ms | 12 vibrations, 216 ms — le pire cas, et le budget tient à 4 ms près |
 | récompense de salle | `[12, 40, 12]` |
 | coffre ouvert | `[18]` puis `[30, 60, 18, 40, 45]` à la fin de l'animation |
 
-Taux en jeu : 11 motifs pour 110 ms vibrés sur 20 s de combat piloté. Le harnais de
-simulation pure donne la borne haute avec un autopilote parfait — 2,16 chocs sonores
-par seconde dont 86,7 % au-dessus du seuil, soit 1,87 vibration/s, ~30 ms vibrés par
-seconde sur les 220 autorisés. Aucun risque de saturation.
+Taux en jeu : 11 motifs pour 110 ms vibrés sur 20 s de combat piloté, soit ~5 ms
+vibrés par seconde sur les 220 autorisés.
 
-#### Deux défauts que seule la mesure pouvait trouver
+Ce qui garantit ce taux, ce n'est PAS la garde du son : `haptics.hit()` est appelé
+**avant** `admitHit`, la vibration ne suit donc pas la hiérarchisation des chocs.
+Déduire un débit de vibration d'un débit de chocs sonores (2,16 chocs sonores/s
+mesurés au harnais de simulation, dont 86,7 % au-dessus du seuil haptique) revenait à
+raisonner sur une chaîne qui n'existe pas. La borne vient des garde-fous propres à la
+vibration — 60 ms entre deux motifs, 220 ms par seconde glissante — et elle se
+vérifie directement : douze chocs pleins à 90 ms, le pire cas jouable, coûtent 216 ms
+sur les 220 du budget. Il tient, mais de justesse : c'est le budget, et lui seul, qui
+empêche la saturation.
+
+#### Quatre défauts que seule la mesure pouvait trouver
 
 1. **Un bouton grisé sonnait et vibrait.** La spec affirmait qu'un `<button disabled>`
    n'émet aucun événement de pointeur. C'est **faux** : le clic tombe sur un `<span>`
@@ -644,6 +667,33 @@ seconde sur les 220 autorisés. Aucun risque de saturation.
    `[20, 50, 45]` était refusé par le garde-fou de 60 ms entre deux vibrations : la
    vibration de l'appui, quelques millisecondes plus tôt, le mangeait. `fuse` et
    `equip` rejoignent les motifs prioritaires, comme le coffre terminé.
+3. **La musique ne démarrait jamais en jeu.** `App` demande l'intensité dès son
+   montage, avant le premier geste qui crée le contexte audio ; `setIntensity`
+   mémorisait la valeur et sortait sur son garde `if (!bus)`, et `attach()` ne
+   rattrapait rien. L'effet suivant n'arrivait qu'à un vrai changement d'onglet, de
+   salle ou de phase — or `intensityFor` rend 0,7 pour les salles 1 à 9, avalé par le
+   garde d'égalité. Invisible sur le banc d'essai, où `start()` et `setIntensity(v)`
+   partagent le même curseur et où la valeur change toujours : la musique y marchait
+   parfaitement. Trouvé en instrumentant `setInterval` — le minuteur de 25 ms du
+   séquenceur n'était **jamais** créé sur tout un démarrage suivi d'un combat.
+   Vérifié après correction : combat à −34,1 dBFS, musique seule, contre −∞ avant.
+4. **Le rotor n'avait pas de palier de duck.** `duck()` posait sur `whirrGain` un
+   palier à 35 % puis une remontée en 0,25 s ; `setSpin()`, appelé juste après dans
+   le même `afterTick`, reposait au même instant un `setTargetAtTime` vers la
+   croisière avec 0,1 s de constante. Les deux se disputaient la forme du même
+   `AudioParam` et c'est le second qui gagnait : le rotor était déjà revenu à 86 % de
+   sa croisière à la fin d'un palier censé le tenir à 35 %. Le rotor a maintenant son
+   propre nœud de ducking, comme la musique.
+
+**Un piège de méthode, pour la prochaine fois.** Une mesure a d'abord conclu qu'un son
+subsistait avec les trois interrupteurs coupés (−31,1 dBFS en Combat, −∞ en Forge).
+C'était vrai — mais sur le **mauvais serveur** : Vite prend le premier port libre à
+partir de 5173, et le script pointait 5173 en dur alors qu'un autre plan de travail du
+même dépôt y servait le code d'avant la refonte, celui dont le rotor souffle en
+continu et qui n'a même pas de clé `spinforge.audio`. Sur la branche, tout coupé rend
+−∞ dBFS partout, et le graphe complet (22 nœuds, dont les onze gains attendus) est
+conforme. **Un script de mesure doit lire son port dans l'environnement, jamais
+l'écrire en dur**, et vérifier qu'il mesure bien le code qu'il croit mesurer.
 
 #### Ce qui reste à valider à l'oreille
 
@@ -655,14 +705,17 @@ seconde sur les 220 autorisés. Aucun risque de saturation.
   (0,05 chacun, contre 0,16 pour le pouls).
 - **Le clic de bouton est peut-être inaudible** sur un téléphone : −50,3 dBFS de crête,
   soit 34 dB sous un choc moyen. Levier : `SFX.tap.gain`.
-- **Le rotor est-il « très discret » ou « absent » ?** La mesure dit qu'il est 39 dB
-  sous un choc ; elle ne dit pas s'il s'entend encore. Levier : `MIX.whirrGain`.
+- **Le rotor est-il « très discret » ou « absent » ?** La mesure dit que son souffle
+  est 31 dB sous un choc plein en croisière, 41 dB pendant le palier de duck ; elle
+  ne dit pas s'il s'entend encore. Levier : `MIX.whirrGain`.
 - **La vibration sur un vrai Android.** Tout ce qui précède prouve que les bons motifs
   sont *demandés* au bon moment ; rien ne dit ce qu'ils *font sentir*.
 
 Le banc d'essai `/spinforge/soundboard.html` (servi par `npm run dev`, jamais construit)
 existe pour ces quatre verdicts : chaque son a son bouton, la puissance du choc,
-l'intensité musicale et le palier de rareté ont leur curseur.
+l'intensité musicale et le palier de rareté ont leur curseur. Il lit les poses du
+coffre dans `ChestScreen` plutôt que de les recopier — recopiées, elles avaient déjà
+divergé, et le banc jouait trois craquements là où le jeu en joue quatre.
 
 ---
 
