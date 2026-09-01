@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { maxPlayableChapter, startRun } from '../sim/sim';
+import { farm, newFarmSession } from '../sim/farm';
+import { OFFLINE, SALLES_PER_CHAPTER } from '../sim/config';
+import type { MetaState } from '../sim/types';
 import { attention, shoppingToupie } from './attention';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
 import { audio } from '../audio/audio';
@@ -23,9 +26,66 @@ export function App() {
   // exactement le premier angle de spawn. Deux flux séparés doivent l'être vraiment.
   // Le joueur reprend là où il poussait : son chapitre le plus haut. Il en change
   // entre deux descentes, dans le panneau de l'écran de combat.
-  const [initialRun] = useState(() =>
-    startRun(loaded.meta, maxPlayableChapter(loaded.meta), (Date.now() ^ 0x9e3779b9) >>> 0));
+  //
+  // Sauf si aucun chapitre n'est encore validé (voir `playing` plus bas) : le run
+  // affiché au montage démarre alors en DÉCOR, sur `bestChapter` et non sur
+  // `maxPlayableChapter` — sinon le tout premier décor jouerait un instant le
+  // chapitre non validé, avant de se corriger de lui-même à sa première salle
+  // du boss (`handleRunTick`, plus bas).
+  const [initialRun] = useState(() => startRun(
+    loaded.meta,
+    loaded.meta.bestChapter === 0 ? maxPlayableChapter(loaded.meta) : loaded.meta.bestChapter,
+    (Date.now() ^ 0x9e3779b9) >>> 0,
+  ));
   const runRef = useRef(initialRun);
+
+  // Deux états, une seule bascule : lancer une descente (bouton « Nouvelle
+  // descente » de CombatScreen) entre en partie pilotée ; quitter l'onglet
+  // Combat une fois la descente close en sort (voir l'effet plus bas — le
+  // voile de fin de descente doit rester atteignable tant qu'on y reste).
+  // Hors partie, la descente affichée tourne en DÉCOR : `handleRunTick`
+  // plus bas l'empêche d'atteindre la salle du boss, et elle ne crédite
+  // rien (voir `combatMetaRef`) — la vraie monnaie vient de `farm`, plus
+  // bas encore. Au tout premier lancement, aucun chapitre n'est validé : le
+  // jeu démarre directement en partie pilotée, le décor n'ayant rien à
+  // farmer.
+  const [playing, setPlaying] = useState(() => loaded.meta.bestChapter === 0);
+  // Miroir en ref de `playing`, lu par `combatMetaRef` ci-dessous : cette
+  // façade n'est construite qu'une fois (identité stable exigée par
+  // `useGameLoop`, qui redémarrerait sa boucle sinon) et ne peut donc pas
+  // fermer sur l'état React directement.
+  const playingRef = useRef(playing);
+  playingRef.current = playing;
+
+  // Méta jetable du décor, cloné une fois au montage — `useState(() => …)`
+  // et non `useRef(structuredClone(…))`, pour la même raison qu'`initialRun`
+  // ci-dessus : l'argument d'un `useRef` est réévalué à chaque rendu, et
+  // `structuredClone` n'est pas gratuit. `useGameLoop` y applique les
+  // récompenses du décor à travers `combatMetaRef` ; elles sont jetées avec
+  // lui. Écart purement cosmétique : le décor ne verra pas les améliorations
+  // achetées pendant qu'il tourne.
+  const [decorMetaInit] = useState(() => structuredClone(loaded.meta));
+  const decorMetaRef = useRef(decorMetaInit);
+
+  // Façade que `CombatScreen` reçoit à la place de `metaRef` : bascule, à
+  // chaque lecture, entre le vrai méta et celui du décor — sans que
+  // `useGameLoop` (qui y écrit via `applyRunReward`) ni `CombatScreen`
+  // (qui le lit pour l'art équipé et la liste de chapitres) n'aient à
+  // connaître l'existence de deux métas. Le décor n'existe que si un
+  // chapitre est validé ; sous ce seuil `playing` vaut déjà vrai (R1
+  // ci-dessus), donc cette façade pointe alors toujours vers le vrai méta.
+  const combatMetaRef = useRef({
+    get current(): MetaState {
+      return !playingRef.current && metaRef.current.bestChapter >= 1
+        ? decorMetaRef.current
+        : metaRef.current;
+    },
+    set current(v: MetaState) {
+      if (!playingRef.current && metaRef.current.bestChapter >= 1) decorMetaRef.current = v;
+      else metaRef.current = v;
+    },
+  }).current;
+
   // Le chapitre explicitement choisi par le joueur pour sa prochaine descente.
   // Remis à null à chaque descente lancée : la suggestion reprend alors la main
   // sans qu'aucun effet n'ait à la recalculer.
@@ -49,6 +109,62 @@ export function App() {
   useEffect(() => {
     audio.setIntensity(intensityFor(tab === 'combat', run.salle, run.phase === 'dead'));
   }, [tab, run.salle, run.phase]);
+
+  // Poussé dans `onTick` de CombatScreen : appelé à chaque tick de
+  // simulation, piloté ou décor. `displayed.tick === 0` juste après
+  // l'assignation d'un run tout neuf signale que le bouton « Nouvelle
+  // descente » vient d'être cliqué — CombatScreen n'a pas d'autre canal
+  // pour nous le dire, faute d'un callback dédié — et repasse en partie
+  // pilotée. Sinon, en décor, la salle du boss ou une descente close
+  // referme immédiatement le run AFFICHÉ par un nouveau `startRun` : la
+  // même règle que `farm()` applique à sa propre session (voir farm.ts),
+  // ici sur ce qu'on montre à l'écran plutôt que sur ce qu'on facture.
+  const handleRunTick = () => {
+    const displayed = runRef.current;
+    if (displayed.tick === 0) {
+      if (!playing) setPlaying(true);
+    } else if (
+      !playing && metaRef.current.bestChapter >= 1 &&
+      (displayed.salle >= SALLES_PER_CHAPTER || displayed.phase !== 'fighting')
+    ) {
+      runRef.current = startRun(metaRef.current, metaRef.current.bestChapter, displayed.rngState);
+    }
+    redraw();
+  };
+
+  // Quitter l'onglet Combat une fois la descente close est le seul retour
+  // au décor (R4d) : tant qu'on y reste, `playing` reste vrai pour que le
+  // voile de fin de descente propose encore la prochaine descente.
+  useEffect(() => {
+    if (tab !== 'combat' && playing && runRef.current.phase !== 'fighting') setPlaying(false);
+  }, [tab]);
+
+  // Session persistante du farm, distincte du run affiché : c'est elle qui
+  // paie, par paquets mesurés sur l'horloge réelle — jamais sur la cadence
+  // du minuteur, ralentie par le navigateur quand l'onglet passe en
+  // arrière-plan. La graine du premier run de la session est tirée une fois
+  // au montage, un flux séparé de celui d'`initialRun` ci-dessus.
+  const farmSessionRef = useRef(newFarmSession());
+  const [farmSeed] = useState(() => (Date.now() ^ 0x2545f491) >>> 0);
+  const lastPacketRef = useRef(0);
+
+  // Le farm crédite dès que le joueur ne pilote pas une descente vivante
+  // (R4c) : aussi pendant le voile de fin de descente (`playing` vrai,
+  // `run.phase` clos), et sur tous les onglets hors combat.
+  const farmActive = !(playing && run.phase === 'fighting');
+
+  useEffect(() => {
+    if (!farmActive || metaRef.current.bestChapter < 1) return;
+    lastPacketRef.current = Date.now();
+    const id = setInterval(() => {
+      const now = Date.now();
+      const elapsed = Math.max(0, (now - lastPacketRef.current) / 1000);
+      lastPacketRef.current = now;
+      const report = farm(metaRef.current, farmSessionRef.current, elapsed * OFFLINE.rate, farmSeed);
+      if (report.salles > 0) metaChanged();
+    }, 1000);
+    return () => clearInterval(id);
+  }, [farmActive]);
 
   const [soundOpen, setSoundOpen] = useState(false);
   const [sound, setSound] = useState(() => audio.settings());
@@ -184,7 +300,7 @@ export function App() {
           PixiJS à chaque changement d'onglet coûterait un rechargement complet
           des textures. On le masque, la boucle se met en pause. */}
       <div style={{ position: 'absolute', inset: 0, display: combat ? 'block' : 'none' }}>
-        <CombatScreen runRef={runRef} metaRef={metaRef} running={combat} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={redraw} onMetaChanged={metaChanged} />
+        <CombatScreen runRef={runRef} metaRef={combatMetaRef} running={combat} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={handleRunTick} onMetaChanged={metaChanged} />
       </div>
       {tab === 'forge' ? (
         <ForgeScreen
