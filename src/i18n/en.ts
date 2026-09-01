@@ -23,7 +23,6 @@ export const en: Record<MessageKey, string> = {
   'audio.music': 'Music',
   'audio.sfx': 'Sound effects',
   'audio.haptics': 'Vibration',
-  'audio.close': 'Close',
 
   'combat.pips': 'Room {n} of {total}',
   'combat.hint.title': '▾ YOUR TOP IS THE ONE WITH THE CHEVRON',

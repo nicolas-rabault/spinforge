@@ -27,7 +27,6 @@ export const fr = {
   'audio.music': 'Musique',
   'audio.sfx': 'Bruitages',
   'audio.haptics': 'Vibration',
-  'audio.close': 'Fermer',
 
   'combat.pips': 'Salle {n} sur {total}',
   'combat.hint.title': '▾ TA TOUPIE EST CELLE DU CHEVRON',
