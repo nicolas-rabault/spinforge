@@ -22,7 +22,7 @@ export const fr = {
   'alert.todo': 'quelque chose à faire',
   'alert.better': 'meilleure que celle équipée',
   'alert.fusable': 'fusionnable',
-  'alert.gift': 'un Fondateur t\'attend',
+  'alert.gift': "un Fondateur t'attend",
 
   'header.credits': 'Crédits',
   'header.gems': 'Gemmes',

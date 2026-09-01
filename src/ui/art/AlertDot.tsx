@@ -38,7 +38,7 @@ export function AlertDot({
       aria-label={label}
       style={{
         ...base, minWidth: 18, height: 18, padding: '0 4px',
-        color: 'var(--text)', fontSize: 11,
+        color: 'var(--ink)', fontSize: 11,
         fontFamily: 'Oswald, ui-sans-serif, sans-serif', fontVariantNumeric: 'tabular-nums',
       }}
     >

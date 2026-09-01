@@ -317,8 +317,8 @@ export function AlertDot({ label, count }: { label: string; count?: number })
   du rouge posé sur de l'orange ne se voit pas. Le cerne sombre le détache des
   deux fonds.
 - Avec `count` : pastille `min-width: 17px`, `height: 17px`, fond `--alert`,
-  texte `--text`, `tabular-nums` — la géométrie exacte de la pastille actuelle
-  de `TabBar`, seule la couleur change.
+  texte `--ink`, `tabular-nums` — la géométrie exacte de la pastille actuelle
+  de `TabBar`, seule la couleur change. `--text` sur `--alert` ne donne que 2,94:1 à 11 px ; `--ink` donne 5,36:1, et c'est déjà la convention des pastilles du jeu.
 - Positionné en absolu au coin haut-droit ; l'appelant porte `position: relative`.
 - `label` devient l'`aria-label` : le point est une information, pas un décor.
 
