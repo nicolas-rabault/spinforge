@@ -14,6 +14,7 @@ export function upgradeCost(level: number): number {
  *  n'avancerait pas de la même façon selon la salle rendrait toute mesure de
  *  déterminisme illisible. */
 export function salleReward(
+  chapter: number,
   salle: number,
   boss: boolean,
   rngState: number,
@@ -25,8 +26,8 @@ export function salleReward(
   const eligible = boss || salle >= LOOT.bySalle.fromSalle;
   if (eligible && r.value < rule.extraChance) chests.push(rule.extra);
   const reward: RunReward = boss
-    ? { credits: base * ECON.bossRewardMult, gems: ECON.bossGems, chests }
-    : { credits: base, gems: 0, chests };
+    ? { credits: base * ECON.bossRewardMult, gems: ECON.bossGems, chests, boss, chapter }
+    : { credits: base, gems: 0, chests, boss, chapter };
   return { reward, rngState: r.state };
 }
 

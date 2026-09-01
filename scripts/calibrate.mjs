@@ -158,7 +158,7 @@ function simulate(seed, { buyChests, steer, toupieId, counterPick }) {
     ticks++;
     salleTicks++;
     if (reward) {
-      applyRunReward(meta, reward, salleBefore);
+      applyRunReward(meta, reward);
       if (!salleDurations.has(salleBefore)) salleDurations.set(salleBefore, []);
       salleDurations.get(salleBefore).push(salleTicks);
       salleTicks = 0;

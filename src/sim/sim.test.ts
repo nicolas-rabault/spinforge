@@ -11,9 +11,8 @@ function play(seed: number, n: number, clearEvery: number | null, clearBreaches 
   const run = createRun(meta, seed);
   for (let i = 0; i < n; i++) {
     if (clearEvery !== null && i % clearEvery === clearEvery - 1) for (const b of run.bots) b.spin = 0.0001;
-    const salleBefore = run.salle;
     const reward = tick(run, { steer: i % 20 < 10 ? { x: 1, y: 0.5 } : null });
-    if (reward) applyRunReward(meta, reward, salleBefore);
+    if (reward) applyRunReward(meta, reward);
     // `run.arena` n'est reconstruit que dans `startSalle`, appelé depuis `tick` :
     // le nettoyer ici après coup suffit à retirer le bord létal de ce scénario.
     // Ce scénario sert à couvrir le déterminisme des transitions de salle et la
@@ -96,9 +95,8 @@ describe('déterminisme', () => {
           for (const b of run.bots) b.spin = 0.0001;
           if (openChests) openChest(meta, 'bronze', 10);
         }
-        const salleBefore = run.salle;
         const reward = tick(run, { steer: i % 20 < 10 ? { x: 1, y: 0.5 } : null });
-        if (reward) applyRunReward(meta, reward, salleBefore);
+        if (reward) applyRunReward(meta, reward);
       }
       return JSON.stringify(run);
     };
@@ -113,7 +111,7 @@ describe('progression', () => {
     const run = createRun(meta, 1);
     for (const b of run.bots) b.spin = 0.0001; // le decay du prochain tick les achève
     const reward = tick(run, { steer: null });
-    expect(reward?.credits).toBeCloseTo(salleReward(1, false, 1).reward.credits, 5);
+    expect(reward?.credits).toBeCloseTo(salleReward(1, 1, false, 1).reward.credits, 5);
     expect(run.salle).toBe(2);
     expect(run.bots).toHaveLength(botCountFor(2));
     // tick() n'a rien appliqué : le méta est hors de sa portée.
@@ -150,11 +148,11 @@ describe('progression', () => {
     run.rngState = spawned.rngState;
     for (const b of run.bots) b.spin = 0.0001;
     const reward = tick(run, { steer: null })!;
-    applyRunReward(meta, reward, SALLES_PER_CHAPTER);
+    applyRunReward(meta, reward);
     expect(meta.chapterValidated).toBe(true);
     expect(run.salle).toBe(1);
-    expect(meta.credits).toBeCloseTo(salleReward(SALLES_PER_CHAPTER, true, 1).reward.credits, 5);
-    expect(meta.gems).toBe(salleReward(SALLES_PER_CHAPTER, true, 1).reward.gems);
+    expect(meta.credits).toBeCloseTo(salleReward(1, SALLES_PER_CHAPTER, true, 1).reward.credits, 5);
+    expect(meta.gems).toBe(salleReward(1, SALLES_PER_CHAPTER, true, 1).reward.gems);
   });
 
   it('spin à zéro ⇒ mort ; resetRun repart salle 1 en gardant les crédits', () => {

@@ -64,6 +64,13 @@ export interface RunReward {
   /** Coffres lâchés par la salle. Le premier est garanti, le second est l'extra
    *  quand il est tombé. */
   chests: ChestKind[];
+  /** La salle vidée était le boss. Porté par la récompense pour que personne ne
+   *  le redérive d'un numéro de salle — trois sites le faisaient, chacun à sa
+   *  façon, et le troisième (`observer.ts`) était déjà mort-né. */
+  boss: boolean;
+  /** Le chapitre d'où vient cette récompense. Ici plutôt qu'en paramètre à part :
+   *  un appelant ne peut pas se tromper de chapitre s'il ne le fournit pas. */
+  chapter: number;
 }
 
 /** Ce qui vit à la cadence du tick. Jamais sauvegardé : fermer l'onglet en

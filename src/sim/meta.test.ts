@@ -13,7 +13,7 @@ import {
   stackOf,
   takePiece,
 } from './meta';
-import { SALLES_PER_CHAPTER, TOUPIE_SHOP } from './config';
+import { TOUPIE_SHOP } from './config';
 
 describe('createInitialMeta', () => {
   it('démarre sans monnaie, sans doublon, avec quatre pièces équipées', () => {
@@ -48,15 +48,15 @@ describe('createInitialMeta', () => {
 describe('applyReward', () => {
   it('ajoute crédits et gemmes', () => {
     const meta = createInitialMeta(1);
-    applyReward(meta, { credits: 120, gems: 0, chests: [] });
-    applyReward(meta, { credits: 30, gems: 40, chests: [] });
+    applyReward(meta, { credits: 120, gems: 0, chests: [], boss: false, chapter: 1 });
+    applyReward(meta, { credits: 30, gems: 40, chests: [], boss: false, chapter: 1 });
     expect(meta.credits).toBe(150);
     expect(meta.gems).toBe(40);
   });
 
   it('le butin d’une récompense rejoint la file', () => {
     const meta = createInitialMeta(1);
-    applyReward(meta, { credits: 0, gems: 0, chests: ['bronze', 'arene'] });
+    applyReward(meta, { credits: 0, gems: 0, chests: ['bronze', 'arene'], boss: false, chapter: 1 });
     expect(meta.pending.bronze).toBe(1);
     expect(meta.pending.arene).toBe(1);
   });
@@ -65,13 +65,13 @@ describe('applyReward', () => {
 describe('applyRunReward', () => {
   it('ne valide pas le chapitre sur une salle ordinaire', () => {
     const meta = createInitialMeta(1);
-    applyRunReward(meta, { credits: 120, gems: 0, chests: [] }, 3);
+    applyRunReward(meta, { credits: 120, gems: 0, chests: [], boss: false, chapter: 1 });
     expect(meta.chapterValidated).toBe(false);
   });
 
-  it('valide le chapitre quand la salle vidée était la dernière', () => {
+  it('valide le chapitre quand la récompense vient du boss', () => {
     const meta = createInitialMeta(1);
-    applyRunReward(meta, { credits: 1, gems: 40, chests: [] }, SALLES_PER_CHAPTER);
+    applyRunReward(meta, { credits: 1, gems: 40, chests: [], boss: true, chapter: 1 });
     expect(meta.chapterValidated).toBe(true);
     expect(meta.gems).toBe(40);
   });

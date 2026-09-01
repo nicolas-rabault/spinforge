@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { playerStats, salleReward, tryUpgrade, upgradeCost } from './economy';
 import { createInitialMeta } from './meta';
 import { STARTER_TOUPIE } from '../content/toupies';
-import { ECON, LOOT, PLAYER_BASE } from './config';
+import { ECON, LOOT, PLAYER_BASE, SALLES_PER_CHAPTER } from './config';
 import { rarityMult } from './piece';
 
 describe('courbes', () => {
@@ -12,40 +12,40 @@ describe('courbes', () => {
   });
 
   it('revenu = rewardBase × rewardGrowth^(salle−1), boss × bossRewardMult', () => {
-    expect(salleReward(1, false, 1).reward.credits).toBeCloseTo(ECON.rewardBase, 5);
-    expect(salleReward(5, false, 1).reward.credits).toBeCloseTo(
+    expect(salleReward(1, 1, false, 1).reward.credits).toBeCloseTo(ECON.rewardBase, 5);
+    expect(salleReward(1, 5, false, 1).reward.credits).toBeCloseTo(
       ECON.rewardBase * Math.pow(ECON.rewardGrowth, 4),
       5,
     );
-    expect(salleReward(10, true, 1).reward.credits).toBeCloseTo(
+    expect(salleReward(1, 10, true, 1).reward.credits).toBeCloseTo(
       ECON.rewardBase * Math.pow(ECON.rewardGrowth, 9) * ECON.bossRewardMult,
       5,
     );
   });
 
   it('seul le boss donne des gemmes', () => {
-    expect(salleReward(9, false, 1).reward.gems).toBe(0);
-    expect(salleReward(10, true, 1).reward.gems).toBe(ECON.bossGems);
+    expect(salleReward(1, 9, false, 1).reward.gems).toBe(0);
+    expect(salleReward(1, 10, true, 1).reward.gems).toBe(ECON.bossGems);
   });
 });
 
 describe('salleReward — butin', () => {
   it('donne toujours le coffre de base de la salle', () => {
-    const { reward } = salleReward(1, false, 1);
+    const { reward } = salleReward(1, 1, false, 1);
     expect(reward.chests[0]).toBe(LOOT.bySalle.chest);
   });
 
   it('n’ajoute jamais d’extra avant la salle prévue', () => {
     for (let seed = 1; seed <= 300; seed++) {
       for (let salle = 1; salle < LOOT.bySalle.fromSalle; salle++) {
-        expect(salleReward(salle, false, seed).reward.chests).toHaveLength(1);
+        expect(salleReward(1, salle, false, seed).reward.chests).toHaveLength(1);
       }
     }
   });
 
   it('ajoute parfois un extra à partir de la salle prévue', () => {
     const withExtra = Array.from({ length: 300 }, (_, i) =>
-      salleReward(LOOT.bySalle.fromSalle, false, i + 1).reward.chests,
+      salleReward(1, LOOT.bySalle.fromSalle, false, i + 1).reward.chests,
     ).filter((c) => c.length === 2);
     expect(withExtra.length).toBeGreaterThan(0);
     expect(withExtra[0][1]).toBe(LOOT.bySalle.extra);
@@ -53,17 +53,26 @@ describe('salleReward — butin', () => {
 
   it('le boss donne toujours son coffre garanti', () => {
     for (let seed = 1; seed <= 50; seed++) {
-      expect(salleReward(10, true, seed).reward.chests[0]).toBe(LOOT.boss.chest);
+      expect(salleReward(1, 10, true, seed).reward.chests[0]).toBe(LOOT.boss.chest);
     }
   });
 
   it('consomme exactement un tirage, extra ou non', () => {
     // Un flux qui n'avancerait pas de la même façon selon la salle rendrait
     // toute mesure de déterminisme illisible.
-    const a = salleReward(1, false, 999);
-    const b = salleReward(9, false, 999);
+    const a = salleReward(1, 1, false, 999);
+    const b = salleReward(1, 9, false, 999);
     expect(a.rngState).toBe(b.rngState);
     expect(a.rngState).not.toBe(999);
+  });
+
+  it('porte le drapeau du boss et son chapitre', () => {
+    const ordinaire = salleReward(1, 4, false, 1).reward;
+    expect(ordinaire.boss).toBe(false);
+    expect(ordinaire.chapter).toBe(1);
+    const boss = salleReward(3, SALLES_PER_CHAPTER, true, 1).reward;
+    expect(boss.boss).toBe(true);
+    expect(boss.chapter).toBe(3);
   });
 });
 

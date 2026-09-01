@@ -1,6 +1,6 @@
 import { modelById } from '../content/pieces';
 import { STARTER_TOUPIE, toupieById, type Toupie, type ToupieId } from '../content/toupies';
-import { SALLES_PER_CHAPTER, TOUPIE_SHOP } from './config';
+import { TOUPIE_SHOP } from './config';
 import { STARTER_EQUIPMENT } from './piece';
 import type { PieceInstance, PieceStack, Slot } from './piece';
 import type { MetaState, RunReward } from './types';
@@ -31,11 +31,11 @@ export function applyReward(meta: MetaState, reward: RunReward): void {
   for (const kind of reward.chests) meta.pending[kind]++;
 }
 
-/** Applique au méta ce qu'une salle vidée vient de produire. `salleJustCleared`
- *  est la salle **avant** l'avancement — `tick()` a déjà fait avancer `run.salle`. */
-export function applyRunReward(meta: MetaState, reward: RunReward, salleJustCleared: number): void {
+/** Applique au méta ce qu'une salle vidée vient de produire. La récompense dit
+ *  elle-même si elle vient du boss : plus aucun appelant ne le redérive. */
+export function applyRunReward(meta: MetaState, reward: RunReward): void {
   applyReward(meta, reward);
-  if (salleJustCleared === SALLES_PER_CHAPTER) meta.chapterValidated = true;
+  if (reward.boss) meta.chapterValidated = true;
 }
 
 export function stackOf(meta: MetaState, model: string, rank: number): PieceStack | undefined {

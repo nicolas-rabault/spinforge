@@ -197,7 +197,7 @@ export function tick(run: RunState, input: Input): RunReward | null {
   }
   if (run.bots.length === 0) {
     const boss = run.salle === SALLES_PER_CHAPTER;
-    const rolled = salleReward(run.salle, boss, run.rngState);
+    const rolled = salleReward(run.chapter, run.salle, boss, run.rngState);
     run.rngState = rolled.rngState;
     if (boss) run.salle = 1;
     else run.salle++;
