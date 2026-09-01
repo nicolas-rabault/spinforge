@@ -208,15 +208,17 @@ describe('inBreach', () => {
 });
 
 function shardTop(over: Partial<Top> = {}): Top {
-  return {
+  const built: Top = {
     id: 't', isPlayer: false, aim: null,
-    pos: { x: 0, y: 0 }, vel: { x: 0, y: 0 },
+    pos: { x: 0, y: 0 }, from: { x: 0, y: 0 }, vel: { x: 0, y: 0 },
     radius: 12, spin: 500, spinMax: 1000, spinDecay: 10,
     attack: 10, defense: 10, maxSpeed: 240, accel: 900,
     talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
     type: 'attaque', mass: 1,
     ...over,
   };
+  if (!over.from) built.from = { ...built.pos };
+  return built;
 }
 
 describe('updateShard', () => {
@@ -286,6 +288,32 @@ describe('takeShard', () => {
   it('ignore une toupie hors de portée', () => {
     const l = layout({ shard: { x: 0, y: 0, ttl: 10 } });
     const t = shardTop({ pos: { x: SHARD.radius + 12 + 5, y: 0 } });
+    expect(takeShard(l, [t])).toBeNull();
+    expect(l.shard).not.toBeNull();
+  });
+
+  it('ramasse un éclat traversé en cours de tick', () => {
+    // 80 px parcourus dans le tick pour 26 px de portée : ni le départ ni
+    // l'arrivée ne sont à portée, mais le trajet passe sur l'éclat.
+    const l = layout({ shard: { x: 0, y: 0, ttl: 10 } });
+    const t = shardTop({ id: 'a', from: { x: -40, y: 0 }, pos: { x: 40, y: 0 } });
+    expect(takeShard(l, [t])).toBe('a');
+    expect(l.shard).toBeNull();
+  });
+
+  it('ignore un trajet qui passe à côté sans jamais l’approcher', () => {
+    const l = layout({ shard: { x: 0, y: 0, ttl: 10 } });
+    const t = shardTop({ from: { x: -40, y: 30 }, pos: { x: 40, y: 30 } });
+    expect(takeShard(l, [t])).toBeNull();
+    expect(l.shard).not.toBeNull();
+  });
+
+  it('ne ramasse pas un éclat droit devant, pas encore atteint', () => {
+    // Aligné sur la trajectoire, mais 60 px au-delà du point d'arrivée : le
+    // trajet s'arrête avant. Mesurer sur la droite plutôt que sur le segment le
+    // ferait ramasser d'avance.
+    const l = layout({ shard: { x: 0, y: 0, ttl: 10 } });
+    const t = shardTop({ from: { x: -100, y: 0 }, pos: { x: -60, y: 0 } });
     expect(takeShard(l, [t])).toBeNull();
     expect(l.shard).not.toBeNull();
   });

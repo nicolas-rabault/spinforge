@@ -17,6 +17,7 @@ function makePlayer(meta: MetaState, toupie: ToupieId): Top {
     isPlayer: true,
     aim: null,
     pos: { x: PLAYER_SPAWN.x, y: PLAYER_SPAWN.y },
+    from: { x: PLAYER_SPAWN.x, y: PLAYER_SPAWN.y },
     vel: { x: 0, y: 0 },
     radius: PLAYER_BASE.radius,
     spin: stats.spinMax,

@@ -53,8 +53,16 @@ export function applySteering(top: Top, steer: Vec | null, zone: ZoneMods): void
  * vient d'être **éjectée** — franchissement du bord, dans un secteur de brèche,
  * à une vitesse sortante suffisante. L'appelant met alors son spin à zéro : pour
  * la simulation, une éjection est une mort comme une autre.
+ *
+ * Note au passage l'origine du trajet dans `from`, dont les collisions se
+ * servent pour chercher le contact sur tout le segment parcouru. Un rebond de
+ * bord fait de ce trajet une ligne brisée que le segment `from` → `pos`
+ * approxime : la corde d'un rebond est toujours plus courte que le trajet réel,
+ * l'approximation resserre donc la détection au lieu de la relâcher.
  */
 export function moveAndBounce(top: Top, layout: ArenaLayout): boolean {
+  top.from.x = top.pos.x;
+  top.from.y = top.pos.y;
   top.pos.x += top.vel.x * TICK_S;
   top.pos.y += top.vel.y * TICK_S;
   const d = Math.hypot(top.pos.x, top.pos.y);

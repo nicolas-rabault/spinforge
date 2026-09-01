@@ -6,16 +6,21 @@ import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
 import type { TopType } from '../content/toupies';
 
+/** `from` suit `pos` par défaut : une toupie qui n'a pas bougé n'a aucun trajet
+ *  à balayer, et le contact se réduit au chevauchement des positions courantes.
+ *  Les scénarios de croisement le surchargent explicitement. */
 function top(over: Partial<Top> = {}): Top {
-  return {
+  const built: Top = {
     id: 't', isPlayer: false, aim: null,
-    pos: { x: 0, y: 0 }, vel: { x: 0, y: 0 },
+    pos: { x: 0, y: 0 }, from: { x: 0, y: 0 }, vel: { x: 0, y: 0 },
     radius: 12, spin: 1000, spinMax: 1000, spinDecay: 10,
     attack: 10, defense: 10, maxSpeed: 240, accel: 900,
     talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
     type: 'attaque', mass: 1,
     ...over,
   };
+  if (!over.from) built.from = { ...built.pos };
+  return built;
 }
 
 describe('decaySpin', () => {
@@ -122,6 +127,163 @@ describe('resolveCollision', () => {
     expect(a.spin).toBe(1000);
     expect(b.spin).toBe(1000);
   });
+});
+
+/** Le contact doit se chercher sur le TRAJET du tick (`from` → `pos`), pas sur
+ *  les seules positions d'arrivée. À 100 ms de pas, deux toupies rapides se
+ *  rapprochent de plus que les 24 px de contact en un tick : échantillonner les
+ *  arrivées les laisse se traverser. */
+describe('resolveCollision — contact en cours de tick', () => {
+  /** Croisement frontal : chacune parcourt 30 px pendant le tick et ressort de
+   *  l'autre côté. Départ et arrivée sont à 30 px l'un de l'autre — jamais en
+   *  chevauchement — mais le trajet passe par le contact à t = 0,1. */
+  const croisement = (): [Top, Top] => [
+    top({ id: 'a', from: { x: -15, y: 0 }, pos: { x: 15, y: 0 }, vel: { x: 300, y: 0 } }),
+    top({ id: 'b', from: { x: 15, y: 0 }, pos: { x: -15, y: 0 }, vel: { x: -300, y: 0 } }),
+  ];
+
+  it('détecte un croisement que les positions d’arrivée ont manqué', () => {
+    const [a, b] = croisement();
+    resolveCollision(a, b);
+    expect(a.spin).toBeLessThan(1000);
+    expect(b.spin).toBeLessThan(1000);
+  });
+
+  it('rembobine les deux toupies à l’instant du contact', () => {
+    const [a, b] = croisement();
+    resolveCollision(a, b);
+    // t = 0,1 : a en -12, b en +12, soit exactement les 24 px de contact — et
+    // toujours chacune de son côté, elles ne se sont pas traversées.
+    expect(a.pos.x).toBeLessThan(b.pos.x);
+    expect(Math.hypot(b.pos.x - a.pos.x, b.pos.y - a.pos.y)).toBeCloseTo(24, 6);
+  });
+
+  it('renvoie les deux toupies d’où elles venaient', () => {
+    const [a, b] = croisement();
+    resolveCollision(a, b);
+    expect(a.vel.x).toBeLessThan(0);
+    expect(b.vel.x).toBeGreaterThan(0);
+  });
+
+  it('frappe à la vitesse de fermeture réelle, pas à celle de l’écart final', () => {
+    const [a, b] = croisement();
+    resolveCollision(a, b);
+    // 600 px/s de fermeture, stats neutres : (600 × 10 / 20) × DAMAGE_K, choc
+    // frontal donc charge neutre des deux côtés.
+    expect(1000 - a.spin).toBeCloseTo(((600 * 10) / 20) * DAMAGE_K, 6);
+  });
+
+  it('laisse passer un trajet qui frôle sans jamais toucher', () => {
+    // Même croisement, décalé de 25 px : au plus près, 25 px séparent les centres
+    // pour 24 px de contact. Rien ne doit se déclencher.
+    const a = top({ id: 'a', from: { x: -15, y: 0 }, pos: { x: 15, y: 0 }, vel: { x: 300, y: 0 } });
+    const b = top({ id: 'b', from: { x: 15, y: 25 }, pos: { x: -15, y: 25 }, vel: { x: -300, y: 0 } });
+    resolveCollision(a, b);
+    expect(a.spin).toBe(1000);
+    expect(b.spin).toBe(1000);
+    expect(a.pos.x).toBe(15);
+  });
+
+  it('ne rembobine pas un contact qui durait déjà au début du tick', () => {
+    // Elles se chevauchent DÉJÀ au départ et avancent ensemble. Rembobiner leur
+    // volerait à chacune le déplacement de son tick : deux toupies qui frottent
+    // l'une contre l'autre se retrouveraient figées sur place.
+    const a = top({ id: 'a', from: { x: 0, y: 0 }, pos: { x: 30, y: 0 }, vel: { x: 300, y: 0 } });
+    const b = top({ id: 'b', from: { x: 20, y: 0 }, pos: { x: 40, y: 0 }, vel: { x: 200, y: 0 } });
+    resolveCollision(a, b);
+    // Un rembobinage les ramènerait à leur départ, 0 et 20. Elles gardent au
+    // contraire le terrain gagné : seule la séparation les écarte un peu.
+    expect(a.pos.x).toBeGreaterThan(20);
+    expect(b.pos.x).toBeGreaterThan(40);
+  });
+
+  it('détecte un croisement qui finit en chevauchement de l’autre côté', () => {
+    // Le piège : à l'arrivée elles se chevauchent bien (10 px d'écart), mais
+    // elles se sont DÉJÀ dépassées. Lire la normale sur ces positions-là la prend
+    // à l'envers — la séparation les pousse alors dans le sens de leur marche, et
+    // la vitesse relative paraît positive, donc ni impulsion ni dégâts.
+    const a = top({ id: 'a', from: { x: -20, y: 0 }, pos: { x: 15, y: 0 }, vel: { x: 350, y: 0 } });
+    const b = top({ id: 'b', from: { x: 20, y: 0 }, pos: { x: 5, y: 0 }, vel: { x: -150, y: 0 } });
+    resolveCollision(a, b);
+    expect(a.pos.x).toBeLessThan(b.pos.x);
+    expect(a.spin).toBeLessThan(1000);
+    expect(b.spin).toBeLessThan(1000);
+    expect(a.vel.x).toBeLessThan(350);
+    expect(b.vel.x).toBeGreaterThan(-150);
+  });
+
+  it('ignore un contact déjà résolu au tick précédent', () => {
+    // Elles se chevauchaient au départ et se séparent : le choc a été encaissé au
+    // tick d'avant, le rejouer ferait payer deux fois le même contact.
+    const a = top({ id: 'a', from: { x: -5, y: 0 }, pos: { x: -20, y: 0 }, vel: { x: -150, y: 0 } });
+    const b = top({ id: 'b', from: { x: 5, y: 0 }, pos: { x: 20, y: 0 }, vel: { x: 150, y: 0 } });
+    resolveCollision(a, b);
+    expect(a.spin).toBe(1000);
+    expect(b.spin).toBe(1000);
+  });
+});
+
+/**
+ * Propriété d'ensemble, plutôt qu'un cas de croisement choisi à la main : on
+ * balaie les écarts latéraux et les phases de départ d'un croisement frontal,
+ * à des vitesses relatives qui vont de deux bots lents à un recul de boss. Tout
+ * passage dont les centres se rapprochent à moins de 24 px doit être détecté,
+ * et aucun autre.
+ *
+ * Les positions sont intégrées ici à la main plutôt que par `moveAndBounce` :
+ * ce test ne parle que de détection de contact, il n'a rien à voir avec l'anneau
+ * ni ses rebonds.
+ */
+describe('resolveCollision — aucun croisement ne passe au travers', () => {
+  /** Un unique croisement : `a` va vers +x, `b` vers -x avec `offset` d'écart
+   *  latéral, `phase` décale le départ d'une fraction de tick. */
+  function touche(va: number, vb: number, offset: number, phase: number): boolean {
+    const a = top({ id: 'a', pos: { x: -300 + phase, y: 0 }, vel: { x: va, y: 0 } });
+    const b = top({ id: 'b', pos: { x: 300, y: offset }, vel: { x: -vb, y: 0 } });
+    for (let i = 0; i < 400; i++) {
+      for (const t of [a, b]) {
+        t.from = { ...t.pos };
+        t.pos.x += t.vel.x * TICK_S;
+        t.pos.y += t.vel.y * TICK_S;
+      }
+      const avant = a.spin + b.spin;
+      resolveCollision(a, b);
+      if (a.spin + b.spin !== avant) return true;
+      if (a.pos.x - b.pos.x > 100) return false; // dépassées sans se toucher
+    }
+    return false;
+  }
+
+  function balaye(va: number, vb: number, de: number, a: number): number {
+    let touches = 0;
+    let total = 0;
+    for (let offset = de; offset < a; offset += 0.5) {
+      for (let phase = 0; phase < 30; phase += 0.5) {
+        total++;
+        if (touche(va, vb, offset, phase)) touches++;
+      }
+    }
+    return touches / total;
+  }
+
+  const VITESSES: [number, number, string][] = [
+    [140, 140, 'deux bots (280 px/s)'],
+    [240, 140, 'joueur contre bot (380 px/s)'],
+    [384, 224, 'les deux en accélérateur (608 px/s)'],
+    [800, 800, 'après un gros recul (1600 px/s)'],
+  ];
+
+  for (const [va, vb, nom] of VITESSES) {
+    it(`n'en rate aucun — ${nom}`, () => {
+      // Écart latéral sous les 24 px de contact : le trajet traverse toujours.
+      expect(balaye(va, vb, 0, 23.5)).toBe(1);
+    });
+
+    it(`n'en invente aucun — ${nom}`, () => {
+      // Au-delà des 24 px, les centres ne s'approchent jamais assez.
+      expect(balaye(va, vb, 24.5, 60)).toBe(0);
+    });
+  }
 });
 
 /** Deux toupies qui se rentrent dedans de face, en collision garantie : un choc

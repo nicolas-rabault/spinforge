@@ -34,6 +34,65 @@ const runTicksThroughSalles = (seed: number, n: number) => play(seed, n, 25, tru
 // à travers une éjection, alors que c'est le risque central du jalon 2.5.
 const runTicksThroughBreaches = (seed: number, n: number) => play(seed, n, 25);
 
+/**
+ * Le tick doit livrer aux collisions le trajet réellement parcouru, pas
+ * seulement les positions d'arrivée. Sans ce câblage, une toupie lancée traverse
+ * ses adversaires : c'est le « elles se croisent sans collision » du terrain.
+ */
+describe('traversée à grande vitesse', () => {
+  it('un joueur lancé traverse un bot en un tick sans le manquer', () => {
+    const run = startRun(createInitialMeta(7), 1, 7);
+    // Une salle nue : ni zone, ni brèche, pour que seule la collision agisse.
+    run.arena.zones = [];
+    run.arena.breaches = [];
+    const bot = run.bots[0];
+    run.bots = [bot];
+    // Bot planté sur place : sans accélération ni vitesse maximale, son pilotage
+    // ne peut plus rien lui ajouter.
+    bot.accel = 0;
+    bot.maxSpeed = 0;
+    bot.pos = { x: 0, y: 0 };
+    bot.vel = { x: 0, y: 0 };
+    // 63 px parcourus dans le tick pour 24 px de contact : le joueur ressort de
+    // l'autre côté du bot, et ni son départ ni son arrivée ne le chevauchent.
+    run.player.pos = { x: -32, y: 0 };
+    run.player.vel = { x: 700, y: 0 };
+
+    const avant = bot.spin;
+    tick(run, { steer: null });
+
+    expect(run.player.pos.x).toBeLessThan(bot.pos.x);
+    // La décroissance naturelle du tick ne coûte que spinDecay × TICK_S ; tout
+    // le reste vient du choc.
+    expect(avant - bot.spin).toBeGreaterThan(bot.spinDecay * 0.1 + 50);
+  });
+
+  it('un joueur lancé ne survole plus un éclat sans le prendre', () => {
+    const run = startRun(createInitialMeta(7), 1, 7);
+    run.arena.zones = [];
+    run.arena.breaches = [];
+    // Un seul bot, planté au loin : la salle ne se vide pas et rien ne vient
+    // dévier le joueur ni lui disputer l'éclat.
+    const bot = run.bots[0];
+    run.bots = [bot];
+    bot.accel = 0;
+    bot.maxSpeed = 0;
+    bot.pos = { x: 100, y: 100 };
+    bot.vel = { x: 0, y: 0 };
+    run.arena.shard = { x: 0, y: 0, ttl: 10 };
+    // 72 px parcourus dans le tick pour 26 px de portée : le joueur passe sur
+    // l'éclat sans que son départ ni son arrivée n'y soient.
+    run.player.pos = { x: -40, y: 0 };
+    run.player.vel = { x: 800, y: 0 };
+    run.player.spin = 100;
+
+    tick(run, { steer: null });
+
+    expect(run.arena.shard).toBeNull();
+    expect(run.player.spin).toBeGreaterThan(100);
+  });
+});
+
 describe('ouverture de la descente', () => {
   it('démarre chapitre 1, salle 1, phase fighting, avec les bots de la salle 1', () => {
     const run = startRun(createInitialMeta(42), 1, 42);
