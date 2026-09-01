@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
+import { audio } from '../audio/audio';
 import { canOpen, chestPrice, grantChests, openChest } from '../sim/chest';
 import { addPiece, pendingTotal } from '../sim/meta';
 import type { PieceInstance } from '../sim/piece';
@@ -88,17 +89,32 @@ export function ChestScreen({
     return () => clearTimeout(id);
   }, [opening, phase, step, revealed]);
 
-  // Le couvercle qui cède, puis chaque pièce assez rare, secouent l'écran entier :
-  // enfermée dans la vignette du coffre, la puissance de l'ouverture ne se sent pas.
+  // Ce que l'ouverture fait sentir : l'écran tremble, et le son suit exactement
+  // les mêmes transitions — un seul effet, donc aucune dérive possible entre ce
+  // qu'on voit et ce qu'on entend.
   useEffect(() => {
     if (!opening) return;
-    if (phase === 'opening' && step === 0) {
-      quake(CHEST_QUAKE[opening.kind], CHEST_QUAKE_LIFE);
+    if (phase === 'shake') {
+      audio.chestShake();
       return;
     }
-    if (phase !== 'reveal' || revealed === 0) return;
-    const feel = REVEAL[rankTier(opening.pulls[revealed - 1].rank)];
+    if (phase === 'opening') {
+      audio.chestStep(step);
+      if (step === 0) quake(CHEST_QUAKE[opening.kind], CHEST_QUAKE_LIFE);
+      return;
+    }
+    if (revealed === 0) {
+      // Le couvercle a fini de céder : c'est ici que la main doit le sentir.
+      audio.chestOpened();
+      return;
+    }
+    const piece = opening.pulls[revealed - 1];
+    const feel = REVEAL[rankTier(piece.rank)];
+    audio.pieceRevealed(rankTier(piece.rank));
     if (feel.shake > 0) quake(feel.shake, feel.life);
+    if (revealed >= opening.pulls.length) {
+      audio.chestDone(rankTier(opening.pulls[opening.pulls.length - 1].rank));
+    }
   }, [opening, phase, step, revealed]);
 
   const start = (kind: ChestKind, drawn: PieceInstance[] | null) => {
