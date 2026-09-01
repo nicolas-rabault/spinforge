@@ -31,7 +31,6 @@ export interface Audio {
   tap(kind: TapKind): void;
   settings(): AudioSettings;
   setSetting(key: keyof AudioSettings, on: boolean): void;
-  destroy(): void;
 }
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
@@ -357,19 +356,6 @@ function createAudio(): Audio {
       const t = bus.ctx.currentTime;
       if (key === 'sfx') bus.sfx.gain.setTargetAtTime(on ? MIX.sfxGain : 0, t, MIX.settingFadeS);
       if (key === 'music') bus.music.gain.setTargetAtTime(on ? MIX.musicGain : 0, t, MIX.settingFadeS);
-    },
-
-    destroy() {
-      document.removeEventListener('visibilitychange', onVisibility);
-      whirrSource?.stop();
-      sub?.stop();
-      void bus?.ctx.close();
-      bus = null;
-      whirrFilter = null;
-      whirrGain = null;
-      whirrSource = null;
-      sub = null;
-      subGain = null;
     },
   };
 }
