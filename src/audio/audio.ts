@@ -35,16 +35,23 @@ export interface Audio {
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
-/** Le palier de croisière du souffle à un spin donné. Partagé par `duck()` (qui y
- *  revient après un choc) et `setSpin()` (qui y va en régime établi) : sans ce
- *  partage, les deux pourraient un jour diverger si les poids n'étaient retouchés
- *  que d'un côté, et le retour après un duck s'entendrait comme un saut. */
+/** Le palier de croisière du souffle à un spin donné : un plancher (le rotor ne
+ *  s'éteint jamais tout à fait tant qu'il tourne) plus une part proportionnelle au
+ *  spin. Il n'appartient qu'à `setSpin()` — le ducking passe par un nœud à part,
+ *  pour que les deux ne se disputent pas le même `AudioParam`. */
 const whirrTarget = (spin: number) => MIX.whirrGain * (MIX.whirrGainFloor + MIX.whirrGainSpan * spin);
 
 function createAudio(): Audio {
   let bus: Bus | null = null;
   let whirrFilter: BiquadFilterNode | null = null;
   let whirrGain: GainNode | null = null;
+  /** Nœud propre au ducking du rotor, en série après `whirrGain` — même partage que
+   *  `duckNode` côté musique. Mesuré : quand les deux écrivaient sur le même gain,
+   *  le `setSpin()` du tick suivait de quelques millisecondes la pose du duck et
+   *  redémarrait la remontée à `t` avec 0,1 s de constante au lieu de `t + 0,15`
+   *  avec 0,25 s — le rotor était déjà revenu à 86 % de sa croisière à la fin d'un
+   *  palier censé le tenir à 35 %. */
+  let whirrDuck: GainNode | null = null;
   let whirrSource: AudioBufferSourceNode | null = null;
   let sub: OscillatorNode | null = null;
   let subGain: GainNode | null = null;
@@ -73,12 +80,11 @@ function createAudio(): Audio {
   function duck(power: number): void {
     if (power < MIX.duckPower) return;
     music.duck();
-    if (!bus || !whirrGain) return;
+    if (!bus || !whirrDuck) return;
     const t = bus.ctx.currentTime;
-    const target = whirrTarget(spin);
-    whirrGain.gain.cancelScheduledValues(t);
-    whirrGain.gain.setValueAtTime(target * MIX.duckWhirr, t);
-    whirrGain.gain.setTargetAtTime(target, t + MIX.duckHoldS, MIX.duckReleaseS);
+    whirrDuck.gain.cancelScheduledValues(t);
+    whirrDuck.gain.setValueAtTime(MIX.duckWhirr, t);
+    whirrDuck.gain.setTargetAtTime(1, t + MIX.duckHoldS, MIX.duckReleaseS);
   }
 
   /** Onglet caché : suspendre le contexte sans arrêter le séquenceur laisserait
@@ -116,10 +122,11 @@ function createAudio(): Audio {
       whirrFilter.Q.value = MIX.whirrQ;
       whirrGain = bus.ctx.createGain();
       whirrGain.gain.value = 0;
+      whirrDuck = bus.ctx.createGain();
       whirrSource = bus.ctx.createBufferSource();
       whirrSource.buffer = bus.noise;
       whirrSource.loop = true;
-      whirrSource.connect(whirrFilter).connect(whirrGain).connect(bus.sfx);
+      whirrSource.connect(whirrFilter).connect(whirrGain).connect(whirrDuck).connect(bus.sfx);
       whirrSource.start();
 
       sub = bus.ctx.createOscillator();
