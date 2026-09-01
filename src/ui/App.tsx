@@ -3,6 +3,7 @@ import { createRun } from '../sim/sim';
 import { pendingTotal } from '../sim/meta';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
 import { audio } from '../audio/audio';
+import { intensityFor } from '../audio/music';
 import { formatCredits, getLang, setLang, t } from '../i18n';
 import { AudioSettings } from './AudioSettings';
 import { CombatScreen } from './CombatScreen';
@@ -34,6 +35,13 @@ export function App() {
 
   useEffect(() => installFlushOnHide(), []);
   useEffect(() => () => flushSave(), []);
+
+  // App se re-rend à chaque tick : l'effet ne se déclenche donc que quand l'un des
+  // trois vrais paramètres change, et `setIntensity` ignore une valeur identique.
+  const run = runRef.current;
+  useEffect(() => {
+    audio.setIntensity(intensityFor(tab === 'combat', run.salle, run.phase === 'dead'));
+  }, [tab, run.salle, run.phase]);
 
   const [soundOpen, setSoundOpen] = useState(false);
   const [sound, setSound] = useState(() => audio.settings());

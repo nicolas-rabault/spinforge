@@ -1,6 +1,7 @@
 import { MIX, REVEAL_HZ, SFX } from './mix';
 import { admitHit, createGate } from './gate';
 import { createHaptics, type Haptics } from './haptics';
+import { createMusic } from './music';
 import { loadSettings, saveSettings, type AudioSettings } from './settings';
 import { burst, createBus, metalBody, tone, type Bus } from './synth';
 
@@ -12,6 +13,8 @@ export interface Audio {
   start(): void;
   /** Le rotor ne souffle que pendant un combat : `null` le coupe. */
   setSpin(ratio: number | null): void;
+  /** L'intensité de la musique, dérivée du contexte de jeu par `intensityFor`. */
+  setIntensity(value: number): void;
   hit(power: number): void;
   death(): void;
   door(): void;
@@ -50,6 +53,7 @@ function createAudio(): Audio {
   let tapAlt = false;
 
   const gate = createGate();
+  const music = createMusic();
   let settings = loadSettings(localStorage);
   const haptics: Haptics = createHaptics(
     typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
@@ -68,12 +72,28 @@ function createAudio(): Audio {
    *  s'interrompt cesse d'être un son tenu : c'est ce qui le fait disparaître de
    *  la conscience sans le retirer de la scène. */
   function duck(power: number): void {
-    if (!bus || !whirrGain || power < MIX.duckPower) return;
+    if (power < MIX.duckPower) return;
+    music.duck();
+    if (!bus || !whirrGain) return;
     const t = bus.ctx.currentTime;
     const target = whirrTarget(spin);
     whirrGain.gain.cancelScheduledValues(t);
     whirrGain.gain.setValueAtTime(target * MIX.duckWhirr, t);
     whirrGain.gain.setTargetAtTime(target, t + MIX.duckHoldS, MIX.duckReleaseS);
+  }
+
+  /** Onglet caché : suspendre le contexte sans arrêter le séquenceur laisserait
+   *  son minuteur planifier des notes dans le vide, à rattraper toutes d'un coup
+   *  au retour. Les deux se suspendent et reprennent ensemble. */
+  function onVisibility(): void {
+    if (!bus) return;
+    if (document.hidden) {
+      music.suspend();
+      void bus.ctx.suspend();
+    } else {
+      void bus.ctx.resume();
+      music.resume();
+    }
   }
 
   return {
@@ -85,6 +105,7 @@ function createAudio(): Audio {
       bus = createBus();
       bus.sfx.gain.value = settings.sfx ? MIX.sfxGain : 0;
       bus.music.gain.value = settings.music ? MIX.musicGain : 0;
+      music.attach(bus);
 
       // Le rotor : bruit filtré (un souffle), jamais un oscillateur tonal — une
       // dent de scie tenue à 60-250 Hz est un bourdon de scie sauteuse, pas une
@@ -108,6 +129,10 @@ function createAudio(): Audio {
       subGain.gain.value = 0;
       sub.connect(subGain).connect(bus.sfx);
       sub.start();
+
+      // Sans ça, la musique continue dans un onglet en arrière-plan — et le
+      // séquenceur continue de tourner pour rien.
+      document.addEventListener('visibilitychange', onVisibility);
     },
 
     setSpin(ratio) {
@@ -130,6 +155,10 @@ function createAudio(): Audio {
       // Le souffle s'efface avec le spin : une toupie qui meurt se tait.
       whirrGain.gain.setTargetAtTime(whirrTarget(spin), t, MIX.spinGainSmoothS);
       subGain.gain.setTargetAtTime(MIX.subGain * spin, t, MIX.spinGainSmoothS);
+    },
+
+    setIntensity(value) {
+      music.setIntensity(value);
     },
 
     hit(power) {
@@ -325,6 +354,7 @@ function createAudio(): Audio {
     },
 
     destroy() {
+      document.removeEventListener('visibilitychange', onVisibility);
       whirrSource?.stop();
       sub?.stop();
       void bus?.ctx.close();

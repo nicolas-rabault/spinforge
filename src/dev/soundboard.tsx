@@ -12,6 +12,7 @@ function Soundboard() {
   const [power, setPower] = useState(0.6);
   const [spin, setSpin] = useState(1);
   const [tier, setTier] = useState(3);
+  const [intensity, setIntensity] = useState(0.7);
 
   const fire = (run: () => void) => () => {
     audio.start();
@@ -21,6 +22,17 @@ function Soundboard() {
   return (
     <main style={{ maxWidth: 620, margin: '0 auto', padding: 20, display: 'grid', gap: 14 }}>
       <h1 style={{ font: '600 22px ui-sans-serif', margin: 0 }}>Banc d'essai sonore</h1>
+
+      <label style={{ display: 'grid', gap: 4 }}>
+        Intensité musicale : {intensity.toFixed(2)}
+        <input type="range" min={0} max={1} step={0.01} value={intensity}
+               onChange={(e) => {
+                 const v = Number(e.target.value);
+                 setIntensity(v);
+                 audio.start();
+                 audio.setIntensity(v);
+               }} />
+      </label>
 
       <label style={{ display: 'grid', gap: 4 }}>
         Puissance du choc : {power.toFixed(2)}
