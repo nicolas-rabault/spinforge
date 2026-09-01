@@ -2116,9 +2116,10 @@ Dans `src/ui/App.tsx`, sur le `<div>` racine :
         // ICI : porté par `CombatScreen`, il laissait sans aucun son un joueur qui
         // démarre l'application sur l'onglet Coffres.
         audio.start();
-        // Un seul écouteur plutôt que seize `onClick` : les boutons `disabled`
-        // n'émettent aucun événement de pointeur, ils se taisent tout seuls, et
-        // le prochain bouton ajouté sonnera sans qu'on y pense.
+        // Un seul écouteur plutôt que seize `onClick` : le prochain bouton ajouté
+        // sonnera sans qu'on y pense. Les boutons `disabled`, eux, doivent être
+        // filtrés à la main — mesuré au navigateur, un clic sur un bouton grisé
+        // tombe sur l'un de ses enfants et l'événement part quand même.
         const button = (e.target as HTMLElement).closest('button');
         if (!button) return;
         const kind = button.dataset.sfx;
