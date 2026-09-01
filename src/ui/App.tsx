@@ -4,6 +4,7 @@ import { pendingTotal } from '../sim/meta';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
 import { audio } from '../audio/audio';
 import { formatCredits, getLang, setLang, t } from '../i18n';
+import { AudioSettings } from './AudioSettings';
 import { CombatScreen } from './CombatScreen';
 import { ForgeScreen } from './ForgeScreen';
 import { ChestScreen } from './ChestScreen';
@@ -34,6 +35,7 @@ export function App() {
   useEffect(() => installFlushOnHide(), []);
   useEffect(() => () => flushSave(), []);
 
+  const [soundOpen, setSoundOpen] = useState(false);
   const [sound, setSound] = useState(() => audio.settings());
   const soundOn = sound.music || sound.sfx;
 
@@ -105,12 +107,8 @@ export function App() {
           {lang === 'fr' ? 'EN' : 'FR'}
         </button>
         <button
-          onClick={() => {
-            const next = !soundOn;
-            for (const key of ['music', 'sfx', 'haptics'] as const) audio.setSetting(key, next);
-            setSound(audio.settings());
-          }}
-          aria-label={soundOn ? t('header.mute') : t('header.unmute')}
+          onClick={() => setSoundOpen((open) => !open)}
+          aria-label={t('audio.settings')}
           style={{
             width: 34, height: 34, borderRadius: 9, cursor: 'pointer',
             border: '1px solid var(--line)', background: 'rgba(19,25,34,.9)', color: 'var(--muted)',
@@ -143,6 +141,14 @@ export function App() {
       {tab === 'toupies' ? <ToupiesScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
 
       <TabBar tab={tab} onChange={setTab} pending={pendingTotal(metaRef.current)} floating={combat} />
+
+      {soundOpen ? (
+        <AudioSettings
+          settings={sound}
+          onChanged={() => setSound(audio.settings())}
+          onClose={() => setSoundOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

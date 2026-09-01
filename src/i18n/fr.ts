@@ -19,11 +19,15 @@ export const fr = {
 
   'header.credits': 'Crédits',
   'header.gems': 'Gemmes',
-  'header.mute': 'Couper le son',
-  'header.unmute': 'Réactiver le son',
   // Nomme la langue vers laquelle le bouton fait basculer, pas la langue lue.
   'header.switchLang': 'Passer en anglais',
   'save.recovered': "Ta sauvegarde était illisible et n'a pas pu être chargée. Elle a été mise de côté ; une nouvelle partie a démarré.",
+
+  'audio.settings': 'Réglages du son',
+  'audio.music': 'Musique',
+  'audio.sfx': 'Bruitages',
+  'audio.haptics': 'Vibration',
+  'audio.close': 'Fermer',
 
   'combat.pips': 'Salle {n} sur {total}',
   'combat.hint.title': '▾ TA TOUPIE EST CELLE DU CHEVRON',
