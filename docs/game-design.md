@@ -8,7 +8,7 @@ SpinForge croise le **run piloté** d'Archero (on dirige sa toupie salle après 
 
 Piliers non négociables :
 1. **La progression des chapitres est 100 % active** — on n'avance qu'en pilotant.
-2. **L'AUTO farme, il ne progresse jamais** — le mode AUTO (débloqué au chapitre 3) et le farm hors-ligne rejouent le meilleur chapitre jamais validé.
+2. **L'AUTO farme, il ne progresse jamais** — le mode AUTO (débloqué dès le premier chapitre validé, même condition que le hors-ligne) et le farm hors-ligne rejouent le meilleur chapitre jamais validé.
 3. ~60 % des **revenus** viennent de l'idle, le jeu actif paie mieux à la minute.
 4. Le mur n'est jamais un bug, c'est le produit — sorties : fusionner, améliorer ses pièces, ou déclencher une Refonte.
 
@@ -105,7 +105,7 @@ Chaque pièce progresse sur deux axes infinis : **niveau** (crédits/fragments) 
 
 **Refonte (prestige)** : reset chapitres + niveaux de pièces + crédits ; conserve catalogue, raretés, gemmes, quêtes et la **référence de farm** (meilleur chapitre jamais validé). Gain : Étoiles = f(salle max), +2 % de revenus permanents/étoile + arbre d'atouts (plafond hors-ligne 12 h, auto-fusion, vitesse du farm AUTO ×3, second emplacement de toupie…).
 
-**Hors-ligne** : farm automatique du meilleur chapitre jamais validé, dès le chapitre 1, plafond 4 h (extensible 12 h), survit à la Refonte. Écran « Pendant ton absence » au retour, ×2 contre pub récompensée ou gemmes. Pubs toujours optionnelles (×2 gains 15 min, coffre gratuit, relance de boss).
+**Hors-ligne** : farm automatique du meilleur chapitre jamais validé, dès le chapitre 1, plafond 4 h (extensible 12 h), survit à la Refonte. Écran « Pendant ton absence » au retour, un seul bouton, rien à acheter ni à regarder pour en récupérer le gain. **Ce jeu n'aura jamais de publicité** — décision tranchée par l'auteur, pas un report de contenu : à ne pas reproposer.
 
 ## Catalogue (univers original — voir règle IP)
 
@@ -137,4 +137,4 @@ Beyblade est une IP Takara Tomy/Hasbro. **Aucun nom officiel** (toupies, personn
 
 ## Stack technique
 
-TypeScript strict + Vite. Cœur : simulation pure à tick fixe 100 ms, déterministe (RNG sérialisé), zéro dépendance rendu — le hors-ligne = fast-forward de ticks (formule fermée au-delà d'1 h). Rendu arène : PixiJS. UI : React. Nombres : `number` isolé dans `economy.ts` au jalon 1, migration `break_infinity.js` prévue quand les valeurs dépassent la précision. Sauvegarde : IndexedDB/localStorage + export. PWA puis Capacitor. Équilibrage en JSON statique versionné (à partir du jalon 2).
+TypeScript strict + Vite. Cœur : simulation pure à tick fixe 100 ms, déterministe (RNG sérialisé), zéro dépendance rendu — le hors-ligne = fast-forward de ticks. Mesuré sur le lot farm : 1 h de jeu simulée coûte 50 ms, 4 h (le plafond) 136 ms, 12 h 389 ms — et le plafond n'est quasiment jamais simulé en entier, puisqu'au taux retenu de 20 % une absence de 4 h ne rejoue en pratique que ~48 min de contenu, pour ~28 ms. Une formule fermée au-delà d'1 h aurait donc acheté des millisecondes contre une approximation, un deuxième chemin de code et un deuxième jeu de tests à maintenir en synchronisation avec le premier : écartée. Rendu arène : PixiJS. UI : React. Nombres : `number` isolé dans `economy.ts` au jalon 1, migration `break_infinity.js` prévue quand les valeurs dépassent la précision. Sauvegarde : IndexedDB/localStorage + export. PWA puis Capacitor. Équilibrage en JSON statique versionné (à partir du jalon 2).

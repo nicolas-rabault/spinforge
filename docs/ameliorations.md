@@ -925,6 +925,42 @@ branche-là réécrit en ce moment.
 
 ---
 
+## Session du 2026-09-02 — brainstorming du lot B (farm), trois décisions à ne pas reproposer
+
+Pas un test joueur : le brainstorming qui a précédé le jalon 3, lot B (mode AUTO + rattrapage
+hors-ligne), a soulevé deux demandes de l'auteur du jeu laissées hors du lot, et confirmé le
+retrait d'une troisième déjà tranchée avant lui. Spec :
+`docs/superpowers/specs/2026-09-01-jalon-3-lot-b-farm-design.md` (§ 9 « Hors périmètre » et le
+paragraphe « Décision annulée en cours de route »).
+
+- 📋 **Verrouiller l'amélioration des pièces pendant une descente pilotée.** Demandé par
+  l'auteur : rendre impossible l'achat d'une amélioration de pièce pendant qu'une salle est en
+  cours. Écarté du lot B pour une raison précise, pas par manque de temps : le harnais de
+  calibration (`scripts/calibrate.mjs`) achète justement ses améliorations **entre deux
+  salles** — c'est ce qui lui permet d'isoler l'effet du combat de celui de l'économie d'une
+  passe de mesure à l'autre. Interdire l'achat pendant une partie pilotée déplacerait les huit
+  garde-fous chiffrés du projet (salle 10 la plus meurtrière dans chaque chapitre, verrou du
+  châssis actif, écart entre châssis ×3,80, passivité jamais validée…) au moment précis où ils
+  servent d'étalon pour prouver qu'une autre modification — l'extraction de l'autopilote de ce
+  lot, par exemple — n'a rien changé au combat. À reprendre dans son propre lot, avec sa propre
+  passe de mesure, en corrigeant le harnais dans le même commit plutôt qu'après coup.
+- 📋 **Des récompenses de progression par niveau.** Demandé par l'auteur : que progresser dans
+  les niveaux, pas seulement dans les chapitres, débloque des récompenses en plus du gain de
+  jeu normal. Voisin des quêtes déjà prévues au lot C du même jalon (`docs/roadmap.md`) — même
+  sous-système de fond (une boucle de récompenses de progression), à spécifier avec elles
+  plutôt qu'en double.
+- 💭 **Décision retirée — la difficulté ne doit pas scaler avec le niveau du joueur.** L'auteur
+  avait d'abord demandé que la difficulté des niveaux augmente avec la puissance du joueur,
+  puis a explicitement annulé cette demande au profit d'une difficulté **fixe** : chaque salle
+  et chaque chapitre gardent leur propre palier de difficulté (`bot.scaling`, indexé sur la
+  salle et le chapitre, jamais sur les stats ou l'équipement du joueur), et c'est au joueur de
+  progresser pour passer le palier suivant — la croissance doit rester assez douce pour qu'il
+  se sente progresser à tout instant. C'est déjà le comportement livré, il n'y a donc rien à
+  changer ici. Consigné pour la seule raison qui compte : une décision retirée qu'on ne note
+  pas est une décision qui revient.
+
+---
+
 ## Comment mesurer (à réutiliser)
 
 Les chiffres ci-dessus viennent de sondes jetables, écrites comme des tests Vitest
