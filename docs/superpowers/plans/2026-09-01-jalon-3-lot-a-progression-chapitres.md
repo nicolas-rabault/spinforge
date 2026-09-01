@@ -974,7 +974,7 @@ ne domine — c'est là que la contre-pioche cesse de suffire."
 
 ---
 
-### Task 6 : le facteur de difficulté par chapitre (mécanisme, valeur neutre)
+### Task 6 : le facteur de difficulté par chapitre (mécanisme, valeur provisoire)
 
 **Files:**
 - Modify: `src/content/balance.json` (`bot.scaling`)
@@ -990,12 +990,16 @@ ne domine — c'est là que la contre-pioche cesse de suffire."
   // Vérifié par mutation : remplacer l'exposant `chapter - 1` par `chapter` fait
   // rougir ce test. C'est lui qui rend exacte la comparaison des garde-fous du
   // chapitre 1 avant/après ce lot.
-  it('le chapitre 1 est inchangé par le facteur de chapitre, quelle qu’en soit la valeur', () => {
-    const bot = makeBot(1, 5, 0, 0);
-    expect(bot.spinMax).toBeCloseTo(
-      BOT_BASE.spinMax * (1 + BOT_SCALING.spinPerSalle * 4), 6);
-    expect(bot.attack).toBeCloseTo(
-      BOT_BASE.attack * (1 + BOT_SCALING.attackPerSalle * 4), 6);
+  it('le chapitre 1 est inchangé par le facteur de chapitre', () => {
+    // Le facteur n'apparaît nulle part dans les attendus : c'est le point. Au
+    // chapitre 1 l'exposant vaut 0, donc la formule est exactement celle du
+    // palier de salle, quelle que soit la valeur du facteur.
+    for (const salle of [1, 5, 9]) {
+      expect(makeBot(1, salle, 0, 0).spinMax, `salle ${salle}`).toBeCloseTo(
+        BOT_BASE.spinMax * (1 + BOT_SCALING.spinPerSalle * (salle - 1)), 6);
+      expect(makeBot(1, salle, 0, 0).attack, `salle ${salle}`).toBeCloseTo(
+        BOT_BASE.attack * (1 + BOT_SCALING.attackPerSalle * (salle - 1)), 6);
+    }
   });
 
   it('le facteur de chapitre est géométrique et se compose avec le palier de salle', () => {
@@ -1015,19 +1019,22 @@ l'import depuis `./config`, qui porte déjà `BOSS`, `BOT_BASE` et `SALLES_PER_C
 Run : `npx vitest run src/sim/salle.test.ts`
 Attendu : ÉCHEC — `BOT_SCALING.spinPerChapter` vaut `undefined`, le rapport est `NaN`.
 
-- [ ] **Step 3 : les deux boutons, à la valeur neutre** (`src/content/balance.json`) :
+- [ ] **Step 3 : les deux boutons, à une valeur provisoire** (`src/content/balance.json`) :
 
 ```json
     "scaling": {
       "spinPerSalle": 0.15,
       "attackPerSalle": 0.08,
-      "spinPerChapter": 1.0,
-      "attackPerChapter": 1.0
+      "spinPerChapter": 1.2,
+      "attackPerChapter": 1.1
     },
 ```
 
-À 1,0 le mécanisme existe sans rien changer : c'est ce qui permet de le livrer sans passe
-de calibration, et de calibrer ensuite dans son propre commit.
+**Provisoires, pas neutres, et c'est délibéré.** À 1,0 les deux tests ci-dessus passeraient
+même si le mécanisme était faux (`Math.pow(1, n)` vaut 1 pour tout `n`) : la mutation de
+l'exposant serait invisible. Une valeur franche rend le mécanisme observable dès son
+commit. Le chapitre 1 reste bit à bit inchangé de toute façon — c'est ce que prouve le
+premier test. La passe de calibration de la tâche 9 remplacera ces deux nombres.
 
 - [ ] **Step 4 : `makeBot` applique le facteur** (`src/sim/salle.ts`) :
 
@@ -1056,15 +1063,16 @@ Attendu : ÉCHEC du test « le chapitre 1 est inchangé ». **Rétablir**, relan
 
 ```bash
 git add -A
-git commit -m "feat(sim): le facteur de difficulté par chapitre (mécanisme, neutre à 1,0)
+git commit -m "feat(sim): le facteur de difficulté par chapitre (mécanisme, valeurs provisoires)
 
 Géométrique par chapitre, multiplicatif avec le palier linéaire par salle.
-La valeur reste neutre : la passe de calibration combat la fixera, seule."
+Les valeurs sont provisoires — franches et non neutres pour que le
+mécanisme soit observable — et la passe de calibration combat les fixera."
 ```
 
 ---
 
-### Task 7 : le facteur de revenu par chapitre (mécanisme, valeur neutre)
+### Task 7 : le facteur de revenu par chapitre (mécanisme, valeur provisoire)
 
 **Files:**
 - Modify: `src/content/balance.json` (`econ`)
@@ -1091,13 +1099,16 @@ La valeur reste neutre : la passe de calibration combat la fixera, seule."
 Run : `npx vitest run src/sim/economy.test.ts`
 Attendu : ÉCHEC — `ECON.rewardPerChapter` vaut `undefined`, le rapport attendu est `NaN`.
 
-- [ ] **Step 3 : le bouton, à la valeur neutre** (`src/content/balance.json`, clé `econ`) :
+- [ ] **Step 3 : le bouton, à une valeur provisoire** (`src/content/balance.json`, clé `econ`) :
 
 ```json
     "rewardBase": 104,
     "rewardGrowth": 1.13,
-    "rewardPerChapter": 1.0,
+    "rewardPerChapter": 1.25,
 ```
+
+Provisoire pour la même raison qu'à la tâche 6 : à 1,0 le test ci-dessus passerait même si
+le facteur n'était pas appliqué. La passe de calibration de la tâche 10 fixera la valeur.
 
 - [ ] **Step 4 : `salleReward` applique le facteur** (`src/sim/economy.ts`) :
 
@@ -1121,10 +1132,11 @@ Attendu : vert, chiffres du chapitre 1 inchangés.
 
 ```bash
 git add -A
-git commit -m "feat(econ): le facteur de revenu par chapitre (mécanisme, neutre à 1,0)
+git commit -m "feat(econ): le facteur de revenu par chapitre (mécanisme, valeur provisoire)
 
 Géométrique par chapitre, comme la difficulté mais dans sa propre passe.
-Les gemmes de boss ne suivent pas : ce lot ne calibre pas les coffres."
+Valeur provisoire, fixée par la passe économie. Les gemmes de boss ne
+suivent pas : ce lot ne calibre pas les coffres."
 ```
 
 ---
@@ -1306,9 +1318,9 @@ contre-pioche identiques à l'historique. Le chapitre 1 est bit à bit inchangé
 tout écart signale que la refonte du cycle de run a déplacé le flux de RNG, **pas** que
 l'équilibrage a bougé. Si un chiffre bouge, comprendre pourquoi avant d'aller plus loin.
 
-Les chapitres 2 à 4 s'affichent avec les facteurs neutres : ils ne diffèrent du 1 que par
-leurs compositions de types. Noter leurs chiffres, ils servent de point de départ aux deux
-passes suivantes.
+Les chapitres 2 à 4 s'affichent avec les facteurs provisoires des tâches 6 et 7. Noter
+leurs chiffres : ils sont le point de départ des deux passes de calibration suivantes, et
+la première mesure qui dise si le mur tombe bien au chapitre 3.
 
 - [ ] **Step 7 : commit**
 
@@ -1332,8 +1344,8 @@ chacun. Les séries de comparaison restent bornées au chapitre 1."
 **Interfaces:**
 - Consumes: le rapport par chapitre de la tâche 8
 
-- [ ] **Step 1 : balayer la difficulté.** `econ.rewardPerChapter` **reste à 1,0** pendant
-      toute cette passe. Depuis la racine du worktree :
+- [ ] **Step 1 : balayer la difficulté.** `econ.rewardPerChapter` **reste à sa valeur
+      provisoire (1,25)** pendant toute cette passe : ce qui compte est qu'il ne bouge pas. Depuis la racine du worktree :
 
 ```bash
 cp src/content/balance.json /tmp/balance-ref.json
