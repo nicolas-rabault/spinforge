@@ -616,3 +616,22 @@ de ces points n'est bloquant.
   fermant le run, les ticks au-delà de la salle 10 ne calculent plus rien.
 - Le second des deux tests de facteur de chapitre dans `src/sim/salle.test.ts` ne tue pas la
   mutation de l'exposant `chapter - 1` → `chapter` ; son voisin la tue.
+
+**Le modèle du harnais de calibration — constat de fond, antérieur à ce lot**
+- `scripts/calibrate.mjs` **n'équipe jamais une pièce tirée et n'appelle jamais la fusion.**
+  Il n'importe ni fonction d'équipement ni `tryFuse` : les pièces des coffres entrent à
+  l'inventaire par `addPiece` et y restent, et la seule montée en puissance passe par
+  `tryUpgrade`, c'est-à-dire les niveaux achetés en crédits sur les quatre pièces de départ.
+  Le modèle mesure donc un joueur pour qui **acheter un coffre est une perte sèche**. Prouvé
+  et non supposé : neutraliser `openLoot` ne déplace que la ligne du premier coffre
+  (0,00 → 0,04 h) et laisse les quatre chapitres au chiffre près.
+  Conséquence : ces mesures ne peuvent pas détecter un changement d'équilibrage des coffres
+  ou de la fusion, et les décisions prises contre elles sur ce terrain — dont
+  « `chests.bronze.price` effondré pour ne plus concurrencer les améliorations » — reposent
+  sur un joueur qui ne tire aucun bénéfice de ce qu'il achète. À rouvrir avec le lot B, qui
+  a besoin d'un autopilote plus fidèle de toute façon.
+- Deux pannes muettes du même harnais, découvertes à l'intégration et réparées : il appelait
+  `grantChest` et `Toupie.label`, tous deux supprimés par la refonte des coffres et le
+  multilangue. `npm run calibrate` était donc **mort sur `main`** depuis ces jalons sans que
+  rien ne le signale — il n'entre pas dans `npm run test`. Un test de fumée qui se contente
+  de lancer une graine sur un chapitre le dirait ; il n'existe pas.
