@@ -137,7 +137,7 @@ export function metalBody(bus: Bus, dest: AudioNode, o: MetalOptions): void {
       gain: o.gain / (1 + (ratio - 1) * MIX.metalRolloff),
       duration: o.decay / Math.sqrt(ratio),
       at: o.at,
-      attack: 0.004,
+      attack: MIX.metalAttackS,
     });
   }
 }

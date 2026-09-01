@@ -25,6 +25,10 @@ export const MIX = {
   burstAttackS: 0.004,
   /** Attaque par défaut de `tone()`, quand l'appelant n'en précise pas. */
   toneAttackS: 0.008,
+  /** Attaque des partiels de `metalBody()` : décide de la netteté de l'attaque
+   *  du métal — égale à `burstAttackS` aujourd'hui par coïncidence, pas par
+   *  intention, ce sont deux réglages de timbre différents. */
+  metalAttackS: 0.004,
   /** Vitesse à laquelle les partiels aigus de `metalBody()` s'éteignent plus
    *  vite que la fondamentale : plus ce facteur est grand, plus le corps
    *  métallique perd ses harmoniques hautes tôt dans le son. */
