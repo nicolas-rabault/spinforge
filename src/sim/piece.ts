@@ -25,22 +25,10 @@ export interface PieceStack {
   levels: number[];
 }
 
-const RANK_LABELS = [
-  'Commun', 'Bon', 'Rare',
-  'Excellent', 'Excellent +1', 'Excellent +2',
-  'Épique', 'Épique +1', 'Épique +2', 'Épique +3',
-  'Légende',
-];
-
 /** Multiplicateur de la stat portée par la pièce. Aucun plafond : la formule
  *  se prolonge d'elle-même dans Légende +N, ce que « rang infini » exige. */
 export function rarityMult(rank: number): number {
   return Math.pow(RARITY.step, rank - 1);
-}
-
-export function rankLabel(rank: number): string {
-  if (rank <= RANK_LABELS.length) return RANK_LABELS[rank - 1];
-  return `Légende +${rank - RANK_LABELS.length}`;
 }
 
 export const STARTER_EQUIPMENT: Record<Slot, PieceInstance> = {

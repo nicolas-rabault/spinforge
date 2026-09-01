@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rankLabel, rarityMult, STARTER_EQUIPMENT } from './piece';
+import { rarityMult, STARTER_EQUIPMENT } from './piece';
 import { MODELS, modelById, modelsForSlot } from '../content/pieces';
 import { RARITY } from './config';
 
@@ -16,22 +16,6 @@ describe('rarityMult', () => {
   it("ne connaît aucun plafond — Légende +N continue de multiplier", () => {
     expect(rarityMult(20)).toBeGreaterThan(rarityMult(11));
     expect(rarityMult(21) / rarityMult(20)).toBeCloseTo(RARITY.step, 10);
-  });
-});
-
-describe('rankLabel', () => {
-  it("nomme les onze rangs de l'échelle", () => {
-    expect(rankLabel(1)).toBe('Commun');
-    expect(rankLabel(4)).toBe('Excellent');
-    expect(rankLabel(6)).toBe('Excellent +2');
-    expect(rankLabel(7)).toBe('Épique');
-    expect(rankLabel(10)).toBe('Épique +3');
-    expect(rankLabel(11)).toBe('Légende');
-  });
-
-  it("prolonge en Légende +N au-delà du onzième", () => {
-    expect(rankLabel(12)).toBe('Légende +1');
-    expect(rankLabel(30)).toBe('Légende +19');
   });
 });
 

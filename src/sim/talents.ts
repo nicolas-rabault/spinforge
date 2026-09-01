@@ -69,24 +69,6 @@ export function talentsOf(slot: Slot, rank: number): TalentId[] {
   return TALENTS_BY_SLOT[slot].filter((id) => rank >= TALENTS[id].rank);
 }
 
-/** Étiquette française de chaque talent — la Forge s'en sert pour afficher les
- *  talents actifs d'une pièce équipée : le rang seul ne dit rien du talent
- *  qu'il débloque, c'est pourtant sa vraie valeur (voir la spec, § 4.3). */
-export const TALENT_LABELS: Record<TalentId, string> = {
-  estoc: 'Estoc',
-  riposte: 'Riposte',
-  percee: 'Percée',
-  ancrage: 'Ancrage',
-  frolement: 'Frôlement',
-  masse: 'Masse',
-  glisse: 'Glisse',
-  relance: 'Relance',
-  toupieFolle: 'Toupie folle',
-  reserve: 'Réserve',
-  secondSouffle: 'Second souffle',
-  coeurGyre: 'Cœur Gyre',
-};
-
 /** Réduit l'équipement du méta à un jeu de modificateurs. Appelé à la création
  *  d'un run et à chaque changement d'équipement, jamais pendant un tick. */
 export function resolveTalents(meta: MetaState): TalentMods {

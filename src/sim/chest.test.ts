@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canOpen, chestPrice, grantChest, openChest } from './chest';
+import { canOpen, chestPrice, drawPulls, grantChests, openChest } from './chest';
 import { createInitialMeta } from './meta';
 import { CHESTS } from './config';
 import { modelById } from '../content/pieces';
@@ -231,25 +231,33 @@ describe('doublons signature', () => {
   });
 });
 
-describe('grantChest', () => {
+describe('grantChests', () => {
   it('rend null quand la file est vide', () => {
     const meta = createInitialMeta(1);
-    expect(grantChest(meta, 'bronze')).toBeNull();
+    expect(grantChests(meta, 'bronze')).toBeNull();
   });
 
-  it('consomme un coffre de la file et rend une pièce', () => {
+  it('vide la file de ce type et rend une pièce par coffre', () => {
+    const meta = createInitialMeta(1);
+    meta.pending.bronze = 3;
+    const pulls = grantChests(meta, 'bronze');
+    expect(pulls).toHaveLength(3);
+    expect(meta.pending.bronze).toBe(0);
+  });
+
+  it('ne touche pas aux files des autres types', () => {
     const meta = createInitialMeta(1);
     meta.pending.bronze = 2;
-    const pulls = grantChest(meta, 'bronze');
-    expect(pulls).toHaveLength(1);
-    expect(meta.pending.bronze).toBe(1);
+    meta.pending.arene = 4;
+    grantChests(meta, 'bronze');
+    expect(meta.pending.arene).toBe(4);
   });
 
   it('ne débite aucune monnaie', () => {
     const meta = createInitialMeta(1);
     meta.pending.bronze = 1;
     meta.credits = 5000;
-    grantChest(meta, 'bronze');
+    grantChests(meta, 'bronze');
     expect(meta.credits).toBe(5000);
   });
 
@@ -260,18 +268,27 @@ describe('grantChest', () => {
     bought.gems = 100000;
     const granted = createInitialMeta(42);
     granted.pending.arene = 1;
-    expect(grantChest(granted, 'arene')).toEqual(openChest(bought, 'arene', 1));
+    expect(grantChests(granted, 'arene')).toEqual(openChest(bought, 'arene', 1));
+  });
+
+  it('enchaîne les coffres sans décaler le flux ni le pity', () => {
+    // Ouvrir la file d'un coup doit être indiscernable de N ouvertures
+    // successives : même flux de RNG consommé, même compteur de pity à la fin.
+    // Sans quoi vider son butin d'un clic changerait les pièces obtenues.
+    const groupe = createInitialMeta(9);
+    groupe.pending.arene = 5;
+    const unAUn = createInitialMeta(9);
+
+    expect(grantChests(groupe, 'arene')).toEqual(drawPulls(unAUn, 'arene', 5));
+    expect(groupe.rngState).toBe(unAUn.rngState);
+    expect(groupe.pity.arene).toBe(unAUn.pity.arene);
   });
 
   it('fait avancer le même compteur de pity que l’achat', () => {
     // Un joueur qui ne ferait que du butin doit atteindre sa garantie.
     const meta = createInitialMeta(7);
     meta.pending.arene = CHESTS.arene.pityThreshold;
-    let best = 0;
-    for (let i = 0; i < CHESTS.arene.pityThreshold; i++) {
-      const pulls = grantChest(meta, 'arene')!;
-      best = Math.max(best, pulls[0].rank);
-    }
-    expect(best).toBeGreaterThanOrEqual(CHESTS.arene.pityRank);
+    const pulls = grantChests(meta, 'arene')!;
+    expect(Math.max(...pulls.map((p) => p.rank))).toBeGreaterThanOrEqual(CHESTS.arene.pityRank);
   });
 });

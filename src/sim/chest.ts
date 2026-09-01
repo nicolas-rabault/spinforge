@@ -86,9 +86,12 @@ export function openChest(meta: MetaState, kind: ChestKind, count: 1 | 10): Piec
   return drawPulls(meta, kind, count);
 }
 
-/** Ouvre un coffre de la file de butin. `null` si la file est vide pour ce type. */
-export function grantChest(meta: MetaState, kind: ChestKind): PieceInstance[] | null {
-  if (meta.pending[kind] <= 0) return null;
-  meta.pending[kind]--;
-  return drawPulls(meta, kind, 1);
+/** Vide la file de butin de ce type et rend un tirage par coffre. `null` si la
+ *  file est vide. Ouvrir la file d'un coup consomme le même flux de RNG que N
+ *  ouvertures unitaires : le geste ne change que le nombre de clics. */
+export function grantChests(meta: MetaState, kind: ChestKind): PieceInstance[] | null {
+  const count = meta.pending[kind];
+  if (count <= 0) return null;
+  meta.pending[kind] = 0;
+  return drawPulls(meta, kind, count);
 }

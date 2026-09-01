@@ -6,30 +6,29 @@ export type Slot = 'lame' | 'disque' | 'pointe' | 'noyau';
 export interface PieceModel {
   id: string;
   slot: Slot;
-  label: string;
 }
 
 export const MODELS: PieceModel[] = [
-  { id: 'lame.couronne-solaire', slot: 'lame', label: 'Couronne Solaire' },
-  { id: 'lame.croc-de-tempete', slot: 'lame', label: 'Croc de Tempête' },
-  { id: 'lame.ecaille-abyssale', slot: 'lame', label: 'Écaille Abyssale' },
-  { id: 'lame.griffe-orageuse', slot: 'lame', label: 'Griffe Orageuse' },
-  { id: 'noyau.fournaise', slot: 'noyau', label: 'Fournaise' },
-  { id: 'noyau.oeil-du-cyclone', slot: 'noyau', label: 'Œil du Cyclone' },
-  { id: 'noyau.caparacon', slot: 'noyau', label: 'Caparaçon' },
-  { id: 'noyau.arc-electrique', slot: 'noyau', label: 'Arc Électrique' },
-  { id: 'disque.lourd', slot: 'disque', label: 'Lourd' },
-  { id: 'disque.gravite', slot: 'disque', label: 'Gravité' },
-  { id: 'disque.eventail', slot: 'disque', label: 'Éventail' },
-  { id: 'disque.axial', slot: 'disque', label: 'Axial' },
-  { id: 'disque.colosse', slot: 'disque', label: 'Colosse' },
-  { id: 'disque.meteorite', slot: 'disque', label: 'Météorite' },
-  { id: 'pointe.plate', slot: 'pointe', label: 'Plate' },
-  { id: 'pointe.aiguille', slot: 'pointe', label: 'Aiguille' },
-  { id: 'pointe.orbitale', slot: 'pointe', label: 'Orbitale' },
-  { id: 'pointe.gyroscope', slot: 'pointe', label: 'Gyroscope' },
-  { id: 'pointe.furie', slot: 'pointe', label: 'Furie' },
-  { id: 'pointe.ressort', slot: 'pointe', label: 'Ressort' },
+  { id: 'lame.couronne-solaire', slot: 'lame' },
+  { id: 'lame.croc-de-tempete', slot: 'lame' },
+  { id: 'lame.ecaille-abyssale', slot: 'lame' },
+  { id: 'lame.griffe-orageuse', slot: 'lame' },
+  { id: 'noyau.fournaise', slot: 'noyau' },
+  { id: 'noyau.oeil-du-cyclone', slot: 'noyau' },
+  { id: 'noyau.caparacon', slot: 'noyau' },
+  { id: 'noyau.arc-electrique', slot: 'noyau' },
+  { id: 'disque.lourd', slot: 'disque' },
+  { id: 'disque.gravite', slot: 'disque' },
+  { id: 'disque.eventail', slot: 'disque' },
+  { id: 'disque.axial', slot: 'disque' },
+  { id: 'disque.colosse', slot: 'disque' },
+  { id: 'disque.meteorite', slot: 'disque' },
+  { id: 'pointe.plate', slot: 'pointe' },
+  { id: 'pointe.aiguille', slot: 'pointe' },
+  { id: 'pointe.orbitale', slot: 'pointe' },
+  { id: 'pointe.gyroscope', slot: 'pointe' },
+  { id: 'pointe.furie', slot: 'pointe' },
+  { id: 'pointe.ressort', slot: 'pointe' },
 ];
 
 const BY_ID = new Map(MODELS.map((m) => [m.id, m]));

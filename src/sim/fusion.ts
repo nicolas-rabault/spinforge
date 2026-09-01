@@ -42,11 +42,27 @@ function availableSacrifice(meta: MetaState, model: string, rank: number): numbe
     .reduce((sum, s) => sum + s.levels.length, 0);
 }
 
-export function canFuse(meta: MetaState, model: string, rank: number): boolean {
+export interface FusionProgress {
+  identical: { have: number; need: number };
+  sacrifice: { have: number; need: number };
+}
+
+/** Où en est une pile de sa prochaine fusion. Exporté pour que l'inventaire
+ *  *montre* l'avancement (des pastilles remplies) au lieu de l'énoncer
+ *  (« 2 identiques + 1 sacrifice ») — et surtout pour qu'il n'ait pas à
+ *  recompter les exemplaires de son côté : deux comptes, et l'un des deux
+ *  finirait par mentir. */
+export function fusionProgress(meta: MetaState, model: string, rank: number): FusionProgress {
   const recipe = fusionRecipe(rank);
-  if (availableIdentical(meta, model, rank) < recipe.identical) return false;
-  if (availableSacrifice(meta, model, rank) < recipe.sacrifice) return false;
-  return true;
+  return {
+    identical: { have: availableIdentical(meta, model, rank), need: recipe.identical },
+    sacrifice: { have: availableSacrifice(meta, model, rank), need: recipe.sacrifice },
+  };
+}
+
+export function canFuse(meta: MetaState, model: string, rank: number): boolean {
+  const p = fusionProgress(meta, model, rank);
+  return p.identical.have >= p.identical.need && p.sacrifice.have >= p.sacrifice.need;
 }
 
 /**

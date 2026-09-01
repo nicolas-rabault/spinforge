@@ -3,11 +3,18 @@
 import { maxPlayableChapter, startRun, syncRunStats, tick } from '../src/sim/sim.ts';
 import { addPiece, applyRunReward, createInitialMeta, setActiveToupie } from '../src/sim/meta.ts';
 import { tryUpgrade, upgradeCost } from '../src/sim/economy.ts';
-import { canOpen, grantChest, openChest } from '../src/sim/chest.ts';
+import { canOpen, grantChests, openChest } from '../src/sim/chest.ts';
 import { ARENA_RADIUS, MAX_CHAPTER, TICK_S, SALLES_PER_CHAPTER } from '../src/sim/config.ts';
 import { botTypeFor } from '../src/sim/salle.ts';
 import { typeMult } from '../src/sim/typeChart.ts';
 import { TOUPIES } from '../src/content/toupies.ts';
+// `src/content/` ne porte plus de texte : les noms de toupies vivent dans les
+// catalogues i18n. On lit le catalogue français *directement* — `src/i18n/fr.ts`
+// n'importe rien et reste donc pur ; `src/i18n/index.ts`, lui, touche
+// `localStorage` et `navigator`, que ce script n'a pas.
+import { fr } from '../src/i18n/fr.ts';
+
+const toupieLabel = (id) => fr[`toupie.${id}`];
 
 const SEEDS = [1, 7, 42, 1337, 90210, 2, 13, 271, 4242, 65535];
 const MAX_TICKS = 60 * 60 * 20 / TICK_S; // garde-fou : 20 h de jeu simulé
@@ -82,15 +89,20 @@ function steerWithTerrain(run) {
     : { x: target.pos.x - me.x, y: target.pos.y - me.y };
 }
 
-/** Vide la file de butin (Task 10), comme un joueur qui ouvre ses coffres au fur
- *  et à mesure. Retourne vrai si au moins un coffre en a été tiré. */
+/** Vide la file de butin, comme un joueur qui ouvre ses coffres au fur et à
+ *  mesure. Retourne vrai si au moins un coffre en a été tiré.
+ *
+ *  `grantChests` vide la file d'un type en un appel : la boucle `while` d'avant
+ *  est devenue cet appel unique. Le flux de RNG est le même — vider la file d'un
+ *  coup consomme exactement ce que consommaient N ouvertures unitaires (c'est ce
+ *  que tient `chest.test.ts`) — donc la mesure reste comparable à l'ancienne. */
 function openLoot(meta) {
   let opened = false;
   for (const kind of CHEST_KINDS) {
-    while (meta.pending[kind] > 0) {
-      for (const piece of grantChest(meta, kind)) addPiece(meta, piece);
-      opened = true;
-    }
+    const pulls = grantChests(meta, kind);
+    if (!pulls) continue;
+    for (const piece of pulls) addPiece(meta, piece);
+    opened = true;
   }
   return opened;
 }
@@ -295,7 +307,7 @@ const chassisResults = TOUPIES.map((toupie) => {
     simulate(seed, { buyChests: true, steer: steerWithTerrain, toupieId: toupie.id, upTo: 1 }));
   const d = deathsOf(runsFor, 1);
   return {
-    label: toupie.label,
+    label: toupieLabel(toupie.id),
     type: toupie.type,
     runs: chapterField(runsFor, 1, 'runs'),
     hours: hoursOf(runsFor, 1),
