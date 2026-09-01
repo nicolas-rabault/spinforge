@@ -75,7 +75,7 @@ export interface Audio {
   death(): void;
   door(): void;
   bossDown(): void;                           // `chapterValidated` de l'observateur
-  reward(credits: number, chests: number): void;
+  reward(chests: number): void;
   chestShake(): void;
   chestStep(index: number): void;
   chestOpened(): void;                        // le couvercle a fini de céder
@@ -160,7 +160,7 @@ supprimer de la scène.
 |---|---|---|
 | `death()` | corps métallique grave + descente 190 → 55 Hz, rotor coupé | 0,55 s |
 | `door()` | ré5 puis la5 (inchangé — ce sont déjà des degrés du mode, elles s'accordent avec la musique) | 0,27 s |
-| `reward(credits, chests)` | **les pièces dans la caisse** : 4 grains (+1 si un coffre est tombé), bruit passe-bande 1 800 → 3 200 Hz Q 6, 25 ms chacun, espacés de 45 ± 15 ms, hauteur montante — puis un fond de caisse, sinus 90 Hz, 90 ms | ~0,3 s |
+| `reward(chests)` | **les pièces dans la caisse** : 4 grains (+1 si un coffre est tombé), bruit passe-bande 1 800 → 3 200 Hz Q 6, 25 ms chacun, espacés de 45 ± 15 ms, hauteur montante — puis un fond de caisse, sinus 90 Hz, 90 ms | ~0,3 s |
 | `chestShake()` | grondement : bruit passe-bas 220 Hz modulé en amplitude | 0,60 s (= `SHAKE_MS`) |
 | `chestStep(i)` | craquement par pose : bruit passe-bande 700 Hz Q 2, 40 ms, hauteur montante avec `i` | 3 × 0,11 s |
 | `chestOpened()` | éclat : bruit passe-haut + accord ré/la | 0,35 s |
