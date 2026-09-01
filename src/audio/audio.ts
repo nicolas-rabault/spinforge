@@ -1,3 +1,4 @@
+import type { RankTier } from '../theme';
 import { MIX, REVEAL_HZ, SFX } from './mix';
 import { admitHit, createGate } from './gate';
 import { createHaptics, type Haptics } from './haptics';
@@ -23,8 +24,8 @@ export interface Audio {
   chestShake(): void;
   chestStep(index: number): void;
   chestOpened(): void;
-  pieceRevealed(tier: number): void;
-  chestDone(bestTier: number): void;
+  pieceRevealed(tier: RankTier): void;
+  chestDone(bestTier: RankTier): void;
   fuse(): void;
   upgrade(): void;
   equip(): void;
@@ -186,7 +187,7 @@ function createAudio(): Audio {
       burst(b, b.sfx, {
         type: 'highpass',
         freq: MIX.hitClickHz,
-        gain: MIX.hitClickGain + MIX.hitClickSpan * p,
+        gain: MIX.hitClickGain + MIX.hitClickGainSpan * p,
         duration: MIX.hitClickS,
         rate: MIX.hitClickRateBase + Math.random() * MIX.hitClickRateSpan, // pas deux chocs identiques
       });
@@ -290,7 +291,7 @@ function createAudio(): Audio {
       const b = live();
       if (!b || !settings.sfx) return;
       const p = SFX.pieceRevealed;
-      const hz = REVEAL_HZ[Math.max(0, Math.min(REVEAL_HZ.length - 1, tier))];
+      const hz = REVEAL_HZ[tier];
       tone(b, b.sfx, { from: hz, duration: p.duration, gain: p.gain, type: 'triangle' });
       tone(b, b.sfx, { from: hz * p.overtoneRatio, duration: p.overtoneDuration, gain: p.overtoneGain });
     },
@@ -300,7 +301,7 @@ function createAudio(): Audio {
       const b = live();
       if (!b || !settings.sfx) return;
       const c = SFX.chestDone;
-      const top = REVEAL_HZ[Math.max(0, Math.min(REVEAL_HZ.length - 1, bestTier))];
+      const top = REVEAL_HZ[bestTier];
       // Décalé : la dernière pièce révélée sonne au même instant, et les deux sons
       // empilés s'annulaient au lieu de se succéder.
       const t = b.ctx.currentTime + c.delayS;

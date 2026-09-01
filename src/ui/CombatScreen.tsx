@@ -10,6 +10,7 @@ import { resetRun } from '../sim/sim';
 import { PipTrack } from './art/PipTrack';
 import type { MetaState, RunState, Vec } from '../sim/types';
 import { audio } from '../audio/audio';
+import { MIX } from '../audio/mix';
 
 const DEAD_ZONE_PX = 8;
 const ONBOARDED_KEY = 'spinforge.onboarded';
@@ -63,7 +64,7 @@ export function CombatScreen({
         const events = arenaRef.current?.consumeEvents();
         if (events) {
           // Les frôlements entre bots ne méritent pas un son ; les tiens, toujours.
-          for (const hit of events.hits) if (hit.id === 'player' || hit.power > 0.25) audio.hit(hit.power);
+          for (const hit of events.hits) if (hit.id === 'player' || hit.power > MIX.hitBotThreshold) audio.hit(hit.power);
           if (events.deaths.some((d) => d.isPlayer)) audio.death();
           if (events.salleChanged) {
             if (events.chapterValidated) audio.bossDown();

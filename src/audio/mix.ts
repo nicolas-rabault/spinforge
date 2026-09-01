@@ -5,6 +5,54 @@
  * Durées en secondes (horloge WebAudio). Les motifs haptiques sont en millisecondes,
  * seule unité que comprend `navigator.vibrate`.
  */
+/** Ré1. Toute hauteur du jeu — musique ET bruitages — en dérive par demi-tons.
+ *  Elle n'est pas dans `MIX` : `noteHz()` et `NOTE` sont juste dessous et `MIX`
+ *  lui-même y puise, une constante ne peut pas se référencer elle-même. */
+const ROOT_HZ = 36.71;
+
+/** Hauteur d'un degré du mode, à l'octave demandée au-dessus de la racine.
+ *  `noteHz(0, 0)` rend la racine, `noteHz(0, 1)` l'octave au-dessus. */
+export function noteHz(semitone: number, octave: number): number {
+  return ROOT_HZ * Math.pow(2, octave + semitone / 12);
+}
+
+/** Ré phrygien, en demi-tons depuis la fondamentale : ré, mi♭, fa, sol, la, si♭, do.
+ *  Le mode le plus sombre qui reste chantable — et son demi-ton ré → mi♭ EST la
+ *  tension du boss. C'est la règle que `mode.test.ts` fait tenir à TOUTES les
+ *  hauteurs du jeu, musique et bruitages ensemble. */
+export const PHRYGIAN = [0, 1, 3, 5, 7, 8, 10] as const;
+
+/**
+ * La table des notes : le seul endroit du son où une hauteur s'écrit. La musique
+ * et les bruitages y puisent tous les deux, et c'est ce partage — pas la bonne
+ * volonté de chaque recette — qui garantit qu'un « ting » de coffre ne frotte
+ * jamais contre le bourdon.
+ *
+ * Nommage scientifique : le do d'une octave de ré porte le numéro suivant, la
+ * numérotation changeant d'octave au do. N'y figurent que les notes réellement
+ * jouées ; une hauteur qu'on ajoute se déclare ici d'abord.
+ */
+export const NOTE = {
+  A1: noteHz(7, 0),
+  D2: noteHz(0, 1),
+  F2: noteHz(3, 1),
+  A2: noteHz(7, 1),
+  Bb2: noteHz(8, 1),
+  D3: noteHz(0, 2),
+  Eb3: noteHz(1, 2),
+  D4: noteHz(0, 3),
+  F4: noteHz(3, 3),
+  G4: noteHz(5, 3),
+  A4: noteHz(7, 3),
+  Bb4: noteHz(8, 3),
+  D5: noteHz(0, 4),
+  Eb5: noteHz(1, 4),
+  G5: noteHz(5, 4),
+  A5: noteHz(7, 4),
+  Bb5: noteHz(8, 4),
+  D6: noteHz(0, 5),
+} as const;
+
 export const MIX = {
   master: 0.5,
   musicGain: 0.3,
@@ -46,7 +94,7 @@ export const MIX = {
   hitClickHz: 3200,
   hitClickS: 0.008,
   hitClickGain: 0.05,
-  hitClickSpan: 0.1,
+  hitClickGainSpan: 0.1,
   /** Variation de la vitesse de lecture du transitoire — même rôle que
    *  `hitDetune`, mais sur le bruit plutôt que sur le corps tonal : deux
    *  anti-répétitions différentes, sur les deux couches du choc. */
@@ -64,9 +112,16 @@ export const MIX = {
   /** Désaccord aléatoire : c'est lui qui tue l'effet mitraillette PERÇU, quel que
    *  soit le débit réel. */
   hitDetune: 0.08,
+  /** Quatre seuils sur le même axe — la puissance d'un choc — et il faut les lire
+   *  ensemble : 0,25 un choc entre bots mérite un son (les tiens sonnent toujours),
+   *  0,30 il gagne son poids grave, 0,35 il se sent dans la main, 0,45 il creuse la
+   *  musique et le rotor. */
+  hitBotThreshold: 0.25,
   hitSubThreshold: 0.3,
+  /** Départ du glissando du poids. À un quart de ton du mode, volontairement : ce
+   *  qui s'entend d'une chute de 120 à 55 Hz en 120 ms, c'est son arrivée. */
   hitSubFrom: 120,
-  hitSubTo: 55,
+  hitSubTo: NOTE.A1,
   hitSubS: 0.12,
   hitSubGain: 0.05,
 
@@ -104,8 +159,6 @@ export const MIX = {
   stepsPerBar: 16,
   lookaheadS: 0.1,
   timerMs: 25,
-  /** Ré1. Toute la musique est dérivée d'elle par demi-tons. */
-  rootHz: 36.71,
   layerFadeS: 0.35,
   intensityMenus: 0.35,
   intensityCombat: 0.7,
@@ -132,12 +185,21 @@ export const LAYERS = {
 
 /**
  * Recettes des cinq couches de la musique — même esprit que `SFX` : une entrée
- * par couche, chacune le timbre complet de CETTE couche (hauteurs, gains,
- * filtres). `LAYERS` (les seuils d'entrée) et `MIX` (tempo, forme, intensités)
- * restent transversaux ; ceci est du signal, pas du calendrier.
+ * par couche, chacune le timbre complet de CETTE couche (notes, gains, filtres).
+ * `LAYERS` porte les seuils d'entrée, `MIX` le tempo et la forme, `NOTE` toutes
+ * les hauteurs.
+ *
+ * Ce qui reste dans `music.ts`, et lui seul, c'est le CALENDRIER : quel pas de la
+ * grille déclenche quoi — le pouls tous les huit pas, l'enclume sur les
+ * contretemps 6 et 11, le motif sur les deux dernières mesures d'un groupe de
+ * quatre. Ce sont des motifs rythmiques, pas des réglages : sortis de la boucle
+ * qui les applique, ils ne diraient plus rien.
  */
 export const MUSIC = {
   drone: {
+    /** Le bourdon sonne le ré2, une octave au-dessus de la racine : à la racine
+     *  même, un petit haut-parleur ne rend plus qu'un souffle. */
+    note: NOTE.D2,
     /** Coupure du passe-bas qui filtre le souffle grave sous le sinus. */
     noiseFilterHz: 180,
     /** Dosage du souffle mélangé au sinus de fondamentale. */
@@ -150,7 +212,9 @@ export const MUSIC = {
     gainSpan: 0.5,
   },
   pulse: {
-    from: 110,
+    from: NOTE.A2,
+    /** L'arrivée de la chute de la grosse caisse. Pas un degré du mode, et c'est
+     *  voulu : la queue d'une peau frappée est un coup, pas une note. */
     to: 44,
     duration: 0.09,
     gain: 0.16,
@@ -161,14 +225,20 @@ export const MUSIC = {
     q: 1.2,
     gain: 0.05,
     duration: 0.05,
+    /** Accord du filtre en peigne : c'est lui qui donne sa hauteur au bruit. */
+    combNote: NOTE.D6,
     /** Retour du filtre en peigne partagé par toutes les frappes d'enclume. */
     combFeedback: 0.72,
   },
   motif: {
+    /** Ré, la, si♭, fa — les quatre notes du motif, dans l'ordre où elles tombent. */
+    notes: [NOTE.D4, NOTE.A4, NOTE.Bb4, NOTE.F4],
     duration: 0.28,
     gain: 0.05,
   },
   tension: {
+    /** Le mi♭ tenu contre le bourdon en ré : le demi-ton phrygien, entier. */
+    note: NOTE.Eb3,
     /** Coupure du passe-bas qui adoucit la scie de la nappe. */
     filterHz: 700,
     /** Gain cible une fois la couche entrée. */
@@ -176,10 +246,11 @@ export const MUSIC = {
   },
 } as const;
 
-/** Hauteur du « ting » de révélation, par palier de rang. Mi♭5, sol5, si♭5, ré6 :
- *  quatre degrés de ré phrygien, donc quatre notes qui s'accordent avec la
- *  musique. Un mi ou un si naturels sonneraient faux contre la fondamentale. */
-export const REVEAL_HZ = [622.25, 784, 932.33, 1174.66] as const;
+/** Hauteur du « ting » de révélation, un palier de rang par entrée. Le tuple à
+ *  quatre places n'est pas décoratif : indexé par un `RankTier` (`0 | 1 | 2 | 3`),
+ *  il rend tout garde de borne inutile côté `audio.ts`. */
+export const REVEAL_HZ: readonly [number, number, number, number] =
+  [NOTE.Eb5, NOTE.G5, NOTE.Bb5, NOTE.D6];
 
 /** Motifs de vibration, en millisecondes (durée, pause, durée, …). */
 export const BUZZ = {
@@ -201,19 +272,30 @@ export const BUZZ = {
  * `src/render/feel.ts` (le barème) et `src/art/recipes.ts` (une recette par
  * objet). Le choc (`hit`) reste dans `MIX` : sa recette varie avec la puissance
  * du coup, ce n'est pas une signature fixe comme celles-ci.
+ *
+ * Toute hauteur vient de `NOTE`. Les rares nombres bruts qui restent sont des
+ * extrémités de glissando volontairement hors du mode : `mode.test.ts` en tient
+ * la liste, avec la raison de chacune.
  */
 export const SFX = {
   death: {
+    /** 190 Hz n'est aucun degré du mode (54 cents sous le sol3), et n'a pas à
+     *  l'être : un corps métallique inharmonique n'est pas une note, et la chute
+     *  qui l'accompagne, elle, atterrit sur le la1. */
     body: { freq: 190, gain: 0.07, decay: 0.55 },
-    tone: { from: 190, to: 55, duration: 0.55, gain: 0.06 },
+    tone: { from: 190, to: NOTE.A1, duration: 0.55, gain: 0.06 },
     burst: { freq: 520, q: 0.9, gain: 0.05, duration: 0.4 },
   },
   door: {
-    first: { from: 587.33, duration: 0.11, gain: 0.045 },
+    /** Ré5 puis la5 : deux notes brèves qui montent — une porte qui s'ouvre, pas
+     *  une alarme. */
+    first: { from: NOTE.D5, duration: 0.11, gain: 0.045 },
     /** Jouée `secondDelayS` après la première. */
-    second: { from: 880, duration: 0.16, gain: 0.04 },
+    second: { from: NOTE.A5, duration: 0.16, gain: 0.04 },
     secondDelayS: 0.09,
-    thud: { from: 110, to: 70, duration: 0.22, gain: 0.05 },
+    /** Le coup sourd sous les deux notes. Sa chute s'arrête hors du mode : à
+     *  70 Hz sur 220 ms, ce qui reste est le poids, pas la hauteur. */
+    thud: { from: NOTE.A2, to: 70, duration: 0.22, gain: 0.05 },
   },
   reward: {
     grainsBase: 4,
@@ -226,13 +308,15 @@ export const SFX = {
     grainDuration: 0.025,
     grainSpacingS: 0.045,
     grainJitterS: 0.015,
-    /** Le fond de la caisse, sous la cascade de grains. */
-    floor: { from: 90, duration: 0.09, gain: 0.04, delayS: 0.02 },
+    /** Le fond de la caisse, sous la cascade de grains. Fa2 : un sinus fixe de
+     *  90 ms sans glissando, joué à chaque récompense par-dessus le bourdon —
+     *  c'est la hauteur du catalogue qui pardonne le moins un quart de ton. */
+    floor: { from: NOTE.F2, duration: 0.09, gain: 0.04, delayS: 0.02 },
   },
   bossDown: {
-    body: { freq: 146.83, gain: 0.09, decay: 0.9 },
+    body: { freq: NOTE.D3, gain: 0.09, decay: 0.9 },
     /** Ré4, la4, ré5 : la fondamentale, sa quinte, son octave. */
-    chord: [293.66, 440, 587.33],
+    chord: [NOTE.D4, NOTE.A4, NOTE.D5],
     chordToneDuration: 0.5,
     chordToneGain: 0.05,
     chordSpacingS: 0.12,
@@ -241,8 +325,8 @@ export const SFX = {
   chestStep: { freqBase: 700, freqIndexStep: 0.18, q: 2, gain: 0.045, duration: 0.04 },
   chestOpened: {
     burst: { type: 'highpass', freq: 2600, gain: 0.05, duration: 0.35 },
-    toneA: { from: 293.66, duration: 0.35, gain: 0.04 },
-    toneB: { from: 440, duration: 0.35, gain: 0.035 },
+    toneA: { from: NOTE.D4, duration: 0.35, gain: 0.04 },
+    toneB: { from: NOTE.A4, duration: 0.35, gain: 0.035 },
   },
   pieceRevealed: {
     duration: 0.18,
@@ -265,9 +349,9 @@ export const SFX = {
   fuse: {
     /** La montée ; l'enclume démarre pile quand elle s'éteint. */
     rise: { freq: 300, toFreq: 2000, q: 3, gain: 0.045, duration: 0.35 },
-    anvil: { freq: 293.66, gain: 0.09, decay: 0.35 },
+    anvil: { freq: NOTE.D4, gain: 0.09, decay: 0.35 },
   },
-  upgrade: { freq: 392, gain: 0.06, decay: 0.2 },
+  upgrade: { freq: NOTE.G4, gain: 0.06, decay: 0.2 },
   equip: {
     first: { freq: 1400, q: 5, gain: 0.035, duration: 0.03 },
     second: { freq: 900, q: 5, gain: 0.03, duration: 0.04 },
@@ -281,7 +365,8 @@ export const SFX = {
     q: 4,
     gain: 0.03,
     duration: 0.025,
-    /** Jouée en plus quand l'appui engage une dépense. */
-    spendTone: { from: 160, to: 120, duration: 0.04, gain: 0.03 },
+    /** Jouée en plus quand l'appui engage une dépense. Mi♭3 → si♭2 : le si
+     *  NATUREL est exactement la note que le mode exclut. */
+    spendTone: { from: NOTE.Eb3, to: NOTE.Bb2, duration: 0.04, gain: 0.03 },
   },
 } as const;

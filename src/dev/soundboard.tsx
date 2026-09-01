@@ -1,6 +1,7 @@
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { audio } from '../audio/audio';
+import type { RankTier } from '../theme';
 
 /**
  * Banc d'essai du son, jumeau de la planche de style — et pour la même raison :
@@ -11,7 +12,7 @@ import { audio } from '../audio/audio';
 function Soundboard() {
   const [power, setPower] = useState(0.6);
   const [spin, setSpin] = useState(1);
-  const [tier, setTier] = useState(3);
+  const [tier, setTier] = useState<RankTier>(3);
   const [intensity, setIntensity] = useState(0.7);
 
   const fire = (run: () => void) => () => {
@@ -56,8 +57,9 @@ function Soundboard() {
 
       <label style={{ display: 'grid', gap: 4 }}>
         Palier de rang : {tier}
+        {/* Le curseur est borné aux quatre paliers : la conversion ne peut pas mentir. */}
         <input type="range" min={0} max={3} step={1} value={tier}
-               onChange={(e) => setTier(Number(e.target.value))} />
+               onChange={(e) => setTier(Number(e.target.value) as RankTier)} />
       </label>
       <button onClick={fire(() => audio.reward(1))} style={BTN}>Récompense de salle</button>
       <button onClick={fire(() => audio.bossDown())} style={BTN}>Boss vaincu</button>

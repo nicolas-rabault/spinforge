@@ -2,20 +2,7 @@ import { SALLES_PER_CHAPTER } from '../sim/config';
 import { LAYERS, MIX, MUSIC } from './mix';
 import { burst, comb, noiseBuffer, tone, type Bus } from './synth';
 
-/** Ré phrygien, en demi-tons depuis la fondamentale. Le mode le plus sombre qui
- *  reste chantable — et son demi-ton ré → mi♭ EST la tension du boss. */
-export const PHRYGIAN = [0, 1, 3, 5, 7, 8, 10] as const;
-/** Le motif : ré, la, si♭, fa. */
-export const MOTIF = [0, 7, 8, 3] as const;
-/** La nappe de tension : le mi♭ tenu contre le bourdon en ré. */
-export const TENSION = 1;
-
 export type LayerName = keyof typeof LAYERS;
-
-/** Hauteur d'un degré du mode, à l'octave demandée au-dessus de la racine. */
-export function noteHz(semitone: number, octave: number): number {
-  return MIX.rootHz * Math.pow(2, octave + semitone / 12);
-}
 
 /** L'intensité est une fonction pure du contexte : c'est ce qui permet de la
  *  tester, et ce qui garantit que deux écrans ne se disputent pas la musique. */
@@ -86,7 +73,7 @@ export function createMusic(): Music {
       const slot = [0, 3, 6, 10].indexOf(inBar);
       if (slot >= 0) {
         tone(b, duckNode!, {
-          from: noteHz(MOTIF[slot], 3), duration: MUSIC.motif.duration, gain: MUSIC.motif.gain,
+          from: MUSIC.motif.notes[slot], duration: MUSIC.motif.duration, gain: MUSIC.motif.gain,
           at, type: 'triangle',
         });
       }
@@ -148,7 +135,7 @@ export function createMusic(): Music {
       droneGain.gain.value = 0;
       droneGain.connect(duckNode);
       const droneOsc = ctx.createOscillator();
-      droneOsc.frequency.value = MIX.rootHz * 2;
+      droneOsc.frequency.value = MUSIC.drone.note;
       droneOsc.connect(droneGain);
       droneOsc.start();
       const droneNoise = ctx.createBufferSource();
@@ -168,7 +155,7 @@ export function createMusic(): Music {
       tensionGain.connect(duckNode);
       const tensionOsc = ctx.createOscillator();
       tensionOsc.type = 'sawtooth';
-      tensionOsc.frequency.value = noteHz(TENSION, 2);
+      tensionOsc.frequency.value = MUSIC.tension.note;
       const tensionFilter = ctx.createBiquadFilter();
       tensionFilter.type = 'lowpass';
       tensionFilter.frequency.value = MUSIC.tension.filterHz;
@@ -177,7 +164,7 @@ export function createMusic(): Music {
 
       // Un seul filtre en peigne pour toutes les frappes d'enclume : en recréer un
       // par note laisserait autant de boucles de délai vivantes derrière soi.
-      anvilIn = comb(next, duckNode, noteHz(0, 5), MUSIC.anvil.combFeedback);
+      anvilIn = comb(next, duckNode, MUSIC.anvil.combNote, MUSIC.anvil.combFeedback);
 
       // L'intensité a déjà été demandée avant que ce bus n'existe : on la rattrape.
       applyIntensity();
