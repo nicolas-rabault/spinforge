@@ -1,4 +1,4 @@
-import { SALLES_PER_CHAPTER, TICK_S } from './config';
+import { OFFLINE, SALLES_PER_CHAPTER, TICK_S } from './config';
 import { steerWithTerrain } from './autopilot';
 import { applyRunReward } from './meta';
 import { startRun, syncRunStats, tick } from './sim';
@@ -115,4 +115,23 @@ export function farm(
     }
   }
   return report;
+}
+
+/**
+ * Secondes de JEU à simuler pour une absence donnée. Le taux s'applique au
+ * temps, jamais aux gains : un seul chiffre gouverne crédits, gemmes et coffres
+ * à la fois, sans règle d'arrondi à inventer pour chacun.
+ *
+ * Le plafond porte sur l'ABSENCE, pas sur le temps simulé — 4 h d'absence à
+ * 20 % valent 48 min de jeu, et une absence de trois jours vaut la même chose,
+ * bonus de retour en plus.
+ *
+ * Une absence négative (horloge système reculée) vaut zéro plutôt qu'un gain
+ * négatif : le méta est écrit par une couche qu'on ne contrôle pas.
+ */
+export function offlineSeconds(absenceSeconds: number): number {
+  if (!(absenceSeconds >= OFFLINE.minSeconds)) return 0;
+  const capped = Math.min(absenceSeconds, OFFLINE.capHours * 3600);
+  const bonus = absenceSeconds >= OFFLINE.winbackAfterHours * 3600 ? OFFLINE.winbackMult : 1;
+  return capped * OFFLINE.rate * bonus;
 }

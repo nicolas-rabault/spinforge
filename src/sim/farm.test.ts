@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { farm, newFarmSession } from './farm';
+import { farm, newFarmSession, offlineSeconds } from './farm';
 import { createInitialMeta } from './meta';
-import { MAX_CHAPTER, SALLES_PER_CHAPTER } from './config';
+import { MAX_CHAPTER, OFFLINE, SALLES_PER_CHAPTER } from './config';
 import type { MetaState } from './types';
 
 /** Un méta qui a validé `best`, prêt à farmer. */
@@ -144,5 +144,42 @@ describe('farm', () => {
     meta.bestChapter = 2;
     farm(meta, session, 0.5, 7); // doit rouvrir sur le chapitre 2
     expect(session.run!.chapter).toBe(2);
+  });
+});
+
+describe('offlineSeconds', () => {
+  const H = 3600;
+
+  it('ignore une absence trop courte', () => {
+    expect(offlineSeconds(OFFLINE.minSeconds - 1)).toBe(0);
+  });
+
+  it('ignore une absence nulle ou négative (horloge reculée)', () => {
+    expect(offlineSeconds(0)).toBe(0);
+    expect(offlineSeconds(-5000)).toBe(0);
+  });
+
+  it('applique le taux au temps d’absence', () => {
+    expect(offlineSeconds(H)).toBeCloseTo(H * OFFLINE.rate, 6);
+  });
+
+  it('plafonne l’absence avant d’appliquer le taux', () => {
+    const plafond = OFFLINE.capHours * H;
+    expect(offlineSeconds(plafond * 3)).toBeCloseTo(plafond * OFFLINE.rate * OFFLINE.winbackMult, 6);
+  });
+
+  it('rapporte strictement moins qu’une minute jouée', () => {
+    // Le pilier : l'actif paie mieux à la minute, bonus de retour compris.
+    expect(offlineSeconds(60)).toBeLessThan(60);
+  });
+
+  it('accorde le bonus de retour au-delà du seuil, pas en deçà', () => {
+    const seuil = OFFLINE.winbackAfterHours * H;
+    const plafond = OFFLINE.capHours * H;
+    const juste = offlineSeconds(seuil);
+    const avant = offlineSeconds(seuil - 1);
+    expect(juste).toBeCloseTo(plafond * OFFLINE.rate * OFFLINE.winbackMult, 6);
+    expect(avant).toBeCloseTo(plafond * OFFLINE.rate, 6);
+    expect(juste).toBeGreaterThan(avant);
   });
 });
