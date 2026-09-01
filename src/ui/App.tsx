@@ -300,7 +300,7 @@ export function App() {
           PixiJS à chaque changement d'onglet coûterait un rechargement complet
           des textures. On le masque, la boucle se met en pause. */}
       <div style={{ position: 'absolute', inset: 0, display: combat ? 'block' : 'none' }}>
-        <CombatScreen runRef={runRef} metaRef={combatMetaRef} running={combat} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={handleRunTick} onMetaChanged={metaChanged} />
+        <CombatScreen runRef={runRef} metaRef={combatMetaRef} running={combat} piloted={playing} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={handleRunTick} onMetaChanged={metaChanged} />
       </div>
       {tab === 'forge' ? (
         <ForgeScreen

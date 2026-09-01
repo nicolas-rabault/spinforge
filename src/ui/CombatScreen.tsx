@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createArena } from '../render/arena';
 import { playerArt } from '../art/toupie';
 import { useGameLoop } from './useGameLoop';
@@ -7,6 +7,7 @@ import { t } from '../i18n';
 import { tx } from '../i18n/tx';
 import { SALLES_PER_CHAPTER } from '../sim/config';
 import { maxPlayableChapter, startRun } from '../sim/sim';
+import { steerWithTerrain } from '../sim/autopilot';
 import { PipTrack } from './art/PipTrack';
 import type { MetaState, RunState, Vec } from '../sim/types';
 import { audio } from '../audio/audio';
@@ -26,11 +27,15 @@ function chapterChipStyle(selected: boolean) {
 }
 
 export function CombatScreen({
-  runRef, metaRef, running, chapterToPlay, onPickChapter, onTick, onMetaChanged,
+  runRef, metaRef, running, piloted, chapterToPlay, onPickChapter, onTick, onMetaChanged,
 }: {
   runRef: { current: RunState };
   metaRef: { current: MetaState };
   running: boolean;
+  /** Vrai en partie pilotée (le doigt commande le run affiché), faux en décor
+   *  (l'autopilote le commande) — bascule unique de la source de pilotage
+   *  donnée à `useGameLoop` ci-dessous. Alimenté par `playing` côté App. */
+  piloted: boolean;
   /** Le chapitre que la prochaine descente utilisera, calculé par `App` — choix
    *  du joueur ou suggestion. L'écran des toupies lit exactement le même. */
   chapterToPlay: number;
@@ -68,10 +73,23 @@ export function CombatScreen({
     if (!running) audio.setSpin(null);
   }, [running]);
 
+  // Source de pilotage donnée à `useGameLoop` : le doigt en partie pilotée,
+  // l'autopilote en décor — sans que `useGameLoop` (qui ne fait que lire
+  // `.current` à chaque tick) ait à savoir laquelle des deux commande. Un
+  // getter suffit, structurellement compatible avec ce que `useGameLoop`
+  // attend d'un `steerRef`. Mémorisé sur la seule bascule `piloted` : un
+  // objet recréé à chaque rendu relancerait la boucle de `useGameLoop`, qui
+  // le porte dans les dépendances de son effet.
+  const steerSourceRef = useMemo(() => ({
+    get current(): Vec | null {
+      return piloted ? steerRef.current : steerWithTerrain(runRef.current);
+    },
+  }), [piloted, runRef]);
+
   useGameLoop(
     runRef,
     metaRef,
-    steerRef,
+    steerSourceRef,
     {
       beforeTick: (run) => arenaRef.current?.beforeTick(run),
       afterTick: (run) => {
@@ -114,7 +132,12 @@ export function CombatScreen({
     running,
   );
 
+  // En décor, le doigt ne pilote pas — « le mode auto n'est pas jouable » est
+  // une exigence explicite du jeu. Un contact sur l'arène pendant le décor ne
+  // fait donc rien : ni piloter, ni entamer une partie pilotée (ça, c'est le
+  // bouton « Nouvelle descente » du voile, seul canal prévu pour ça).
   const onDown = (e: React.PointerEvent) => {
+    if (!piloted) return;
     // Glisser n'importe où pilote la toupie — sauf sur un bouton.
     if ((e.target as HTMLElement).closest('button')) return;
     if (pointerRef.current !== null) return;
@@ -122,6 +145,7 @@ export function CombatScreen({
     originRef.current = { x: e.clientX, y: e.clientY };
   };
   const onMove = (e: React.PointerEvent) => {
+    if (!piloted) return;
     if (e.pointerId !== pointerRef.current || !originRef.current) return;
     const dx = e.clientX - originRef.current.x;
     const dy = e.clientY - originRef.current.y;
@@ -135,6 +159,7 @@ export function CombatScreen({
     }
   };
   const onUp = (e: React.PointerEvent) => {
+    if (!piloted) return;
     if (e.pointerId !== pointerRef.current) return;
     pointerRef.current = null;
     originRef.current = null;
