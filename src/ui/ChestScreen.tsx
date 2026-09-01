@@ -9,6 +9,7 @@ import { rankTier } from '../theme';
 import { formatCredits, t, type MessageKey } from '../i18n';
 import { tx } from '../i18n/tx';
 import { ChestIcon } from './art/ChestIcon';
+import { AlertDot } from './art/AlertDot';
 import { PieceIcon } from './art/PieceIcon';
 import { RingMeter } from './art/RingMeter';
 import { OddsBar } from './art/OddsBar';
@@ -182,6 +183,7 @@ export function ChestScreen({
                 >
                   {meta.pending[kind]}
                 </span>
+                <AlertDot label={t('alert.todo')} top={-2} right={-4} />
               </button>
             ))}
           </div>
