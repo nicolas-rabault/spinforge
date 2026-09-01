@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { addPiece, createInitialMeta } from '../sim/meta';
 import { STARTER_TOUPIE } from '../content/toupies';
-import { attention, stackKey } from './attention';
-import type { MetaState } from '../sim/types';
+import { attention, shoppingToupie, stackKey } from './attention';
+import type { MetaState, RunState } from '../sim/types';
 
 function empty(): MetaState {
   return createInitialMeta(1);
@@ -83,5 +83,23 @@ describe('attention', () => {
     addPiece(meta, { model: 'disque.lourd', rank: 1, level: 5 });
     const att = attention(meta, STARTER_TOUPIE);
     expect(att.betterSlots.has('disque')).toBe(true);
+  });
+});
+
+describe('shoppingToupie', () => {
+  // La Forge chiffre la toupie sur laquelle l'achat va porter : celle de
+  // l'arène tant que le run vit, celle qui attend une fois la descente perdue.
+  it('suit la toupie de l’arène tant que le run vit', () => {
+    const meta = createInitialMeta(1);
+    const run = { phase: 'fighting', toupie: 'brasier-solaire' } as RunState;
+    meta.toupies.active = 'typhon-primal';
+    expect(shoppingToupie(meta, run)).toBe('brasier-solaire');
+  });
+
+  it('bascule sur la toupie active une fois la descente perdue', () => {
+    const meta = createInitialMeta(1);
+    const run = { phase: 'dead', toupie: 'brasier-solaire' } as RunState;
+    meta.toupies.active = 'typhon-primal';
+    expect(shoppingToupie(meta, run)).toBe('typhon-primal');
   });
 });
