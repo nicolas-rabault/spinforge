@@ -87,7 +87,7 @@ export function CombatScreen({
       draw: (run, alpha) =>
         arenaRef.current?.draw(run, alpha, playerArt(metaRef.current.equipped, run.toupie)),
       onReward: (reward) => {
-        audio.reward(reward.credits, reward.chests.length);
+        audio.reward(reward.chests.length);
         onMetaChanged();
       },
     },

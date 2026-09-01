@@ -15,7 +15,7 @@ export interface Audio {
   hit(power: number): void;
   death(): void;
   door(): void;
-  reward(credits: number, chests: number): void;
+  reward(chests: number): void;
   bossDown(): void;
   chestShake(): void;
   chestStep(index: number): void;
@@ -184,9 +184,7 @@ function createAudio(): Audio {
       tone(b, b.sfx, SFX.door.thud);
     },
 
-    // `credits` fait partie de la signature (tâches 9-11 en auront besoin) mais
-    // ne module encore aucun son : seul le nombre de coffres compte ici.
-    reward(_credits, chests) {
+    reward(chests) {
       haptics.buzz('reward', performance.now());
       const b = live();
       if (!b || !settings.sfx) return;

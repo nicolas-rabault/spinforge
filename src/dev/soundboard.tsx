@@ -47,7 +47,7 @@ function Soundboard() {
         <input type="range" min={0} max={3} step={1} value={tier}
                onChange={(e) => setTier(Number(e.target.value))} />
       </label>
-      <button onClick={fire(() => audio.reward(1200, 1))} style={BTN}>Récompense de salle</button>
+      <button onClick={fire(() => audio.reward(1))} style={BTN}>Récompense de salle</button>
       <button onClick={fire(() => audio.bossDown())} style={BTN}>Boss vaincu</button>
       <button onClick={fire(() => audio.chestShake())} style={BTN}>Coffre — secousse</button>
       <button onClick={fire(() => [0, 1, 2].forEach((i) => setTimeout(() => audio.chestStep(i), i * 110)))} style={BTN}>
