@@ -6,6 +6,7 @@ import type { MessageKey } from './fr';
 export const en: Record<MessageKey, string> = {
   'format.thousand': 'k',
   'format.million': 'M',
+  'format.hour': 'h',
 
   'tab.combat': 'Battle',
   'tab.forge': 'Forge',
@@ -42,6 +43,18 @@ export const en: Record<MessageKey, string> = {
   'combat.pickRun': 'Choose your run',
   'combat.chapterChip': '{n} — {name}',
   'combat.newRun': 'New run',
+
+  // Full-screen veil on load, when offline farming ran during the absence —
+  // same layout as the end-of-run veil above.
+  'absence.title': 'While you were away',
+  'absence.duration': '{h} of farming — {chapter}',
+  'absence.credits': '+{n} credits',
+  'absence.chests.one': '+{n} chest',
+  'absence.chests.other': '+{n} chests',
+  'absence.salles.one': '{n} room cleared',
+  'absence.salles.other': '{n} rooms cleared',
+  'absence.winback': 'Comeback bonus ×{mult}',
+  'absence.claim': 'Claim',
 
   'forge.level': 'lv. {n}',
   'forge.changeToupie': 'Change top',

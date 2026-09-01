@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { maxPlayableChapter, startRun } from '../sim/sim';
-import { farm, newFarmSession } from '../sim/farm';
+import { farm, newFarmSession, offlineSeconds, type FarmReport } from '../sim/farm';
 import { OFFLINE, SALLES_PER_CHAPTER } from '../sim/config';
 import { attention, shoppingToupie } from './attention';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
 import { audio } from '../audio/audio';
 import { intensityFor } from '../audio/music';
 import { formatCredits, getLang, setLang, t } from '../i18n';
+import { AbsenceScreen } from './AbsenceScreen';
 import { AudioSettings } from './AudioSettings';
 import { CombatScreen } from './CombatScreen';
 import { ForgeScreen } from './ForgeScreen';
@@ -87,6 +88,28 @@ export function App() {
 
   useEffect(() => installFlushOnHide(), []);
   useEffect(() => () => flushSave(), []);
+
+  // L'écran « Pendant ton absence » : le rapport que le farm hors-ligne a
+  // produit au chargement, ou null tant qu'aucune absence n'a été mesurée ou
+  // qu'elle a été réclamée. Sur une session neuve, jamais celle d'`AUTO`
+  // (`farmSessionRef` plus bas) : les deux farms sont deux flux séparés,
+  // l'un ponctuel au montage, l'autre continu tant que l'app reste ouverte.
+  const [absenceReport, setAbsenceReport] = useState<FarmReport | null>(null);
+  // Un `useEffect` à dépendances vides s'exécute une fois par montage — mais
+  // React ne garantit pas qu'un effet ne s'exécute jamais deux fois (mode
+  // strict, changements futurs). La ref est le vrai verrou : posée avant
+  // d'appeler `farm`, elle rend la seconde exécution inoffensive quoi qu'il
+  // arrive, alors que `farm` mute directement `metaRef.current`.
+  const absenceHandledRef = useRef(false);
+  useEffect(() => {
+    if (absenceHandledRef.current) return;
+    absenceHandledRef.current = true;
+    const seconds = offlineSeconds(loaded.absenceSeconds);
+    if (seconds <= 0 || metaRef.current.bestChapter < 1) return;
+    const report = farm(metaRef.current, newFarmSession(), seconds, (Date.now() ^ 0x27d4eb2f) >>> 0);
+    setAbsenceReport(report);
+    metaChanged();
+  }, []);
 
   // App se re-rend à chaque tick : l'effet ne se déclenche donc que quand l'un des
   // trois vrais paramètres change, et `setIntensity` ignore une valeur identique.
@@ -303,6 +326,14 @@ export function App() {
           settings={sound}
           onChanged={() => setSound(audio.settings())}
           onClose={() => setSoundOpen(false)}
+        />
+      ) : null}
+
+      {absenceReport ? (
+        <AbsenceScreen
+          report={absenceReport}
+          absenceSeconds={loaded.absenceSeconds}
+          onClaim={() => setAbsenceReport(null)}
         />
       ) : null}
     </div>

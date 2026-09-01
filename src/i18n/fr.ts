@@ -9,6 +9,7 @@ export const fr = {
   // Le français sépare le nombre de son suffixe, l'anglais le colle.
   'format.thousand': ' k',
   'format.million': ' M',
+  'format.hour': ' h',
 
   'tab.combat': 'Combat',
   'tab.forge': 'Forge',
@@ -51,6 +52,18 @@ export const fr = {
   // deux langues gardent la main dessus.
   'combat.chapterChip': '{n} — {name}',
   'combat.newRun': 'Nouvelle descente',
+
+  // Voile plein écran au chargement, quand le farm hors-ligne a tourné pendant
+  // l'absence — même gabarit que le voile de fin de descente ci-dessus.
+  'absence.title': 'Pendant ton absence',
+  'absence.duration': '{h} de farm — {chapter}',
+  'absence.credits': '+{n} crédits',
+  'absence.chests.one': '+{n} coffre',
+  'absence.chests.other': '+{n} coffres',
+  'absence.salles.one': '{n} salle vidée',
+  'absence.salles.other': '{n} salles vidées',
+  'absence.winback': 'Bonus de retour ×{mult}',
+  'absence.claim': 'Réclamer',
 
   'forge.level': 'niv. {n}',
   'forge.changeToupie': 'Changer de toupie',
