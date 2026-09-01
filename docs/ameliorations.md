@@ -606,9 +606,25 @@ Le rotor, lui, passe de 0,055 à 0,018 de gain, et son souffle s'efface de 65 %
 pendant **150 ms** (`MIX.duckHoldS`) sous chaque choc fort. Mesuré en branchant un
 analyseur sur la sortie de sa propre chaîne — sinon le choc le couvre — et ramené au
 niveau de sortie : **−55,9 dBFS rms en croisière contre −65,8 pendant le palier**,
-soit −9,9 dB là où le barème en promet −9,1 (`MIX.duckWhirr` = 0,35). Il passe alors
-41 dB sous un choc plein (−24,8 dBFS rms). Le sub qui double le souffle n'est pas
-ducké, lui, et c'est lui qui domine ce qu'on mesure du rotor en sortie.
+soit −9,9 dB là où le barème en promet −9,1 (`MIX.duckWhirr` = 0,35). Le sub qui
+double le souffle n'est pas ducké, lui, et c'est lui qui domine ce qu'on mesure du
+rotor en sortie.
+
+> **Le niveau absolu du rotor est contesté entre deux méthodes, et l'oreille doit
+> trancher.** Mesuré sur sa propre chaîne puis ramené à la sortie : −55,9 dBFS rms.
+> Mesuré directement à la sortie, rotor seul à spin plein, curseur tiré par un vrai
+> geste : **−33,1 dBFS crête / −40,2 rms**, soit **17,3 dB sous la crête d'un choc
+> plein** — pas les 41 dB que donne l'autre méthode. Les deux mesures portent sur le
+> même code ; je n'ai pas réconcilié l'écart. Ce qui est certain et indépendant de la
+> méthode : le gain est passé de 0,055 à 0,018, soit **−9,7 dB** par rapport à la
+> version jugée « très prenante ». Si le rotor reste pénible, `MIX.whirrGain` est le
+> bouton, et il est cette fois le seul en cause.
+>
+> Piège de méthode qui a produit le faux chiffre initial (−71,7 dBFS) : sur le banc
+> d'essai, un curseur poussé par un événement synthétique **n'atteint pas React** —
+> la valeur affichée change, `onChange` ne part jamais, et on mesure le silence en
+> croyant mesurer le son. Toujours tirer le curseur par un vrai geste de souris, et
+> vérifier qu'une automation a bien été déclenchée.
 **Un son tenu qui s'interrompt cesse d'être un son tenu.**
 
 **La musique.** Boucle de 8 mesures en ré phrygien, 92 BPM constants, cinq couches
