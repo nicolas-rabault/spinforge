@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { BUZZ, MIX } from './mix';
-import { admitBuzz, createHaptics, createHapticsState, hitPattern } from './haptics';
+import { admitBuzz, createHaptics, createHapticsState, hitPattern, type BuzzKind } from './haptics';
 
 describe('le motif de choc', () => {
   it('ne vibre pas sous le seuil de puissance', () => {
@@ -67,14 +67,21 @@ describe('la façade haptique', () => {
 
   // Mesuré au navigateur sur une fusion réussie : le clic du bouton vibre à
   // t≈0, sa conclusion arrive quelques millisecondes plus tard — bien avant
-  // les 60 ms de `hapticMinGapMs` — et se faisait avaler par l'appui. `fuse`
-  // et `equip` concluent une action tout comme `chestDone` et `bossDown` :
-  // elles doivent passer, sans quoi une réussite ne se sent plus.
-  it("laisse passer la conclusion d'une action même juste après son appui", () => {
+  // les 60 ms de `hapticMinGapMs` — et se faisait avaler par l'appui puisque
+  // `fuse` ne figurait pas dans `URGENT`. Généralisé aux quatre membres du
+  // `Set` : chacun conclut une action, la mesure n'en couvrait qu'un seul.
+  // Une instance `createHaptics` fraîche par membre, pas un état partagé :
+  // `chestDone` (93 ms) et `bossDown` (160 ms) coûtent chacun une bonne part
+  // des 220 ms de `MIX.hapticBudgetMs`, et s'épuiseraient l'un l'autre dans
+  // la même fenêtre glissante — un échec qui n'aurait alors plus rien à voir
+  // avec `URGENT`.
+  const CONCLUSIONS: BuzzKind[] = ['chestDone', 'bossDown', 'fuse', 'equip'];
+
+  it.each(CONCLUSIONS)('%s conclut une action et passe malgré l\'intervalle minimum', (kind) => {
     const emit = vi.fn();
     const haptics = createHaptics(emit, true);
     haptics.buzz('tap', 0);
-    haptics.buzz('fuse', 30);
+    haptics.buzz(kind, 30);
     expect(emit).toHaveBeenCalledTimes(2);
   });
 });
