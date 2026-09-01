@@ -662,7 +662,6 @@ export function createHaptics(emit: Emit | null, enabled: boolean): Haptics {
     },
     setEnabled(next) {
       on = next;
-      if (!next && emit) emit([0]); // coupe une vibration déjà en cours
     },
   };
 }
@@ -1932,36 +1931,14 @@ Attendu : 9 tests PASSENT.
 | retirer le `if (intensity <= 0) return []` | « n'en allume aucune à intensité nulle » |
 | remplacer `2` par `3` dans l'exposant de `noteHz` | « place la fondamentale à ré4 » |
 
-- [ ] **Étape 6 : brancher le curseur d'intensité au banc d'essai**
+Le curseur d'intensité du banc d'essai appartient à la **tâche 8** : il appelle
+`audio.setIntensity`, que la façade ne gagne qu'à ce moment-là. Cette tâche-ci ne
+touche donc pas `src/dev/soundboard.tsx`.
 
-Dans `src/dev/soundboard.tsx`, importer `createMusic` et le brancher sur le bus. Le
-banc a besoin d'un accès au bus que la façade n'expose pas ; on passe donc par la
-façade elle-même, qui gagne à la tâche 8 une méthode `setIntensity`. **En attendant,
-cette étape se limite à ajouter le curseur et à appeler `audio.setIntensity`, qui
-n'existe pas encore** — donc :
-
-Faire d'abord l'étape 1 de la tâche 8 (ajout de `setIntensity` à la façade), puis
-revenir ici. Les deux tâches partagent ce point de couture ; c'est le seul du plan.
-
-```tsx
-  const [intensity, setIntensity] = useState(0.7);
-  // …
-      <label style={{ display: 'grid', gap: 4 }}>
-        Intensité musicale : {intensity.toFixed(2)}
-        <input type="range" min={0} max={1} step={0.01} value={intensity}
-               onChange={(e) => {
-                 const v = Number(e.target.value);
-                 setIntensity(v);
-                 audio.start();
-                 audio.setIntensity(v);
-               }} />
-      </label>
-```
-
-- [ ] **Étape 7 : commit**
+- [ ] **Étape 6 : commit**
 
 ```bash
-git add src/audio/music.ts src/audio/music.test.ts src/dev/soundboard.tsx
+git add src/audio/music.ts src/audio/music.test.ts
 git status --short
 git commit -m "feat(son): une boucle de forge en ré phrygien, dont la densité suit le jeu
 
@@ -2061,12 +2038,31 @@ import { intensityFor } from '../audio/music';
   }, [tab, run.salle, run.phase]);
 ```
 
-- [ ] **Étape 4 : vérifier la compilation et les tests**
+- [ ] **Étape 4 : ajouter le curseur d'intensité au banc d'essai**
+
+Dans `src/dev/soundboard.tsx` :
+
+```tsx
+  const [intensity, setIntensity] = useState(0.7);
+  // …
+      <label style={{ display: 'grid', gap: 4 }}>
+        Intensité musicale : {intensity.toFixed(2)}
+        <input type="range" min={0} max={1} step={0.01} value={intensity}
+               onChange={(e) => {
+                 const v = Number(e.target.value);
+                 setIntensity(v);
+                 audio.start();
+                 audio.setIntensity(v);
+               }} />
+      </label>
+```
+
+- [ ] **Étape 5 : vérifier la compilation et les tests**
 
 Lancer : `npm run build && npm run test`
 Attendu : aucune erreur, tous les tests passent.
 
-- [ ] **Étape 5 : écouter en jeu**
+- [ ] **Étape 6 : écouter en jeu**
 
 Ouvrir `/spinforge/` et vérifier soi-même :
 
@@ -2079,10 +2075,10 @@ Ouvrir `/spinforge/` et vérifier soi-même :
 6. **Changer d'onglet du navigateur coupe tout**, et le retour reprend.
 7. **L'interrupteur Musique coupe la musique en laissant les chocs.**
 
-- [ ] **Étape 6 : commit**
+- [ ] **Étape 7 : commit**
 
 ```bash
-git add src/audio/audio.ts src/ui/App.tsx
+git add src/audio/audio.ts src/ui/App.tsx src/dev/soundboard.tsx
 git status --short
 git commit -m "feat(son): la musique prend le fond sonore, et s'efface sous les chocs
 
@@ -2455,7 +2451,6 @@ validé *cette* combinaison-là. Sinon, demander au user avant de fusionner.
 | § 11 risques (coffres partagés, autoplay, onglet caché, iOS, batterie) | 8 (visibilité), 9 (autoplay), 12 (git) |
 | § 12 hors périmètre | contraintes globales |
 
-**Un point de couture, assumé et signalé** : l'étape 6 de la tâche 7 a besoin de
-`audio.setIntensity`, livré par l'étape 1 de la tâche 8. C'est écrit dans les deux
-tâches. C'est le seul endroit du plan où l'ordre des étapes traverse une frontière
-de tâche.
+**Aucun point de couture** : le balayage de pré-vol en avait trouvé un — le curseur
+d'intensité du banc dépendait d'une méthode livrée par la tâche suivante. Le curseur
+a été déplacé dans la tâche 8, avec la méthode dont il dépend.
