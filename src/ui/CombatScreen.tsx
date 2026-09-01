@@ -3,7 +3,7 @@ import { createArena } from '../render/arena';
 import { useGameLoop } from './useGameLoop';
 import { chapterOf } from '../content/chapters';
 import { SALLES_PER_CHAPTER } from '../sim/config';
-import { startRun } from '../sim/sim';
+import { maxPlayableChapter, startRun } from '../sim/sim';
 import { botTypeFor } from '../sim/salle';
 import { TYPE_LABELS } from './typeLabels';
 import type { MetaState, RunState, Vec } from '../sim/types';
@@ -15,6 +15,16 @@ const ONBOARDED_KEY = 'spinforge.onboarded';
 interface Banner {
   text: string;
   tint: string;
+}
+
+function chapterChipStyle(selected: boolean) {
+  return {
+    flex: '1 1 auto', minHeight: 38, borderRadius: 9, cursor: 'pointer' as const,
+    border: `1px solid ${selected ? 'var(--ember)' : 'var(--line)'}`,
+    background: selected ? 'var(--ember)' : 'var(--panel)',
+    color: selected ? 'var(--ink)' : 'var(--text)',
+    font: '600 12.5px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.02em',
+  };
 }
 
 export function CombatScreen({
@@ -36,6 +46,10 @@ export function CombatScreen({
   // Le premier lancement explique ce qu'aucun repère à l'écran ne peut dire seul :
   // laquelle est la tienne, et que foncer vaut mieux qu'attendre le choc.
   const [hint, setHint] = useState(() => localStorage.getItem(ONBOARDED_KEY) !== '1');
+  // Choix explicite du joueur. Remis à null à chaque descente lancée : la
+  // suggestion (le chapitre perdu, ou celui qui vient de s'ouvrir) reprend alors
+  // la main sans qu'aucun effet n'ait à la recalculer.
+  const [picked, setPicked] = useState<number | null>(null);
 
   useEffect(() => {
     let disposed = false;
@@ -209,23 +223,54 @@ export function CombatScreen({
         </div>
       </div>
 
-      {s.phase !== 'fighting' ? (
-        <button
-          onClick={() => {
-            // La graine continue le flux de la descente précédente : deux runs
-            // consécutifs ne rejouent pas les mêmes gabarits d'arène, et aucune
-            // horloge n'entre dans la simulation.
-            runRef.current = startRun(metaRef.current, s.chapter, s.rngState);
-            onTick();
-          }}
-          style={{
-            minHeight: 48, borderRadius: 11, cursor: 'pointer', border: '1px solid var(--ember)',
-            background: 'var(--ember)', color: 'var(--ink)', font: '600 15px Oswald, ui-sans-serif, sans-serif',
-          }}
-        >
-          {s.phase === 'won' ? 'Chapitre validé — Nouvelle descente' : 'Ta toupie s’est arrêtée — Nouvelle descente'}
-        </button>
-      ) : null}
+      {s.phase !== 'fighting' ? (() => {
+        const maxChapter = maxPlayableChapter(metaRef.current);
+        const suggested = s.phase === 'won' ? Math.min(s.chapter + 1, maxChapter) : s.chapter;
+        const chapterToPlay = picked ?? suggested;
+        return (
+          <section
+            style={{
+              border: '1px solid var(--ember)', background: 'var(--panel)', borderRadius: 11,
+              padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8,
+            }}
+          >
+            <p style={{ margin: 0, font: '600 15px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.03em' }}>
+              {s.phase === 'won' ? `Chapitre ${s.chapter} validé` : 'Ta toupie s’est arrêtée'}
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
+              {s.phase === 'won'
+                ? (maxChapter > s.chapter
+                    ? `Le chapitre ${s.chapter + 1} s’ouvre.`
+                    : 'Fin du contenu actuel : les chapitres suivants arrivent plus tard.')
+                : 'Tes crédits sont gardés.'}
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>Choisis ta descente</p>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {Array.from({ length: maxChapter }, (_, i) => i + 1).map((n) => (
+                <button key={n} onClick={() => setPicked(n)} style={chapterChipStyle(n === chapterToPlay)}>
+                  {n} — {chapterOf(n).name}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => {
+                // La graine continue le flux de la descente précédente : deux runs
+                // consécutifs ne rejouent pas les mêmes gabarits d'arène, et aucune
+                // horloge n'entre dans la simulation.
+                runRef.current = startRun(metaRef.current, chapterToPlay, s.rngState);
+                setPicked(null);
+                onTick();
+              }}
+              style={{
+                minHeight: 48, borderRadius: 11, cursor: 'pointer', border: '1px solid var(--ember)',
+                background: 'var(--ember)', color: 'var(--ink)', font: '600 15px Oswald, ui-sans-serif, sans-serif',
+              }}
+            >
+              Nouvelle descente
+            </button>
+          </section>
+        );
+      })() : null}
     </div>
   );
 }

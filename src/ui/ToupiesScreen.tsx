@@ -26,7 +26,7 @@ interface SalleGroup {
   type: TopType;
 }
 
-/** Regroupe les dix salles du chapitre 1 par plages consécutives de même type —
+/** Regroupe les dix salles du chapitre par plages consécutives de même type —
  *  sans ce regroupement la contre-pioche se lirait comme dix lignes répétitives
  *  au lieu d'une composition qu'on saisit d'un regard. */
 function chapterGroups(chapter: number): SalleGroup[] {
@@ -77,7 +77,7 @@ export function ToupiesScreen({
   const waiting = pending.id !== piloted.id;
   const between = runRef.current.phase !== 'fighting';
   const giftAvailable = canClaimFounderGift(meta);
-  const groups = chapterGroups(1);
+  const groups = chapterGroups(runRef.current.chapter);
 
   // Une seule porte de mutation. Plus de `syncRunStats` ici : le run ne relit
   // jamais `meta.toupies.active`, c'est tout l'objet du verrou.
@@ -110,7 +110,7 @@ export function ToupiesScreen({
 
       <section style={cardStyle('var(--line)')}>
         <p style={{ margin: 0, font: '500 15px Oswald, ui-sans-serif, sans-serif' }}>
-          Chapitre 1 — composition
+          Chapitre {runRef.current.chapter} — composition
         </p>
         <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
           Attaque bat Endurance, qui bat Défense, qui bat Attaque : +{Math.round(TYPES.dominantBonus * 100)} %
