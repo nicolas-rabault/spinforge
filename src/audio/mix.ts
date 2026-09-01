@@ -23,6 +23,12 @@ export const MIX = {
   // — primitives : réglages par défaut d'un burst() qui n'en précise pas —
   burstQ: 1,
   burstAttackS: 0.004,
+  /** Attaque par défaut de `tone()`, quand l'appelant n'en précise pas. */
+  toneAttackS: 0.008,
+  /** Vitesse à laquelle les partiels aigus de `metalBody()` s'éteignent plus
+   *  vite que la fondamentale : plus ce facteur est grand, plus le corps
+   *  métallique perd ses harmoniques hautes tôt dans le son. */
+  metalRolloff: 1.6,
 
   // — le choc —
   /** Garde entre deux chocs. Mesurée : sans elle, l'arène monte à 20 sons/s.
@@ -120,6 +126,11 @@ export const LAYERS = {
   tension: 0.9,
 } as const;
 
+/** Hauteur du « ting » de révélation, par palier de rang. Mi♭5, sol5, si♭5, ré6 :
+ *  quatre degrés de ré phrygien, donc quatre notes qui s'accordent avec la
+ *  musique. Un mi ou un si naturels sonneraient faux contre la fondamentale. */
+export const REVEAL_HZ = [622.25, 784, 932.33, 1174.66] as const;
+
 /** Motifs de vibration, en millisecondes (durée, pause, durée, …). */
 export const BUZZ = {
   tap: [8],
@@ -153,5 +164,74 @@ export const SFX = {
     second: { from: 880, duration: 0.16, gain: 0.04 },
     secondDelayS: 0.09,
     thud: { from: 110, to: 70, duration: 0.22, gain: 0.05 },
+  },
+  reward: {
+    grainsBase: 4,
+    /** Bonus quand un second coffre est tombé — un butin plus gros tombe plus dru. */
+    grainsChestBonus: 1,
+    grainFreqFrom: 1800,
+    grainFreqTo: 3200,
+    grainQ: 6,
+    grainGain: 0.035,
+    grainDuration: 0.025,
+    grainSpacingS: 0.045,
+    grainJitterS: 0.015,
+    /** Le fond de la caisse, sous la cascade de grains. */
+    floor: { from: 90, duration: 0.09, gain: 0.04, delayS: 0.02 },
+  },
+  bossDown: {
+    body: { freq: 146.83, gain: 0.09, decay: 0.9 },
+    /** Ré4, la4, ré5 : la fondamentale, sa quinte, son octave. */
+    chord: [293.66, 440, 587.33],
+    chordToneDuration: 0.5,
+    chordToneGain: 0.05,
+    chordSpacingS: 0.12,
+  },
+  chestShake: { type: 'lowpass', freq: 220, gain: 0.05, duration: 0.6, rate: 0.4 },
+  chestStep: { freqBase: 700, freqIndexStep: 0.18, q: 2, gain: 0.045, duration: 0.04 },
+  chestOpened: {
+    burst: { type: 'highpass', freq: 2600, gain: 0.05, duration: 0.35 },
+    toneA: { from: 293.66, duration: 0.35, gain: 0.04 },
+    toneB: { from: 440, duration: 0.35, gain: 0.035 },
+  },
+  pieceRevealed: {
+    duration: 0.18,
+    gain: 0.035,
+    /** Harmonique ajoutée au-dessus du « ting » : ratio, pas note à part. */
+    overtoneRatio: 2.4,
+    overtoneDuration: 0.09,
+    overtoneGain: 0.015,
+  },
+  chestDone: {
+    /** La dernière pièce révélée sonne au même instant que `chestDone` : sans ce
+     *  délai, les deux sons empilés s'annulaient au lieu de se succéder. */
+    delayS: 0.12,
+    /** Ratios de la triade jouée sous la note la plus rare du butin. */
+    chordRatios: [0.5, 0.75, 1],
+    toneDuration: 0.25,
+    toneGain: 0.04,
+    spacingS: 0.1,
+  },
+  fuse: {
+    /** La montée ; l'enclume démarre pile quand elle s'éteint. */
+    rise: { freq: 300, toFreq: 2000, q: 3, gain: 0.045, duration: 0.35 },
+    anvil: { freq: 293.66, gain: 0.09, decay: 0.35 },
+  },
+  upgrade: { freq: 392, gain: 0.06, decay: 0.2 },
+  equip: {
+    first: { freq: 1400, q: 5, gain: 0.035, duration: 0.03 },
+    second: { freq: 900, q: 5, gain: 0.03, duration: 0.04 },
+    secondDelayS: 0.04,
+  },
+  tap: {
+    freq: 1200,
+    /** Seconde variante, en alternance avec `freq` : deux clics identiques à la
+     *  suite s'entendent comme un défaut, pas comme un retour. */
+    freqAltRatio: 1.12,
+    q: 4,
+    gain: 0.03,
+    duration: 0.025,
+    /** Jouée en plus quand l'appui engage une dépense. */
+    spendTone: { from: 160, to: 120, duration: 0.04, gain: 0.03 },
   },
 } as const;

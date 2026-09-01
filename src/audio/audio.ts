@@ -1,4 +1,4 @@
-import { MIX, SFX } from './mix';
+import { MIX, REVEAL_HZ, SFX } from './mix';
 import { admitHit, createGate } from './gate';
 import { createHaptics, type Haptics } from './haptics';
 import { loadSettings, saveSettings, type AudioSettings } from './settings';
@@ -15,6 +15,17 @@ export interface Audio {
   hit(power: number): void;
   death(): void;
   door(): void;
+  reward(credits: number, chests: number): void;
+  bossDown(): void;
+  chestShake(): void;
+  chestStep(index: number): void;
+  chestOpened(): void;
+  pieceRevealed(tier: number): void;
+  chestDone(bestTier: number): void;
+  fuse(): void;
+  upgrade(): void;
+  equip(): void;
+  tap(kind: TapKind): void;
   settings(): AudioSettings;
   setSetting(key: keyof AudioSettings, on: boolean): void;
   destroy(): void;
@@ -36,6 +47,7 @@ function createAudio(): Audio {
   let sub: OscillatorNode | null = null;
   let subGain: GainNode | null = null;
   let spin = 0;
+  let tapAlt = false;
 
   const gate = createGate();
   let settings = loadSettings(localStorage);
@@ -170,6 +182,134 @@ function createAudio(): Audio {
       tone(b, b.sfx, SFX.door.first);
       tone(b, b.sfx, { ...SFX.door.second, at: b.ctx.currentTime + SFX.door.secondDelayS });
       tone(b, b.sfx, SFX.door.thud);
+    },
+
+    // `credits` fait partie de la signature (tâches 9-11 en auront besoin) mais
+    // ne module encore aucun son : seul le nombre de coffres compte ici.
+    reward(_credits, chests) {
+      haptics.buzz('reward', performance.now());
+      const b = live();
+      if (!b || !settings.sfx) return;
+      const r = SFX.reward;
+      // Les pièces qui tombent dans la caisse : des grains de métal, hauteur
+      // montante, espacés irrégulièrement — une cascade, pas un arpège.
+      const grains = r.grainsBase + Math.min(r.grainsChestBonus, chests);
+      for (let i = 0; i < grains; i++) {
+        burst(b, b.sfx, {
+          freq: r.grainFreqFrom + (r.grainFreqTo - r.grainFreqFrom) * (i / grains),
+          q: r.grainQ,
+          gain: r.grainGain,
+          duration: r.grainDuration,
+          at: b.ctx.currentTime + i * r.grainSpacingS + Math.random() * r.grainJitterS,
+        });
+      }
+      // Le fond de la caisse.
+      tone(b, b.sfx, {
+        from: r.floor.from, duration: r.floor.duration, gain: r.floor.gain,
+        at: b.ctx.currentTime + r.floor.delayS,
+      });
+    },
+
+    bossDown() {
+      haptics.buzz('bossDown', performance.now());
+      const b = live();
+      if (!b || !settings.sfx) return;
+      const t = b.ctx.currentTime;
+      const d = SFX.bossDown;
+      metalBody(b, b.sfx, d.body);
+      d.chord.forEach((hz, i) => {
+        tone(b, b.sfx, { from: hz, duration: d.chordToneDuration, gain: d.chordToneGain, at: t + i * d.chordSpacingS });
+      });
+    },
+
+    chestShake() {
+      const b = live();
+      if (!b || !settings.sfx) return;
+      // Un grondement sourd tenu le temps de la secousse (600 ms côté écran).
+      burst(b, b.sfx, SFX.chestShake);
+    },
+
+    chestStep(index) {
+      const b = live();
+      if (!b || !settings.sfx) return;
+      const s = SFX.chestStep;
+      burst(b, b.sfx, {
+        freq: s.freqBase + s.freqBase * s.freqIndexStep * index, q: s.q, gain: s.gain, duration: s.duration,
+      });
+    },
+
+    chestOpened() {
+      haptics.buzz('chestOpened', performance.now());
+      const b = live();
+      if (!b || !settings.sfx) return;
+      burst(b, b.sfx, SFX.chestOpened.burst);
+      tone(b, b.sfx, SFX.chestOpened.toneA);
+      tone(b, b.sfx, SFX.chestOpened.toneB);
+    },
+
+    pieceRevealed(tier) {
+      const b = live();
+      if (!b || !settings.sfx) return;
+      const p = SFX.pieceRevealed;
+      const hz = REVEAL_HZ[Math.max(0, Math.min(REVEAL_HZ.length - 1, tier))];
+      tone(b, b.sfx, { from: hz, duration: p.duration, gain: p.gain, type: 'triangle' });
+      tone(b, b.sfx, { from: hz * p.overtoneRatio, duration: p.overtoneDuration, gain: p.overtoneGain });
+    },
+
+    chestDone(bestTier) {
+      haptics.buzz('chestDone', performance.now());
+      const b = live();
+      if (!b || !settings.sfx) return;
+      const c = SFX.chestDone;
+      const top = REVEAL_HZ[Math.max(0, Math.min(REVEAL_HZ.length - 1, bestTier))];
+      // Décalé : la dernière pièce révélée sonne au même instant, et les deux sons
+      // empilés s'annulaient au lieu de se succéder.
+      const t = b.ctx.currentTime + c.delayS;
+      c.chordRatios.forEach((ratio, i) => {
+        tone(b, b.sfx, { from: top * ratio, duration: c.toneDuration, gain: c.toneGain, at: t + i * c.spacingS, type: 'triangle' });
+      });
+    },
+
+    fuse() {
+      haptics.buzz('fuse', performance.now());
+      const b = live();
+      if (!b || !settings.sfx) return;
+      const t = b.ctx.currentTime;
+      // La montée, puis l'enclume au bout : on entend l'effort avant le résultat.
+      burst(b, b.sfx, SFX.fuse.rise);
+      metalBody(b, b.sfx, { ...SFX.fuse.anvil, at: t + SFX.fuse.rise.duration });
+    },
+
+    upgrade() {
+      const b = live();
+      if (!b || !settings.sfx) return;
+      metalBody(b, b.sfx, SFX.upgrade);
+    },
+
+    equip() {
+      haptics.buzz('equip', performance.now());
+      const b = live();
+      if (!b || !settings.sfx) return;
+      const t = b.ctx.currentTime;
+      burst(b, b.sfx, SFX.equip.first);
+      burst(b, b.sfx, { ...SFX.equip.second, at: t + SFX.equip.secondDelayS });
+    },
+
+    tap(kind) {
+      haptics.buzz('tap', performance.now());
+      const b = live();
+      if (!b || !settings.sfx) return;
+      const s = SFX.tap;
+      // Deux variantes alternées : deux clics rigoureusement identiques à la
+      // suite s'entendent comme un défaut, pas comme un retour.
+      tapAlt = !tapAlt;
+      burst(b, b.sfx, {
+        freq: tapAlt ? s.freq : s.freq * s.freqAltRatio, q: s.q, gain: s.gain, duration: s.duration,
+      });
+      if (kind !== 'tap') {
+        // L'appui qui engage une dépense sonne plus lourd que celui qui navigue.
+        tone(b, b.sfx, s.spendTone);
+      }
     },
 
     settings() {

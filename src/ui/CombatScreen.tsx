@@ -66,7 +66,8 @@ export function CombatScreen({
           for (const hit of events.hits) if (hit.id === 'player' || hit.power > 0.25) audio.hit(hit.power);
           if (events.deaths.some((d) => d.isPlayer)) audio.death();
           if (events.salleChanged) {
-            audio.door();
+            if (events.chapterValidated) audio.bossDown();
+            else audio.door();
             // Seul le boss garde une annonce écrite : nommer le Gardien du Hangar à
             // son entrée est de la mise en scène. Le type de l'adversaire, lui, se
             // lit désormais sur la toupie elle-même — badge d'avantage porté par le
@@ -85,7 +86,10 @@ export function CombatScreen({
       },
       draw: (run, alpha) =>
         arenaRef.current?.draw(run, alpha, playerArt(metaRef.current.equipped, run.toupie)),
-      onReward: () => { onMetaChanged(); },
+      onReward: (reward) => {
+        audio.reward(reward.credits, reward.chests.length);
+        onMetaChanged();
+      },
     },
     running,
   );

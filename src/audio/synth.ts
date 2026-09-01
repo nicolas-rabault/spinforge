@@ -111,7 +111,7 @@ export function tone(bus: Bus, dest: AudioNode, o: ToneOptions): void {
   if (o.to !== undefined && o.to !== o.from) {
     osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.to), at + o.duration);
   }
-  osc.connect(envelope(ctx, at, o.gain, o.attack ?? 0.008, o.duration)).connect(dest);
+  osc.connect(envelope(ctx, at, o.gain, o.attack ?? MIX.toneAttackS, o.duration)).connect(dest);
   osc.start(at);
   osc.stop(at + o.duration);
 }
@@ -134,7 +134,7 @@ export function metalBody(bus: Bus, dest: AudioNode, o: MetalOptions): void {
   for (const ratio of o.partials ?? MIX.hitBodyPartials) {
     tone(bus, dest, {
       from: o.freq * ratio,
-      gain: o.gain / (1 + (ratio - 1) * 1.6),
+      gain: o.gain / (1 + (ratio - 1) * MIX.metalRolloff),
       duration: o.decay / Math.sqrt(ratio),
       at: o.at,
       attack: 0.004,
