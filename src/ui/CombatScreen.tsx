@@ -239,9 +239,11 @@ export function CombatScreen({
             </p>
             <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
               {s.phase === 'won'
-                ? (maxChapter > s.chapter
-                    ? `Le chapitre ${s.chapter + 1} s’ouvre.`
-                    : 'Fin du contenu actuel : les chapitres suivants arrivent plus tard.')
+                ? (metaRef.current.bestChapter > s.chapter
+                    ? 'Tu l’avais déjà validé : les crédits, eux, restent bons à prendre.'
+                    : (maxChapter > s.chapter
+                        ? `Le chapitre ${s.chapter + 1} s’ouvre.`
+                        : 'Fin du contenu actuel : les chapitres suivants arrivent plus tard.'))
                 : 'Tes crédits sont gardés.'}
             </p>
             <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>Choisis ta descente</p>
