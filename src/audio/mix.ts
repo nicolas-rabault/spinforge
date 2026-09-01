@@ -99,3 +99,29 @@ export const BUZZ = {
   bossDown: [40, 40, 40, 40, 80],
   death: [40, 60, 90],
 } as const;
+
+/**
+ * Recettes des bruitages nommés — une entrée par événement, chacune la recette
+ * complète de CE son : ses hauteurs, ses gains, ses durées. Différent de `MIX`,
+ * qui porte ce qui est TRANSVERSAL (bus, seuils, gardes, ducking, musique,
+ * vibration) et sert plusieurs sons à la fois. Même partage que
+ * `src/render/feel.ts` (le barème) et `src/art/recipes.ts` (une recette par
+ * objet). Le choc (`hit`) reste dans `MIX` : sa recette varie avec la puissance
+ * du coup, ce n'est pas une signature fixe comme celles-ci.
+ */
+export const SFX = {
+  death: {
+    body: { freq: 190, gain: 0.07, decay: 0.55 },
+    tone: { from: 190, to: 55, duration: 0.55, gain: 0.06 },
+    burst: { freq: 520, q: 0.9, gain: 0.05, duration: 0.4 },
+  },
+  door: {
+    /** Ré5 puis la5 : deux degrés de ré phrygien, deux notes qui s'accordent
+     *  avec la musique au lieu de lui rentrer dedans. */
+    first: { from: 587.33, duration: 0.11, gain: 0.045 },
+    /** Jouée `secondDelayS` après la première. */
+    second: { from: 880, duration: 0.16, gain: 0.04 },
+    secondDelayS: 0.09,
+    thud: { from: 110, to: 70, duration: 0.22, gain: 0.05 },
+  },
+} as const;

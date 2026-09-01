@@ -1,4 +1,4 @@
-import { MIX } from './mix';
+import { MIX, SFX } from './mix';
 import { admitHit, createGate } from './gate';
 import { createHaptics, type Haptics } from './haptics';
 import { loadSettings, saveSettings, type AudioSettings } from './settings';
@@ -68,6 +68,10 @@ function createAudio(): Audio {
       bus.sfx.gain.value = settings.sfx ? MIX.sfxGain : 0;
       bus.music.gain.value = settings.music ? MIX.musicGain : 0;
 
+      // Le rotor : bruit filtré (un souffle), jamais un oscillateur tonal — une
+      // dent de scie tenue à 60-250 Hz est un bourdon de scie sauteuse, pas une
+      // toupie (cf. `docs/ameliorations.md` § 3.1). À ne pas « simplifier » un
+      // jour en oscillateur : l'erreur diagnostiquée là reviendrait avec.
       whirrFilter = bus.ctx.createBiquadFilter();
       whirrFilter.type = 'bandpass';
       whirrFilter.frequency.value = MIX.whirrFreqLow;
@@ -103,6 +107,7 @@ function createAudio(): Audio {
         MIX.whirrFreqLow + (MIX.whirrFreqHigh - MIX.whirrFreqLow) * spin, t, 0.12,
       );
       sub.frequency.setTargetAtTime(MIX.subFreqLow + (MIX.subFreqHigh - MIX.subFreqLow) * spin, t, 0.12);
+      // Le souffle s'efface avec le spin : une toupie qui meurt se tait.
       whirrGain.gain.setTargetAtTime(MIX.whirrGain * (0.25 + 0.75 * spin), t, 0.1);
       subGain.gain.setTargetAtTime(MIX.subGain * spin, t, 0.1);
     },
@@ -122,7 +127,7 @@ function createAudio(): Audio {
         freq: MIX.hitClickHz,
         gain: MIX.hitClickGain + MIX.hitClickSpan * p,
         duration: MIX.hitClickS,
-        rate: 0.7 + Math.random() * 0.6,
+        rate: 0.7 + Math.random() * 0.6, // pas deux chocs identiques
       });
       // Le corps : c'est lui qui manquait. Plus le choc est fort, plus il est grave.
       const detune = 1 + (Math.random() * 2 - 1) * MIX.hitDetune;
@@ -143,9 +148,9 @@ function createAudio(): Audio {
       haptics.buzz('death', performance.now());
       const b = live();
       if (!b || !settings.sfx) return;
-      metalBody(b, b.sfx, { freq: 190, gain: 0.07, decay: 0.55 });
-      tone(b, b.sfx, { from: 190, to: 55, duration: 0.55, gain: 0.06 });
-      burst(b, b.sfx, { freq: 520, q: 0.9, gain: 0.05, duration: 0.4 });
+      metalBody(b, b.sfx, SFX.death.body);
+      tone(b, b.sfx, SFX.death.tone);
+      burst(b, b.sfx, SFX.death.burst);
     },
 
     door() {
@@ -153,9 +158,9 @@ function createAudio(): Audio {
       if (!b || !settings.sfx) return;
       // Ré5 puis la5 : deux degrés de ré phrygien, donc deux notes qui
       // s'accordent avec la musique au lieu de lui rentrer dedans.
-      tone(b, b.sfx, { from: 587.33, duration: 0.11, gain: 0.045 });
-      tone(b, b.sfx, { from: 880, duration: 0.16, gain: 0.04, at: b.ctx.currentTime + 0.09 });
-      tone(b, b.sfx, { from: 110, to: 70, duration: 0.22, gain: 0.05 });
+      tone(b, b.sfx, SFX.door.first);
+      tone(b, b.sfx, { ...SFX.door.second, at: b.ctx.currentTime + SFX.door.secondDelayS });
+      tone(b, b.sfx, SFX.door.thud);
     },
 
     settings() {
