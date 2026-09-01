@@ -1,5 +1,5 @@
 import { SALLES_PER_CHAPTER } from '../sim/config';
-import { LAYERS, MIX } from './mix';
+import { LAYERS, MIX, MUSIC } from './mix';
 import { burst, comb, noiseBuffer, tone, type Bus } from './synth';
 
 /** Ré phrygien, en demi-tons depuis la fondamentale. Le mode le plus sombre qui
@@ -39,7 +39,11 @@ export interface Music {
   resume(): void;
 }
 
-const STEP_S = 60 / MIX.bpm / 4; // une double-croche
+/** Durée d'une mesure à quatre temps, dérivée du tempo. */
+const BAR_S = (60 / MIX.bpm) * 4;
+/** Durée d'un pas : la mesure divisée par le nombre de pas qu'elle contient —
+ *  ainsi tempo et grille ne peuvent plus diverger l'un de l'autre. */
+const STEP_S = BAR_S / MIX.stepsPerBar;
 const TOTAL_STEPS = MIX.bars * MIX.stepsPerBar;
 
 export function createMusic(): Music {
@@ -63,19 +67,27 @@ export function createMusic(): Music {
     // Le pouls en demi-temps : deux frappes par mesure. À 92 BPM, une frappe par
     // temps ferait une marche ; c'est une forge, pas une parade.
     if (layers.includes('pulse') && inBar % 8 === 0) {
-      tone(b, duckNode!, { from: 110, to: 44, duration: 0.09, gain: 0.16, at, attack: 0.003 });
+      tone(b, duckNode!, {
+        from: MUSIC.pulse.from, to: MUSIC.pulse.to, duration: MUSIC.pulse.duration,
+        gain: MUSIC.pulse.gain, at, attack: MUSIC.pulse.attack,
+      });
     }
     // L'enclume, sur les contretemps : c'est elle qui donne le lieu.
     if (layers.includes('anvil') && (inBar === 6 || inBar === 11)) {
-      burst(b, anvilIn!, { freq: 1400, q: 1.2, gain: 0.05, duration: 0.05, at });
+      burst(b, anvilIn!, {
+        freq: MUSIC.anvil.freq, q: MUSIC.anvil.q, gain: MUSIC.anvil.gain,
+        duration: MUSIC.anvil.duration, at,
+      });
     }
-    // Le motif n'entre qu'une mesure sur deux : entendu huit fois d'affilée, il
-    // devient une sonnerie.
+    // Le motif occupe les deux dernières mesures de chaque groupe de quatre (et
+    // se tait sur les deux premières) : entendu huit fois d'affilée, il
+    // deviendrait une sonnerie.
     if (layers.includes('motif') && bar % 4 >= 2) {
       const slot = [0, 3, 6, 10].indexOf(inBar);
       if (slot >= 0) {
         tone(b, duckNode!, {
-          from: noteHz(MOTIF[slot], 3), duration: 0.28, gain: 0.05, at, type: 'triangle',
+          from: noteHz(MOTIF[slot], 3), duration: MUSIC.motif.duration, gain: MUSIC.motif.gain,
+          at, type: 'triangle',
         });
       }
     }
@@ -128,9 +140,9 @@ export function createMusic(): Music {
       droneNoise.loop = true;
       const droneFilter = ctx.createBiquadFilter();
       droneFilter.type = 'lowpass';
-      droneFilter.frequency.value = 180;
+      droneFilter.frequency.value = MUSIC.drone.noiseFilterHz;
       const droneNoiseGain = ctx.createGain();
-      droneNoiseGain.gain.value = 0.35;
+      droneNoiseGain.gain.value = MUSIC.drone.noiseGain;
       droneNoise.connect(droneFilter).connect(droneNoiseGain).connect(droneGain);
       droneNoise.start();
 
@@ -143,13 +155,13 @@ export function createMusic(): Music {
       tensionOsc.frequency.value = noteHz(TENSION, 2);
       const tensionFilter = ctx.createBiquadFilter();
       tensionFilter.type = 'lowpass';
-      tensionFilter.frequency.value = 700;
+      tensionFilter.frequency.value = MUSIC.tension.filterHz;
       tensionOsc.connect(tensionFilter).connect(tensionGain);
       tensionOsc.start();
 
       // Un seul filtre en peigne pour toutes les frappes d'enclume : en recréer un
       // par note laisserait autant de boucles de délai vivantes derrière soi.
-      anvilIn = comb(next, duckNode, noteHz(0, 5), 0.72);
+      anvilIn = comb(next, duckNode, noteHz(0, 5), MUSIC.anvil.combFeedback);
     },
 
     setIntensity(value) {
@@ -159,8 +171,9 @@ export function createMusic(): Music {
       if (!bus || !droneGain || !tensionGain) return;
       const t = bus.ctx.currentTime;
       const fade = target === 0 ? MIX.deathFadeS : MIX.layerFadeS;
-      droneGain.gain.setTargetAtTime(target > 0 ? 0.09 * (0.5 + target / 2) : 0, t, fade);
-      tensionGain.gain.setTargetAtTime(target >= LAYERS.tension ? 0.03 : 0, t, fade);
+      const droneTarget = MUSIC.drone.gainBase * (MUSIC.drone.gainFloor + MUSIC.drone.gainSpan * target);
+      droneGain.gain.setTargetAtTime(target > 0 ? droneTarget : 0, t, fade);
+      tensionGain.gain.setTargetAtTime(target >= LAYERS.tension ? MUSIC.tension.gain : 0, t, fade);
       runTimer(target > 0);
     },
 

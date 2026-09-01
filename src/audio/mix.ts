@@ -126,6 +126,52 @@ export const LAYERS = {
   tension: 0.9,
 } as const;
 
+/**
+ * Recettes des cinq couches de la musique — même esprit que `SFX` : une entrée
+ * par couche, chacune le timbre complet de CETTE couche (hauteurs, gains,
+ * filtres). `LAYERS` (les seuils d'entrée) et `MIX` (tempo, forme, intensités)
+ * restent transversaux ; ceci est du signal, pas du calendrier.
+ */
+export const MUSIC = {
+  drone: {
+    /** Coupure du passe-bas qui filtre le souffle grave sous le sinus. */
+    noiseFilterHz: 180,
+    /** Dosage du souffle mélangé au sinus de fondamentale. */
+    noiseGain: 0.35,
+    /** Gain = `gainBase * (gainFloor + gainSpan * intensité)` : un plancher dès
+     *  l'entrée, plus une part qui suit l'intensité — même patron que
+     *  `whirrTarget()` pour le souffle du rotor. */
+    gainBase: 0.09,
+    gainFloor: 0.5,
+    gainSpan: 0.5,
+  },
+  pulse: {
+    from: 110,
+    to: 44,
+    duration: 0.09,
+    gain: 0.16,
+    attack: 0.003,
+  },
+  anvil: {
+    freq: 1400,
+    q: 1.2,
+    gain: 0.05,
+    duration: 0.05,
+    /** Retour du filtre en peigne partagé par toutes les frappes d'enclume. */
+    combFeedback: 0.72,
+  },
+  motif: {
+    duration: 0.28,
+    gain: 0.05,
+  },
+  tension: {
+    /** Coupure du passe-bas qui adoucit la scie de la nappe. */
+    filterHz: 700,
+    /** Gain cible une fois la couche entrée. */
+    gain: 0.03,
+  },
+} as const;
+
 /** Hauteur du « ting » de révélation, par palier de rang. Mi♭5, sol5, si♭5, ré6 :
  *  quatre degrés de ré phrygien, donc quatre notes qui s'accordent avec la
  *  musique. Un mi ou un si naturels sonneraient faux contre la fondamentale. */
