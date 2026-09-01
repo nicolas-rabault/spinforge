@@ -20,6 +20,10 @@ export const PALETTE = {
   zoneSpike: 0xff5a5a,
   zoneSlick: 0x7ab6ff,
   ember: 0xffc24a,
+  /** Le point « quelque chose t'attend ici ». Distinct de `zoneSpike` et de
+   *  `bot`, qui vivent dans l'arène : celui-ci ne se rencontre que dans les
+   *  menus et sur la barre d'onglets. */
+  alert: 0xff3b30,
   ink: 0x151109,
   text: 0xe8eaee,
   muted: 0x8a94a6,
