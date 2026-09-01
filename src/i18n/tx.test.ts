@@ -65,19 +65,18 @@ describe('tx', () => {
 });
 
 describe('txn', () => {
-  it('accorde le gabarit avant d’y insérer les nœuds', () => {
-    expect(parts(txn('chest.pity', 1, { rank: 'Épique', n: '1' })).join(''))
-      .toBe('Épique garanti dans 1 tirage');
-    expect(parts(txn('chest.pity', 3, { rank: 'Épique', n: '3' })).join(''))
-      .toBe('Épique garanti dans 3 tirages');
+  it('accorde le gabarit avant d’y insérer le nœud', () => {
+    const one = createElement('span', null, '1');
+    expect(parts(txn('tab.chestsBadge', 1, { n: one }))).toEqual([one, ' coffre à ouvrir']);
+    expect(parts(txn('tab.chestsBadge', 3, { n: '3' })).join('')).toBe('3 coffres à ouvrir');
   });
 
   it('injecte le compte comme variable `n` par défaut', () => {
-    expect(parts(txn('chest.loot', 2)).join('')).toBe('Butin — 2 coffres');
+    expect(parts(txn('tab.chestsBadge', 2)).join('')).toBe('2 coffres à ouvrir');
   });
 
   it('laisse un nœud fourni pour `n` primer sur le compte brut', () => {
     const n = createElement('span', null, '4');
-    expect(parts(txn('chest.loot', 4, { n }))).toContain(n);
+    expect(parts(txn('tab.chestsBadge', 4, { n }))).toContain(n);
   });
 });

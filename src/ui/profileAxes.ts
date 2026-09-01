@@ -18,6 +18,12 @@ const AXIS_KEYS: Record<ProfileAxis, MessageKey> = {
   spinDecay: 'axis.spinDecay',
 };
 
+/** Abrégé d'un axe. Le radar (`StatRadar`) et la Forge le lisent tous les deux :
+ *  le joueur n'apprend qu'un vocabulaire, pas deux. */
+export function axisAbbr(axis: ProfileAxis): string {
+  return t(`axis.abbr.${axis}` as MessageKey);
+}
+
 /** > 1 est un gain pour six axes sur sept. `spinDecay` est une perte de spin par
  *  seconde (voir `sim/profile.ts`) : là, c'est < 1 qui est le gain. Piège de sens
  *  à ne pas reproduire ici — la couleur suit cette règle, pas le signe du %. */

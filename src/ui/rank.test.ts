@@ -32,18 +32,20 @@ describe('rankLabel', () => {
 });
 
 describe('rankColor', () => {
+  // Les seuils vivent dans `rankTier` (`theme.ts`) : ici on vérifie seulement
+  // que les quatre paliers tombent sur les mêmes rangs que `rankLabel`.
   it('donne ses quatre paliers de lisibilité', () => {
-    expect(rankColor(1)).toBe('var(--muted)');
-    expect(rankColor(4)).toBe('var(--player)');
-    expect(rankColor(7)).toBe('var(--ember)');
-    expect(rankColor(11)).toBe('var(--boss)');
+    expect(rankColor(1)).toBe('var(--rank-0)');
+    expect(rankColor(4)).toBe('var(--rank-1)');
+    expect(rankColor(7)).toBe('var(--rank-2)');
+    expect(rankColor(11)).toBe('var(--rank-3)');
   });
 
   // La couleur classe un rang, elle ne le nomme pas : elle ne doit rien devoir
   // à la langue.
   it('ne dépend pas de la langue', () => {
     setLang('en');
-    expect(rankColor(11)).toBe('var(--boss)');
-    expect(rankColor(1)).toBe('var(--muted)');
+    expect(rankColor(11)).toBe('var(--rank-3)');
+    expect(rankColor(1)).toBe('var(--rank-0)');
   });
 });

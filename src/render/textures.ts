@@ -2,15 +2,6 @@ import { Texture } from 'pixi.js';
 import { hex, PALETTE } from '../theme';
 import type { ZoneKind } from '../sim/config';
 
-export type Shape = 'player' | 'bot';
-
-/** Résolution des textures de toupie, généreuse : elles sont réduites à l'écran. */
-const TOP_PX = 256;
-const NOTCHES: Record<Shape, number> = { player: 6, bot: 5 };
-const HOOK: Record<Shape, number> = { player: 0, bot: 0.16 };
-/** Trois niveaux d'usure : intact, ébréché, très ébréché. */
-const WEAR_CHIP = [0, 0.34, 0.6];
-
 /** Rayon du disque dessiné dans floorTexture(), en fraction du canevas carré qui le
  * contient. Exporté pour qu'arena.ts en dérive le rayon visuel du sol au lieu de
  * réestimer le même facteur de son côté — source unique des deux bugs de débordement
@@ -22,15 +13,12 @@ export const FLOOR_EDGE = 0.94;
 export const FLOOR_OVERSCAN = 1.06;
 
 export interface Textures {
-  body: Record<Shape, Texture[]>;
-  rim: Record<Shape, Texture[]>;
   core: Texture;
   halo: Texture;
   spark: Texture;
   wave: Texture;
   shadow: Texture;
   caret: Texture;
-  typeMark: Texture;
   zone: Record<ZoneKind, Texture>;
   shard: Texture;
 }
@@ -40,69 +28,6 @@ function canvas(size: number): { el: HTMLCanvasElement; ctx: CanvasRenderingCont
   el.width = size;
   el.height = size;
   return { el, ctx: el.getContext('2d')! };
-}
-
-/**
- * Disque encoché vu de dessus : bord d'attaque net pour que le sens de rotation
- * se lise, creux vers l'intérieur. Le motif d'ébréchure est fixe pour ne pas scintiller.
- */
-function notchedDisc(ctx: CanvasRenderingContext2D, r: number, shape: Shape, chip: number): void {
-  const n = NOTCHES[shape];
-  const hook = HOOK[shape];
-  const step = (Math.PI * 2) / n;
-  ctx.beginPath();
-  for (let i = 0; i < n; i++) {
-    const a = i * step;
-    const worn = chip > 0 && ((i * 7) % n) / n < chip;
-    const ro = r * (worn ? 0.86 : 1);
-    ctx.arc(0, 0, ro, a, a + step * (0.58 - hook));
-    const b = a + step * (0.58 - hook);
-    ctx.lineTo(Math.cos(b + step * 0.16) * r * 0.7, Math.sin(b + step * 0.16) * r * 0.7);
-    ctx.lineTo(Math.cos(a + step) * r * (0.82 + hook), Math.sin(a + step) * r * (0.82 + hook));
-  }
-  ctx.closePath();
-}
-
-function bodyTexture(shape: Shape, chip: number): Texture {
-  const { el, ctx } = canvas(TOP_PX);
-  const c = TOP_PX / 2;
-  const r = c * 0.94;
-  ctx.translate(c, c);
-  notchedDisc(ctx, r, shape, chip);
-  const g = ctx.createLinearGradient(-r, -r, r, r);
-  g.addColorStop(0, '#5a6779');
-  g.addColorStop(0.5, '#3a4450');
-  g.addColorStop(1, '#222932');
-  ctx.fillStyle = g;
-  ctx.fill();
-  // disque central rivé
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.6, 0, Math.PI * 2);
-  const d = ctx.createRadialGradient(-r * 0.24, -r * 0.28, 1, 0, 0, r * 0.6);
-  d.addColorStop(0, '#515f71');
-  d.addColorStop(1, '#1f252e');
-  ctx.fillStyle = d;
-  ctx.fill();
-  ctx.fillStyle = '#161c24';
-  for (let i = 0; i < 4; i++) {
-    const a = (i * Math.PI) / 2 + 0.4;
-    ctx.beginPath();
-    ctx.arc(Math.cos(a) * r * 0.44, Math.sin(a) * r * 0.44, r * 0.055, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  return Texture.from(el);
-}
-
-function rimTexture(shape: Shape, chip: number): Texture {
-  const { el, ctx } = canvas(TOP_PX);
-  const c = TOP_PX / 2;
-  ctx.translate(c, c);
-  notchedDisc(ctx, c * 0.94, shape, chip);
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = TOP_PX * 0.022;
-  ctx.lineJoin = 'round';
-  ctx.stroke();
-  return Texture.from(el);
 }
 
 function radialTexture(size: number, stops: [number, number][]): Texture {
@@ -166,25 +91,6 @@ function caretTexture(): Texture {
   return Texture.from(el);
 }
 
-/** Point de repère de type : disque plein, contour sombre pour rester net une
- *  fois teinté par-dessus n'importe quelle usure du corps. Contour renforcé
- *  (épaisseur et opacité) pour que le rouge d'Attaque se détache mieux du corps
- *  orange des bots (`PALETTE.bot`) — la teinte elle-même reste inchangée, c'est
- *  une décision de direction artistique qui n'appartient pas à ce correctif. */
-function typeMarkTexture(): Texture {
-  const size = 64;
-  const { el, ctx } = canvas(size);
-  const c = size / 2;
-  ctx.beginPath();
-  ctx.arc(c, c, c * 0.8, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffffff';
-  ctx.fill();
-  ctx.lineWidth = size * 0.15;
-  ctx.strokeStyle = 'rgba(10,13,18,.72)';
-  ctx.stroke();
-  return Texture.from(el);
-}
-
 /** Éclat de Gyre : une étoile à quatre branches dans un halo. Des branches, quand
  * tout le reste de l'arène est fait de disques : il doit se repérer au coin de
  * l'œil sans jamais se confondre avec une toupie. */
@@ -229,23 +135,13 @@ function shadowTexture(): Texture {
 }
 
 export function createTextures(): Textures {
-  const shapes: Shape[] = ['player', 'bot'];
-  const body = {} as Record<Shape, Texture[]>;
-  const rim = {} as Record<Shape, Texture[]>;
-  for (const shape of shapes) {
-    body[shape] = WEAR_CHIP.map((chip) => bodyTexture(shape, chip));
-    rim[shape] = WEAR_CHIP.map((chip) => rimTexture(shape, chip));
-  }
   return {
-    body,
-    rim,
     core: radialTexture(128, [[0, 1], [0.55, 0.75], [1, 0]]),
     halo: radialTexture(256, [[0, 0.55], [1, 0]]),
     spark: radialTexture(32, [[0, 1], [0.4, 0.9], [1, 0]]),
     wave: waveTexture(),
     shadow: shadowTexture(),
     caret: caretTexture(),
-    typeMark: typeMarkTexture(),
     zone: {
       // Le trait continu se lit comme un sol, le pointillé comme un danger.
       accelerateur: zoneTexture(PALETTE.zoneBoost, false),
@@ -257,10 +153,7 @@ export function createTextures(): Textures {
 }
 
 export function destroyTextures(t: Textures): void {
-  const all = [
-    ...t.body.player, ...t.body.bot, ...t.rim.player, ...t.rim.bot,
-    t.core, t.halo, t.spark, t.wave, t.shadow, t.caret, t.typeMark, t.shard,
-  ];
+  const all = [t.core, t.halo, t.spark, t.wave, t.shadow, t.caret, t.shard];
   for (const tex of all) tex.destroy(true);
   for (const tex of Object.values(t.zone)) tex.destroy(true);
 }
@@ -326,5 +219,53 @@ export function floorTexture(pixelSize: number): Texture {
     ctx.arc(c + Math.cos(a) * r, c + Math.sin(a) * r, pixelSize * 0.006, 0, Math.PI * 2);
     ctx.fill();
   }
+  return Texture.from(el);
+}
+
+/** Décor du chapitre, derrière l'anneau de jeu. L'arène passée en plein écran a
+ *  libéré de la place *autour* du disque : sans décor, cette place est du noir, et
+ *  les huit chapitres se ressemblent tous. La texture est carrée et étirée au
+ *  canvas — un dégradé radial supporte l'étirement, contrairement à un motif. */
+export function backdropTexture(pixelSize: number, ambience: number): Texture {
+  const { el, ctx } = canvas(pixelSize);
+  const c = pixelSize / 2;
+  ctx.fillStyle = hex(PALETTE.bg);
+  ctx.fillRect(0, 0, pixelSize, pixelSize);
+
+  // Deux nappes : une large qui teinte toute la scène, une serrée derrière l'anneau
+  // qui détache le disque de jeu de son fond. Une seule nappe pâle laissait l'écran
+  // noir dès qu'on sortait de l'arène — le défaut relevé sur la première capture
+  // de l'arène plein écran.
+  const wide = ctx.createRadialGradient(c, c * 0.7, 0, c, c * 0.7, c * 1.35);
+  wide.addColorStop(0, `${hex(ambience)}52`);
+  wide.addColorStop(0.5, `${hex(ambience)}22`);
+  wide.addColorStop(1, `${hex(ambience)}00`);
+  ctx.fillStyle = wide;
+  ctx.fillRect(0, 0, pixelSize, pixelSize);
+
+  const halo = ctx.createRadialGradient(c, c, c * 0.34, c, c, c * 0.62);
+  halo.addColorStop(0, `${hex(ambience)}00`);
+  halo.addColorStop(0.55, `${hex(ambience)}3a`);
+  halo.addColorStop(1, `${hex(ambience)}00`);
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, pixelSize, pixelSize);
+
+  // Hachures obliques très pâles : de la matière, pas un motif reconnaissable —
+  // ce qui la rend insensible à l'étirement.
+  ctx.strokeStyle = 'rgba(255,255,255,.035)';
+  ctx.lineWidth = Math.max(1, pixelSize / 400);
+  for (let i = -pixelSize; i < pixelSize * 2; i += pixelSize * 0.055) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i - pixelSize, pixelSize);
+    ctx.stroke();
+  }
+
+  const vig = ctx.createRadialGradient(c, c, c * 0.3, c, c, c * 1.05);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(0.62, 'rgba(0,0,0,.28)');
+  vig.addColorStop(1, 'rgba(0,0,0,.8)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, pixelSize, pixelSize);
   return Texture.from(el);
 }

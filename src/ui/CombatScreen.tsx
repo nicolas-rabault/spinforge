@@ -1,23 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { createArena } from '../render/arena';
+import { playerArt } from '../art/toupie';
 import { useGameLoop } from './useGameLoop';
 import { chapterBoss, chapterName } from './contentLabels';
-import { SALLES_PER_CHAPTER } from '../sim/config';
-import { resetRun } from '../sim/sim';
-import { botTypeFor } from '../sim/salle';
-import { typeLabel } from './typeLabels';
 import { t } from '../i18n';
 import { tx } from '../i18n/tx';
+import { SALLES_PER_CHAPTER } from '../sim/config';
+import { resetRun } from '../sim/sim';
+import { PipTrack } from './art/PipTrack';
 import type { MetaState, RunState, Vec } from '../sim/types';
 import type { Audio } from '../audio/audio';
 
 const DEAD_ZONE_PX = 8;
 const ONBOARDED_KEY = 'spinforge.onboarded';
-
-interface Banner {
-  text: string;
-  tint: string;
-}
 
 export function CombatScreen({
   runRef, metaRef, running, onTick, onMetaChanged, audio,
@@ -34,7 +29,7 @@ export function CombatScreen({
   const pointerRef = useRef<number | null>(null);
   const arenaRef = useRef<Awaited<ReturnType<typeof createArena>> | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
-  const [banner, setBanner] = useState<Banner | null>(null);
+  const [bossBanner, setBossBanner] = useState<string | null>(null);
   // Le premier lancement explique ce qu'aucun repère à l'écran ne peut dire seul :
   // laquelle est la tienne, et que foncer vaut mieux qu'attendre le choc.
   const [hint, setHint] = useState(() => localStorage.getItem(ONBOARDED_KEY) !== '1');
@@ -73,21 +68,15 @@ export function CombatScreen({
           if (events.deaths.some((d) => d.isPlayer)) audio.death();
           if (events.salleChanged) {
             audio.door();
-            // Le triangle ne se lit en combat que par la teinte d'un point sur le
-            // bot (§ 5.4) : sans ce texte, rien ne dit ce que cette teinte veut
-            // dire. La salle boss garde son annonce dédiée, plus utile qu'un type.
-            const isBoss = run.salle === SALLES_PER_CHAPTER;
-            setBanner(
-              isBoss
-                ? { text: chapterBoss(run.chapter), tint: 'var(--boss)' }
-                : {
-                    text: t('combat.banner.salle', {
-                      n: run.salle, type: typeLabel(botTypeFor(run.chapter, run.salle)),
-                    }),
-                    tint: `var(--type-${botTypeFor(run.chapter, run.salle)})`,
-                  },
-            );
-            window.setTimeout(() => setBanner(null), 2100);
+            // Seul le boss garde une annonce écrite : nommer le Gardien du Hangar à
+            // son entrée est de la mise en scène. Le type de l'adversaire, lui, se
+            // lit désormais sur la toupie elle-même — badge d'avantage porté par le
+            // bot — au lieu d'un bandeau « Salle 4 · Défense » qui nommait un type
+            // sans dire ce qu'il fallait en faire.
+            if (run.salle === SALLES_PER_CHAPTER) {
+              setBossBanner(chapterBoss(run.chapter));
+              window.setTimeout(() => setBossBanner(null), 2100);
+            }
           }
           // Le rotor se tait à la mort : sans ce `null`, l'oscillateur tenait sa
           // dernière fréquence par-dessus l'écran de défaite.
@@ -95,7 +84,8 @@ export function CombatScreen({
         }
         onTick();
       },
-      draw: (run, alpha) => arenaRef.current?.draw(run, alpha),
+      draw: (run, alpha) =>
+        arenaRef.current?.draw(run, alpha, playerArt(metaRef.current.equipped, run.toupie)),
       onReward: () => { onMetaChanged(); },
     },
     running,
@@ -132,7 +122,6 @@ export function CombatScreen({
   };
 
   const s = runRef.current;
-  const spinPct = Math.max(0, Math.min(100, (s.player.spin / s.player.spinMax) * 100));
 
   return (
     <div
@@ -141,59 +130,52 @@ export function CombatScreen({
       onPointerUp={onUp}
       onPointerLeave={onUp}
       onPointerCancel={onUp}
-      style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', minHeight: 0, touchAction: 'none' }}
+      style={{ position: 'absolute', inset: 0, touchAction: 'none', overflow: 'hidden' }}
     >
-      <section style={{ border: '1px solid var(--line)', background: 'var(--panel)', borderRadius: 11, padding: '9px 12px' }}>
-        <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
-          {t('combat.chapter', { n: s.chapter, name: chapterName(s.chapter) })}
-        </p>
-        <p style={{ margin: 0, font: '500 22px/1.15 Oswald, ui-sans-serif, sans-serif', letterSpacing: '.02em' }}>
-          {t('combat.salle', { n: s.salle, max: SALLES_PER_CHAPTER })}
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-          <span style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
-            {s.salle === SALLES_PER_CHAPTER
-              ? chapterBoss(s.chapter)
-              : t('combat.bossAt', { n: SALLES_PER_CHAPTER })}
-          </span>
-          <div style={{ flex: '1 1 0', height: 7, borderRadius: 4, background: 'var(--bg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-            <div style={{ width: `${((s.salle - 1) / (SALLES_PER_CHAPTER - 1)) * 100}%`, height: '100%', background: 'var(--ember)' }} />
-          </div>
-        </div>
-      </section>
+      {/* L'arène prend tout l'écran : l'en-tête et la barre d'onglets se posent
+          par-dessus (voir App). Le carré central d'autrefois laissait 60 % de la
+          hauteur au vide. */}
+      <div ref={hostRef} style={{ position: 'absolute', inset: 0 }} />
 
-      {/* Ce panneau prend tout l'espace vertical restant (flex: 1 1 0, minHeight: 0
-          l'autorise à se comprimer sous sa taille naturelle) ; le conteneur de
-          requête (containerType: size) donne à ses unités cq la taille réellement
-          disponible, et min(100cqw, 100cqh) choisit le plus grand carré qui y tient
-          — l'arène reste carrée sur toute taille d'écran, sans jamais pousser la
-          barre d'onglets hors du viewport. */}
-      <div style={{ flex: '1 1 0', minHeight: 0, containerType: 'size', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ position: 'relative', width: 'min(100cqw, 100cqh)', aspectRatio: '1 / 1' }}>
-          <div ref={hostRef} style={{ position: 'absolute', inset: 0, borderRadius: 14, overflow: 'hidden', background: '#05070b' }} />
-          {banner ? (
-            <div
-              style={{
-                position: 'absolute', left: 0, right: 0, top: '50%', transform: 'translateY(-50%)',
-                background: 'rgba(8,10,15,.82)', borderTop: `2px solid ${banner.tint}`, borderBottom: `2px solid ${banner.tint}`,
-                padding: '10px 0', textAlign: 'center', pointerEvents: 'none',
-                font: '600 17px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.06em', textTransform: 'uppercase',
-              }}
-            >
-              {banner.text}
-            </div>
-          ) : null}
-        </div>
+      {/* Bandeau supérieur : nom du chapitre et les dix pastilles de salle. Posé
+          sous les jetons de monnaie, sur un voile qui garantit la lisibilité
+          quelle que soit la couleur d'ambiance du chapitre. */}
+      <div
+        style={{
+          position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 52,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+          background: 'linear-gradient(180deg, rgba(6,8,12,.86) 0%, rgba(6,8,12,.55) 62%, rgba(6,8,12,0) 100%)',
+          paddingBottom: 22, pointerEvents: 'none',
+        }}
+      >
+        <span style={{ font: '500 12px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.14em', color: 'var(--muted)', textTransform: 'uppercase' }}>
+          {chapterName(s.chapter)}
+        </span>
+        <PipTrack total={SALLES_PER_CHAPTER} current={s.salle} />
       </div>
 
-      {/* Hors de l'arène, à dessein : posée en surimpression, l'explication masquait
-          les deux toupies qu'elle désigne. L'espace vertical libre autour du carré
-          suffit à l'accueillir sans rétrécir le terrain de jeu. */}
+      {bossBanner ? (
+        <div
+          style={{
+            position: 'absolute', left: 0, right: 0, top: '46%', transform: 'translateY(-50%)',
+            background: 'rgba(8,10,15,.82)', borderTop: '2px solid var(--boss)', borderBottom: '2px solid var(--boss)',
+            padding: '10px 0', textAlign: 'center', pointerEvents: 'none',
+            font: '600 17px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.06em', textTransform: 'uppercase',
+          }}
+        >
+          {bossBanner}
+        </div>
+      ) : null}
+
+      {/* Explication du premier lancement. Posée bas, au-dessus de la barre
+          d'onglets : en surimpression au centre elle masquait les deux toupies
+          qu'elle désigne. */}
       {hint ? (
         <div
           style={{
+            position: 'absolute', left: 12, right: 12, bottom: 74,
             border: '1px solid var(--player)', borderRadius: 11, padding: '9px 12px',
-            background: 'rgba(128,232,255,.06)', textAlign: 'center', pointerEvents: 'none',
+            background: 'rgba(8,12,18,.88)', textAlign: 'center', pointerEvents: 'none',
           }}
         >
           <p style={{ margin: 0, font: '600 14px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.04em', color: 'var(--player)' }}>
@@ -207,25 +189,28 @@ export function CombatScreen({
         </div>
       ) : null}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-        {/* Le chevron et la teinte reprennent exactement ceux du repère porté par la
-            toupie du joueur : la barre nomme la toupie autant qu'elle mesure son spin. */}
-        <span style={{ fontSize: 11, color: 'var(--player)', letterSpacing: '.07em', whiteSpace: 'nowrap' }}>{t('combat.spin')}</span>
-        <div style={{ flex: '1 1 0', height: 9, borderRadius: 5, background: 'var(--bg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-          <div style={{ width: `${spinPct}%`, height: '100%', background: 'var(--player)' }} />
-        </div>
-      </div>
-
       {s.phase === 'dead' ? (
-        <button
-          onClick={() => { resetRun(runRef.current, metaRef.current); onTick(); }}
+        <div
           style={{
-            minHeight: 48, borderRadius: 11, cursor: 'pointer', border: '1px solid var(--ember)',
-            background: 'var(--ember)', color: 'var(--ink)', font: '600 15px Oswald, ui-sans-serif, sans-serif',
+            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 14,
+            background: 'rgba(5,7,11,.72)',
           }}
         >
-          {t('combat.retry')}
-        </button>
+          <p style={{ margin: 0, font: '600 22px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.06em', textTransform: 'uppercase' }}>
+            {t('combat.dead.title')}
+          </p>
+          <button
+            onClick={() => { resetRun(runRef.current, metaRef.current); onTick(); }}
+            style={{
+              minHeight: 50, padding: '0 34px', borderRadius: 11, cursor: 'pointer',
+              border: '1px solid var(--ember)', background: 'var(--ember)', color: 'var(--ink)',
+              font: '600 16px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.04em',
+            }}
+          >
+            {t('combat.retry')}
+          </button>
+        </div>
       ) : null}
     </div>
   );

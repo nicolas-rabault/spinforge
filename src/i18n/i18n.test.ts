@@ -40,46 +40,44 @@ describe('t', () => {
     expect(getLang()).toBe('en');
   });
 
-  it('remplace les variables nommées', () => {
-    expect(t('combat.salle', { n: 3, max: 10 })).toBe('SALLE 3 / 10');
-  });
-
-  // Le remplacement doit être global : une variable citée deux fois doit être
-  // substituée deux fois, pas seulement à sa première occurrence.
-  it('remplace toutes les occurrences d’une même variable', () => {
-    expect(t('type.bonus.dominant', { pct: 25 }))
-      .toBe('+25 % de dégâts contre son type dominé, +25 % subis face à qui la domine.');
+  // Le remplacement doit être global : sans le drapeau `g`, seule la première
+  // variable du gabarit serait substituée et la seconde resterait à nu.
+  it('remplace toutes les variables, pas seulement la première', () => {
+    expect(t('toupies.salleType', { n: 3, type: 'Défense' })).toBe('Salle 3 : Défense');
   });
 
   // Un trou doit se voir et se corriger, pas passer pour du texte.
   it('laisse le marqueur en place quand la variable manque', () => {
-    expect(t('toupies.salle', {})).toBe('Salle {n}');
+    expect(t('toupies.salleType', { n: 4 })).toBe('Salle 4 : {type}');
   });
 });
 
 describe('tn', () => {
+  // Le français accorde 0 au singulier, l'anglais au pluriel : c'est la borne
+  // que six `n > 1 ? 's' : ''` codés en dur rataient.
   it('choisit le singulier et le pluriel français', () => {
-    expect(tn('chest.loot', 0)).toBe('Butin — 0 coffre');
-    expect(tn('chest.loot', 1)).toBe('Butin — 1 coffre');
-    expect(tn('chest.loot', 2)).toBe('Butin — 2 coffres');
+    expect(tn('tab.chestsBadge', 0)).toBe('0 coffre à ouvrir');
+    expect(tn('tab.chestsBadge', 1)).toBe('1 coffre à ouvrir');
+    expect(tn('tab.chestsBadge', 2)).toBe('2 coffres à ouvrir');
   });
 
   it('choisit le singulier et le pluriel anglais', () => {
     setLang('en');
-    expect(tn('chest.loot', 0)).toBe('Loot — 0 chests');
-    expect(tn('chest.loot', 1)).toBe('Loot — 1 chest');
-    expect(tn('chest.loot', 2)).toBe('Loot — 2 chests');
+    expect(tn('tab.chestsBadge', 0)).toBe('0 chests to open');
+    expect(tn('tab.chestsBadge', 1)).toBe('1 chest to open');
+    expect(tn('tab.chestsBadge', 2)).toBe('2 chests to open');
   });
 
   it('complète les autres variables du gabarit', () => {
-    expect(tn('chest.pity', 3, { rank: 'Épique' })).toBe('Épique garanti dans 3 tirages');
+    expect(tn('inventory.copies', 2, { name: 'Furie', rank: 'Rare' }))
+      .toBe('Furie, Rare, 2 exemplaires');
   });
 
   // Le CLDR récent classe le million en « many » pour le français. Sans repli,
   // cette clé — que le typage n'exige pas — afficherait du vide.
   it('retombe sur `.other` quand la catégorie Intl n’a pas de clé', () => {
     expect(new Intl.PluralRules('fr').select(1_000_000)).toBe('many');
-    expect(tn('chest.loot', 1_000_000)).toBe('Butin — 1000000 coffres');
+    expect(tn('tab.chestsBadge', 1_000_000)).toBe('1000000 coffres à ouvrir');
   });
 });
 

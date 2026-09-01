@@ -1,18 +1,24 @@
 import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
-import type { TopType } from '../content/toupies';
+import { chapterOf } from '../content/chapters';
 import { ARENA, ARENA_RADIUS, SALLES_PER_CHAPTER } from '../sim/config';
+import { typeMult } from '../sim/typeChart';
 import { PALETTE, spinTint } from '../theme';
-import type { RunState } from '../sim/types';
+import { botArt, type ToupieArt } from '../art/toupie';
+import type { RunState, Top } from '../sim/types';
 import type { Zone } from '../sim/terrain';
-import { createTextures, destroyTextures, floorTexture, FLOOR_EDGE, FLOOR_OVERSCAN, type Shape } from './textures';
+import { backdropTexture, createTextures, destroyTextures, floorTexture, FLOOR_EDGE, FLOOR_OVERSCAN } from './textures';
 import { FEEL } from './feel';
-import { createTopView, type TopView } from './topView';
+import { createToupieTextures } from './toupieTextures';
+import { createTopView, type Advantage, type TopView } from './topView';
 import { lerp, snapshotById, takeSnapshot, type Snapshot } from './snapshot';
 import { observe, type RenderEvents } from './observer';
 import { createEffects, type Effects } from './effects';
 
-/** Marge entre le bord de l'anneau et le bord du canvas. */
-const MARGIN = 1.1;
+/** Marge entre le bord de l'anneau et le bord du canvas. Au plus juste : l'arène
+ *  est un cercle sur un écran haut, elle ne peut gagner de la place qu'en largeur,
+ *  et chaque pour-cent compte. Le disque visible vaut 0,996 × ARENA_RADIUS
+ *  (FLOOR_OVERSCAN × FLOOR_EDGE), donc 1,02 laisse encore deux pour-cent de garde. */
+const MARGIN = 1.02;
 /** Rayon visuel du disque du sol : mêmes facteurs que floorTexture() (textures.ts),
  * dérivés du même symbole pour que les deux ne puissent jamais diverger — un cercle,
  * pas le carré de la texture qui le contient. */
@@ -23,7 +29,10 @@ export interface Arena {
   afterTick(state: RunState): void;
   /** Les événements du dernier tick, consommés une seule fois (sonorisation). */
   consumeEvents(): RenderEvents | null;
-  draw(state: RunState, alpha: number): void;
+  /** `playerArt` est la toupie réellement montée : châssis de la descente et
+   *  pièces équipées à cet instant. Passée par image plutôt que posée une fois,
+   *  parce qu'un achat en Forge prend effet dans la seconde (acquis du jalon 1). */
+  draw(state: RunState, alpha: number, playerArt: ToupieArt): void;
   destroy(): void;
 }
 
@@ -53,12 +62,18 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   resizeObserver.observe(host);
 
   const tex = createTextures();
+  const tops = createToupieTextures();
   const world = new Container();
   const floorLayer = new Container();
   const topLayer = new Container();
   const effects: Effects = createEffects(tex);
   world.addChild(floorLayer, topLayer, effects.container);
-  app.stage.addChild(world);
+
+  // Le décor vit dans le repère de l'ÉCRAN, pas du monde : il doit couvrir tout le
+  // canvas quelle que soit l'échelle de l'arène.
+  const backdrop = new Sprite(Texture.EMPTY);
+  backdrop.anchor.set(0.5);
+  app.stage.addChild(backdrop, world);
 
   const floor = new Sprite(Texture.EMPTY);
   floor.anchor.set(0.5);
@@ -129,9 +144,10 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
   let reforgeFlash = 0; // secondes restantes d'éclair
   let lastReforgeAt = -Infinity;
   let floorPx = 0;
+  let backdropChapter = 0;
   let lastDraw = performance.now();
 
-  function layout(): void {
+  function layout(chapter: number): void {
     const size = Math.min(app.screen.width, app.screen.height);
     world.scale.set(size / (2 * ARENA_RADIUS * MARGIN));
     const wanted = Math.max(256, Math.round(size * Math.min(window.devicePixelRatio || 1, 2)));
@@ -141,18 +157,39 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       floor.texture = floorTexture(wanted);
       if (old !== Texture.EMPTY) old.destroy(true);
     }
+    if (chapter !== backdropChapter) {
+      backdropChapter = chapter;
+      const old = backdrop.texture;
+      backdrop.texture = backdropTexture(512, chapterOf(chapter).ambience);
+      if (old !== Texture.EMPTY) old.destroy(true);
+    }
+    backdrop.x = app.screen.width / 2;
+    backdrop.y = app.screen.height / 2;
+    // `Math.max` et non la taille exacte : le décor doit déborder du canvas plutôt
+    // que d'en laisser voir les coins.
+    const cover = Math.max(app.screen.width, app.screen.height) * 1.05;
+    backdrop.width = backdrop.height = cover;
   }
 
-  function viewFor(id: string, isPlayer: boolean, radius: number, salle: number, type: TopType): TopView {
-    let view = views.get(id);
+  function viewFor(top: Top, art: ToupieArt, salle: number): TopView {
+    let view = views.get(top.id);
     if (!view) {
-      const shape: Shape = isPlayer ? 'player' : 'bot';
-      const boss = !isPlayer && salle === SALLES_PER_CHAPTER;
-      view = createTopView(tex, shape, isPlayer ? 'player' : boss ? 'boss' : 'bot', radius, boss, type);
+      const boss = !top.isPlayer && salle === SALLES_PER_CHAPTER;
+      view = createTopView(tex, tops, art, top.isPlayer ? 'player' : boss ? 'boss' : 'bot', top.radius, boss);
       topLayer.addChild(view.container);
-      views.set(id, view);
+      views.set(top.id, view);
     }
     return view;
+  }
+
+  /** Ce que le triangle donne au joueur contre cet adversaire. Neutre des deux
+   *  côtés — ou favorable des deux, cas d'Équilibre contre Équilibre — n'affiche
+   *  rien : un badge qui ne tranche pas n'apprend rien. */
+  function advantageOf(player: Top, bot: Top): Advantage {
+    const deals = typeMult(player.type, bot.type) > 1;
+    const takes = typeMult(bot.type, player.type) > 1;
+    if (deals === takes) return 0;
+    return deals ? 1 : -1;
   }
 
   return {
@@ -220,11 +257,11 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       pending = null;
       return e;
     },
-    draw(state, alpha) {
+    draw(state, alpha, playerArt) {
       const now = performance.now();
       const dt = Math.min((now - lastDraw) / 1000, 0.05);
       lastDraw = now;
-      layout();
+      layout(state.chapter);
       syncZones(state);
 
       // L'éclat pulse et tourne pour ne jamais se confondre avec une toupie
@@ -274,11 +311,14 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
 
       const prev = before ? snapshotById(before) : null;
       const live = new Set<string>();
-      const tops = [state.player, ...state.bots];
+      const all = [state.player, ...state.bots];
 
-      for (const top of tops) {
+      for (const top of all) {
         live.add(top.id);
-        const view = viewFor(top.id, top.isPlayer, top.radius, state.salle, top.type);
+        const art = top.isPlayer ? playerArt : botArt(top.type);
+        const view = viewFor(top, art, state.salle);
+        view.setArt(art);
+        if (!top.isPlayer) view.setAdvantage(advantageOf(state.player, top));
         // Le joueur reste dans state.player même mort (sim.ts ne fait que basculer
         // phase à 'dead', il ne le retire jamais) : reviver sans condition annulerait
         // kill() à l'image même où il vient d'être appelé, et l'agonie ne jouerait
@@ -319,13 +359,17 @@ export async function createArena(host: HTMLElement): Promise<Arena> {
       for (const view of views.values()) view.destroy();
       views.clear();
       if (floor.texture !== Texture.EMPTY) floor.texture.destroy(true);
+      if (backdrop.texture !== Texture.EMPTY) backdrop.texture.destroy(true);
       effects.destroy();
       // Après app.destroy(true, ...) : ce dernier détruit toute la scène, y
       // compris le sprite `shard` et les enfants de `zoneLayer` qui référencent
       // encore les textures de `tex` — les détruire avant les laisserait
-      // pointer sur des textures déjà libérées.
+      // pointer sur des textures déjà libérées. Les textures de toupie sont dans
+      // le même cas : les vues viennent d'être détruites, mais elles partagent
+      // leurs textures avec le cache, qui ne se vide qu'ici.
       app.destroy(true, { children: true });
       destroyTextures(tex);
+      tops.destroy();
     },
   };
 }

@@ -15,3 +15,9 @@ const KEYS: Record<TopType, MessageKey> = {
 export function typeLabel(type: TopType): string {
   return t(KEYS[type]);
 }
+
+/** Abrégé d'un type, pour les nœuds du triangle. Explicite et non tronqué :
+ *  découper un libellé traduit marche par accident, pas par construction. */
+export function typeAbbr(type: TopType): string {
+  return t(`type.abbr.${type}` as MessageKey);
+}

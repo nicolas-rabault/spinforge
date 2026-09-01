@@ -58,8 +58,15 @@ describe('clés dérivées du contenu', () => {
     expect(missing(chapters.flatMap((c) => [`chapter.${c}.name`, `chapter.${c}.boss`]))).toEqual([]);
   });
 
-  it('nomme les sept axes de profil', () => {
+  it('nomme les sept axes de profil, en toutes lettres et en abrégé', () => {
     expect(missing(PROFILE_AXES.map((a) => `axis.${a}`))).toEqual([]);
+    expect(missing(PROFILE_AXES.map((a) => `axis.abbr.${a}`))).toEqual([]);
+  });
+
+  it('nomme les quatre types, en toutes lettres et en abrégé', () => {
+    const types = TOUPIES.map((t) => t.type);
+    expect(new Set(types).size).toBe(4);
+    expect(missing(types.flatMap((ty) => [`type.${ty}`, `type.abbr.${ty}`]))).toEqual([]);
   });
 
   it('nomme les douze talents', () => {

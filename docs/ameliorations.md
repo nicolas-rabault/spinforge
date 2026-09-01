@@ -10,6 +10,71 @@ Statuts : ✅ corrigé · 🔧 en cours · 📋 à faire · 💭 à arbitrer
 
 ---
 
+## Session du 2026-08-31 — refonte graphique
+
+> « Il faut que chaque toupie et chaque pièce de toupie soit représentée visuellement
+> et jolie. Repense complètement les graphismes, il faut que ce soit un jeu vidéo pas
+> un formulaire web. Tente de représenter visuellement les choses plus que de les
+> expliquer en texte. »
+
+**Diagnostic, capture en main.** Les quatre écrans photographiés avant d'écrire une
+ligne. Le catalogue était riche — 20 pièces, 4 châssis, 11 rangs, 4 types — et
+**intégralement muet** :
+
+| Objet du jeu | Avant | Après |
+|---|---|---|
+| 20 modèles de pièces | une chaîne (« Couronne Solaire ») | une silhouette par emplacement, un motif par modèle |
+| 4 toupies | quatre cartes de texte identiques | un portrait trois quarts, châssis + 4 pièces |
+| 11 rangs | un mot et une couleur de texte | cadre, matière, 0 à 3 gemmes, ergots, balayage |
+| toupie en arène | 2 disques génériques (`Shape = 'player' \| 'bot'`) | la toupie réellement montée, adversaires compris |
+| 7 axes de profil | 7 lignes « Vitesse max +10 % » sur 3 écrans | un radar à 7 branches |
+| triangle des types | un paragraphe de 4 lignes | un triangle dessiné |
+| composition du chapitre | 3 lignes « Salles 1-3 — Endurance » | 10 pastilles teintées par type |
+| tirage ×10 | 10 lignes de tableau | le coffre s'ouvre, les pièces sortent une à une |
+| recette de fusion | « 2 identiques + 1 sacrifice » | des pastilles remplies / vides |
+| pitié de coffre | « Excellent garanti dans 7 tirages » | un anneau qui se remplit autour du coffre |
+| progression de salle | « SALLE 4 / 10 » + barre + « Boss : salle 10 » | 10 pastilles, la dixième en losange |
+| type de l'adversaire | bandeau « Salle 4 · Défense » | badge ▲/▼ porté par le bot |
+| écran de combat | l'arène occupait ~40 % de la hauteur | plein écran, HUD en surimpression, décor par chapitre |
+
+**La cause unique.** Rien n'était dessiné à partir de ses données. `src/art/` est né
+de là : des recettes (données pures), des primitives canvas, et **un seul code de
+dessin pour PixiJS et pour React**. La Lame vue en inventaire est désormais celle qui
+tourne dans l'arène — c'est structurellement impossible autrement.
+
+**Ce qui verrouille l'acquis.** `src/art/recipes.test.ts` fait échouer la suite si un
+modèle du catalogue n'a pas de recette, si une recette décrit la mauvaise silhouette,
+ou si `ui/rank.ts` réintroduit des seuils de rareté qui dérivent des siens. Vérifié
+par mutation : quatre mutations sur cinq sont tuées ; la cinquième — une table de
+seuils dupliquée **à valeurs rigoureusement identiques** — survit, et seule la
+relecture du code la distingue. C'est écrit tel quel dans le test.
+
+**Un doublon supprimé au passage.** `ui/rank.ts` portait ses propres seuils *et* une
+échelle inversée (Légende violet, Épique doré) ; l'échelle unique vit maintenant dans
+`theme.ts` (`rankTier`, `RANK_TIERS`), acier → bleui → violet → or.
+
+**Méthode.** Quatre vagues, chacune vérifiée en navigateur par capture Playwright
+relue — pas seulement par les tests. Sept défauts ont été trouvés et corrigés ainsi,
+qu'aucun test n'aurait vus : objets qui se dissolvaient dans leur plaque de rang,
+portrait en vue éclatée, couvercle de coffre décroché de sa charnière, bande de
+composition effondrée à zéro pixel, couronne de Lame recouvrant les quatre châssis au
+point de les rendre identiques, décor de chapitre invisible, couvercle rogné à pleine
+ouverture. La planche de style (`/spinforge/styleboard.html`, `npm run dev`) est
+conservée : c'est la seule surface qui montre à quoi ressemble une recette.
+
+**Hors périmètre, intact :** `src/sim/` n'a reçu qu'un ajout (`fusionProgress`,
+exporté pour que l'UI ne recompte pas les doublons de son côté) ; aucun chiffre
+d'équilibrage n'a bougé, `npm run calibrate` n'avait donc pas à être rejoué. 338 tests
+au vert, `npm run build` propre.
+
+**📋 À tester en jeu.** Ce lot n'a pas encore eu de retour joueur. Les points les plus
+incertains : la jauge de spin en anneau remplace la barre du HUD (est-ce qu'on la lit
+en plein combat ?), le badge ▲/▼ remplace l'annonce du type (est-ce qu'on comprend ce
+qu'il dit sans explication ?), et le radar à 7 axes (dense sur 390 px — le repli en
+quatre barres reste possible).
+
+---
+
 ## Session du 2026-08-30 — intégration du jalon 2.5 dans le jalon 2b
 
 Pas un test joueur : le jalon 2b (toupies, triangle des forces) et le jalon 2.5 (terrain,
