@@ -21,7 +21,7 @@ const ALL = ['brasier-solaire', 'typhon-primal', 'carapace-abyssale', 'tigre-fou
  *  pièces de rang 11 pour que les salles tombent vite (passe du boss) ; sans lui, la
  *  toupie est nue et meurt d'elle-même (passe de la mort). */
 const save = (maxed) => JSON.stringify({
-  v: 4,
+  v: 5,
   meta: {
     rngState: 123456789, credits: maxed ? 1000000 : 0, gems: 0,
     equipped: Object.fromEntries(
@@ -30,10 +30,10 @@ const save = (maxed) => JSON.stringify({
         .map(([slot, model]) => [slot, { model, rank: maxed ? 11 : 1, level: maxed ? 40 : 0 }]),
     ),
     inventory: [], pity: { bronze: 0, arene: 0, mythique: 0 },
-    // Le schéma 4 exige aussi `pending` : sans lui `isComplete` rejette le blob et
-    // la partie repart à zéro, avec une seule toupie — les vérifications échoueraient
-    // sans dire pourquoi.
-    pending: { bronze: 0, arene: 0, mythique: 0 }, chapterValidated: false,
+    // Le schéma 5 exige aussi `pending` et `bestChapter` : sans eux `isComplete`
+    // rejette le blob et la partie repart à zéro, avec une seule toupie — les
+    // vérifications échoueraient sans dire pourquoi.
+    pending: { bronze: 0, arene: 0, mythique: 0 }, bestChapter: 0,
     toupies: { unlocked: ALL, active: 'brasier-solaire' }, founderGiftClaimed: true,
   },
 });

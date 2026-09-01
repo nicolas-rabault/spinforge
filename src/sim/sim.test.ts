@@ -66,7 +66,7 @@ describe('déterminisme', () => {
     // Garde-fou : si ce scénario cessait de franchir des salles, il ne testerait
     // plus rien de plus que le test précédent — d'où l'exigence de la validation
     // du chapitre entier (les dix salles), pas seulement d'une salle vidée.
-    expect(JSON.parse(a).meta.chapterValidated).toBe(true);
+    expect(JSON.parse(a).meta.bestChapter).toBe(1);
   });
 
   // Graines 95 et 132 choisies exprès, pas au hasard : sous ce pilotage à direction
@@ -149,7 +149,7 @@ describe('progression', () => {
     for (const b of run.bots) b.spin = 0.0001;
     const reward = tick(run, { steer: null })!;
     applyRunReward(meta, reward);
-    expect(meta.chapterValidated).toBe(true);
+    expect(meta.bestChapter).toBe(1);
     expect(run.salle).toBe(1);
     expect(meta.credits).toBeCloseTo(salleReward(1, SALLES_PER_CHAPTER, true, 1).reward.credits, 5);
     expect(meta.gems).toBe(salleReward(1, SALLES_PER_CHAPTER, true, 1).reward.gems);

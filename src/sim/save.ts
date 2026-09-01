@@ -12,8 +12,11 @@ import type { PieceInstance, PieceStack } from './piece';
  *  antérieur » de `deserializeMeta` et traverse `hydrate`, qui comble les
  *  champs que son dialecte ignorait (`pending` pour le dialecte
  *  `toupies`/`founderGiftClaimed`, ou l'inverse). Le joueur garde crédits,
- *  gemmes, équipement, inventaire et pity. */
-export const SAVE_SCHEMA = 4;
+ *  gemmes, équipement, inventaire et pity.
+ *  Le passage au schéma 5 remplace `chapterValidated: boolean` par
+ *  `bestChapter: number`. La migration tient dans `hydrate` : un blob antérieur
+ *  est, par construction, un méta auquel il manque le champ. */
+export const SAVE_SCHEMA = 5;
 
 interface Envelope {
   v: number;
@@ -88,7 +91,11 @@ function hydrate(partial: Record<string, unknown>): MetaState {
     inventory: (partial.inventory as MetaState['inventory']) ?? base.inventory,
     pity: (partial.pity as MetaState['pity']) ?? base.pity,
     pending: (partial.pending as MetaState['pending']) ?? base.pending,
-    chapterValidated: partial.chapterValidated === true,
+    // Migration 4 → 5 : le booléen devient un numéro. Un blob antérieur au 4
+    // traverse la même branche et retombe sur 0, ce qui est exact.
+    bestChapter: typeof partial.bestChapter === 'number'
+      ? partial.bestChapter
+      : (partial.chapterValidated === true ? 1 : 0),
     toupies: hydrateToupies(partial.toupies),
     founderGiftClaimed: partial.founderGiftClaimed === true,
   };
@@ -142,6 +149,7 @@ function isComplete(m: Record<string, unknown>): boolean {
     typeof m.rngState === 'number' &&
     typeof m.credits === 'number' &&
     typeof m.gems === 'number' &&
+    typeof m.bestChapter === 'number' &&
     Array.isArray(m.inventory) && m.inventory.every(isValidStack) &&
     typeof pity === 'object' && pity !== null &&
     chestKinds.every((k) => typeof pity[k] === 'number') &&

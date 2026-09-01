@@ -23,7 +23,7 @@ describe('createInitialMeta', () => {
     expect(meta.inventory).toHaveLength(0);
     expect(Object.keys(meta.equipped).sort()).toEqual(['disque', 'lame', 'noyau', 'pointe']);
     expect(meta.pity).toEqual({ bronze: 0, arene: 0, mythique: 0 });
-    expect(meta.chapterValidated).toBe(false);
+    expect(meta.bestChapter).toBe(0);
   });
 
   it('démarre avec une file de butin vide', () => {
@@ -66,14 +66,26 @@ describe('applyRunReward', () => {
   it('ne valide pas le chapitre sur une salle ordinaire', () => {
     const meta = createInitialMeta(1);
     applyRunReward(meta, { credits: 120, gems: 0, chests: [], boss: false, chapter: 1 });
-    expect(meta.chapterValidated).toBe(false);
+    expect(meta.bestChapter).toBe(0);
   });
 
   it('valide le chapitre quand la récompense vient du boss', () => {
     const meta = createInitialMeta(1);
     applyRunReward(meta, { credits: 1, gems: 40, chests: [], boss: true, chapter: 1 });
-    expect(meta.chapterValidated).toBe(true);
+    expect(meta.bestChapter).toBe(1);
     expect(meta.gems).toBe(40);
+  });
+
+  // Vérifié par mutation : remplacer le Math.max de `applyRunReward` par une
+  // affectation fait rougir ce test.
+  it('bestChapter ne descend jamais', () => {
+    const meta = createInitialMeta(1);
+    applyRunReward(meta, { credits: 0, gems: 0, chests: [], boss: true, chapter: 2 });
+    expect(meta.bestChapter).toBe(2);
+    // Redescendre un chapitre déjà validé ne rabaisse rien : c'est la référence
+    // de farm du lot B, et on la perdrait en jouant.
+    applyRunReward(meta, { credits: 0, gems: 0, chests: [], boss: true, chapter: 1 });
+    expect(meta.bestChapter).toBe(2);
   });
 });
 
@@ -153,7 +165,7 @@ describe('toupies du méta', () => {
     const meta = createInitialMeta(1);
     expect(canClaimFounderGift(meta)).toBe(false);
     expect(claimFounderGift(meta, 'carapace-abyssale')).toBe(false);
-    meta.chapterValidated = true;
+    meta.bestChapter = 1;
     expect(canClaimFounderGift(meta)).toBe(true);
     expect(claimFounderGift(meta, 'carapace-abyssale')).toBe(true);
     expect(meta.toupies.unlocked).toContain('carapace-abyssale');
@@ -164,7 +176,7 @@ describe('toupies du méta', () => {
   // « unlocked.length === 1 » deviendrait fausse dès qu’on achète avant de réclamer.
   it('laisse le cadeau réclamable après un achat en boutique', () => {
     const meta = createInitialMeta(1);
-    meta.chapterValidated = true;
+    meta.bestChapter = 1;
     meta.gems = TOUPIE_SHOP.priceGems;
     buyToupie(meta, 'typhon-primal');
     expect(canClaimFounderGift(meta)).toBe(true);
@@ -174,7 +186,7 @@ describe('toupies du méta', () => {
 
   it('ne réclame pas deux fois', () => {
     const meta = createInitialMeta(1);
-    meta.chapterValidated = true;
+    meta.bestChapter = 1;
     claimFounderGift(meta, 'carapace-abyssale');
     expect(canClaimFounderGift(meta)).toBe(false);
     expect(claimFounderGift(meta, 'tigre-foudre')).toBe(false);
@@ -183,7 +195,7 @@ describe('toupies du méta', () => {
 
   it('refuse de réclamer une toupie déjà possédée', () => {
     const meta = createInitialMeta(1);
-    meta.chapterValidated = true;
+    meta.bestChapter = 1;
     expect(claimFounderGift(meta, 'brasier-solaire')).toBe(false);
     expect(meta.founderGiftClaimed).toBe(false);
   });

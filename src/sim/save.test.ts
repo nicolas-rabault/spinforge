@@ -14,7 +14,7 @@ function filled() {
     { model: 'pointe.furie', rank: 3, levels: [0, 0] },
   ];
   meta.pity = { bronze: 0, arene: 6, mythique: 19 };
-  meta.chapterValidated = true;
+  meta.bestChapter = 1;
   return meta;
 }
 
@@ -152,6 +152,19 @@ describe('migration', () => {
       },
     };
     expect(deserializeMeta(JSON.stringify(v1))).toBeNull();
+  });
+
+  it('migre un blob de schéma 4 : chapterValidated devient bestChapter', () => {
+    const { bestChapter: _absent, ...sans } = createInitialMeta(1);
+    const valide = { v: 4, meta: { ...sans, chapterValidated: true } };
+    expect(deserializeMeta(JSON.stringify(valide))!.bestChapter).toBe(1);
+    const vierge = { v: 4, meta: { ...sans, chapterValidated: false } };
+    expect(deserializeMeta(JSON.stringify(vierge))!.bestChapter).toBe(0);
+  });
+
+  it('rejette un blob de schéma courant sans bestChapter', () => {
+    const { bestChapter: _absent, ...sans } = createInitialMeta(1);
+    expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta: sans }))).toBeNull();
   });
 });
 

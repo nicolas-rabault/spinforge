@@ -108,7 +108,10 @@ export interface MetaState {
   /** Coffres gagnés et pas encore ouverts, par type. Un compteur plutôt qu'une
    *  file : pas de plafond à inventer, donc jamais de butin jeté. */
   pending: Record<ChestKind, number>;
-  chapterValidated: boolean;
+  /** Le meilleur chapitre jamais validé ; 0 tant qu'aucun ne l'est. Ne descend
+   *  jamais : c'est la référence de farm du jalon 3, et un joueur qui redescend
+   *  un chapitre déjà validé ne doit pas la perdre en jouant. */
+  bestChapter: number;
   /** Les toupies possédées et celle qu'on pilote. `unlocked` est une liste et
    *  non un `Set` : elle doit se sérialiser en JSON. */
   toupies: { unlocked: ToupieId[]; active: ToupieId };

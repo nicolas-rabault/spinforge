@@ -19,7 +19,7 @@ export function createInitialMeta(seed: number): MetaState {
     inventory: [],
     pity: { bronze: 0, arene: 0, mythique: 0 },
     pending: { bronze: 0, arene: 0, mythique: 0 },
-    chapterValidated: false,
+    bestChapter: 0,
     toupies: { unlocked: [STARTER_TOUPIE], active: STARTER_TOUPIE },
     founderGiftClaimed: false,
   };
@@ -35,7 +35,9 @@ export function applyReward(meta: MetaState, reward: RunReward): void {
  *  elle-même si elle vient du boss : plus aucun appelant ne le redérive. */
 export function applyRunReward(meta: MetaState, reward: RunReward): void {
   applyReward(meta, reward);
-  if (reward.boss) meta.chapterValidated = true;
+  // Math.max et jamais une affectation : rejouer un chapitre déjà validé ne
+  // doit pas faire redescendre la référence de farm.
+  if (reward.boss) meta.bestChapter = Math.max(meta.bestChapter, reward.chapter);
 }
 
 export function stackOf(meta: MetaState, model: string, rank: number): PieceStack | undefined {
@@ -101,7 +103,7 @@ export function buyToupie(meta: MetaState, id: ToupieId): boolean {
 }
 
 export function canClaimFounderGift(meta: MetaState): boolean {
-  return meta.chapterValidated && !meta.founderGiftClaimed;
+  return meta.bestChapter >= 1 && !meta.founderGiftClaimed;
 }
 
 /** Le Fondateur offert pour avoir franchi le mur. Le joueur choisit lequel :
