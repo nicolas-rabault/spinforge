@@ -108,6 +108,7 @@ reste ouverte, et son énoncé est mis à jour pour dire que le lot B l'a laiss�
 export interface FarmSession {
   run: RunState | null;
   chapter: number;      // le chapitre de `run` — sert à détecter un bestChapter qui a monté
+  carry: number;        // secondes reçues mais pas encore converties en ticks
 }
 
 export interface FarmReport {
@@ -150,6 +151,24 @@ paquets. Même code, même rendement par minute.
 de valider un chapitre en pilotant), la session est repartie sur le nouveau chapitre : le
 farm suit toujours le meilleur chapitre validé, sans attendre la fin d'une descente en cours
 sur l'ancien.
+
+**`carry` répond au même défaut sur l'autre axe.** La simulation avance par pas fixes de
+100 ms, mais rien ne garantit qu'un paquet vaille un nombre entier de ticks : à un taux de
+15 %, un paquet d'une seconde réelle vaut 0,15 s de jeu, soit un tick et demi. Tronquer à
+chaque paquet perdrait la moitié de ce tick **à chaque fois** — un tiers du farm évaporé sans
+que rien ne le signale. Les secondes non converties sont donc reportées au paquet suivant, ce
+qui rend `farm` exacte pour n'importe quel taux plutôt que pour les seuls taux qui tombent
+juste.
+
+### 3.1.2 La graine et la continuité du flux
+
+`seed` n'ouvre que la **première** descente d'une session. Chaque descente suivante prend
+`run.rngState` de celle qu'elle remplace — le flux continue, exactement comme le fait le
+bouton « Nouvelle descente » de l'écran de combat depuis le lot A.
+
+C'est ce qui rend vrai le test du § 8.1 : si la graine d'une descente dépendait du paramètre
+`seed` plutôt que du flux, découper le même temps en paquets différents produirait des
+descentes différentes, et « N petits paquets valent un gros paquet » serait faux.
 
 ### 3.2 Le farm s'arrête salle 9 — le pilier devient inviolable
 
