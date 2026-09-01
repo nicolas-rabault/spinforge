@@ -5,6 +5,7 @@ import { salleReward } from './economy';
 import { spawnSalle, botCountFor } from './salle';
 import { ARENA_RADIUS, CHASSIS, MAX_CHAPTER, MODELS_PROFILE, PLAYER_BASE, SALLES_PER_CHAPTER, TALENTS } from './config';
 import { openChest } from './chest';
+import { chapterOf } from '../content/chapters';
 
 function play(seed: number, n: number, clearEvery: number | null, clearBreaches = false): string {
   const meta = createInitialMeta(seed);
@@ -323,6 +324,18 @@ describe('startRun', () => {
     meta.bestChapter = 99;
     expect(maxPlayableChapter(meta)).toBe(MAX_CHAPTER);
     expect(startRun(meta, 99, 1).chapter).toBe(MAX_CHAPTER);
+  });
+
+  // Vérifié par mutation : retirer le `Math.trunc` de `startRun` fait rougir ce
+  // test. La borne doit tenir même si l'appelant lui tend un chapitre
+  // fractionnaire — `chapterOf(2.5)` va chercher `CHAPTERS[1.5]`, ne trouve rien,
+  // et la première lecture de `.name` fait une page blanche.
+  it('tronque un chapitre fractionnaire', () => {
+    const meta = createInitialMeta(1);
+    meta.bestChapter = 2;
+    const run = startRun(meta, 2.5, 1);
+    expect(run.chapter).toBe(2);
+    expect(chapterOf(run.chapter)).toBeDefined();
   });
 
   it('normalise une graine nulle', () => {

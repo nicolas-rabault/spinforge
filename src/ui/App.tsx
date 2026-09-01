@@ -24,6 +24,10 @@ export function App() {
   const [initialRun] = useState(() =>
     startRun(loaded.meta, maxPlayableChapter(loaded.meta), (Date.now() ^ 0x9e3779b9) >>> 0));
   const runRef = useRef(initialRun);
+  // Le chapitre explicitement choisi par le joueur pour sa prochaine descente.
+  // Remis à null à chaque descente lancée : la suggestion reprend alors la main
+  // sans qu'aucun effet n'ait à la recalculer.
+  const [pickedChapter, setPickedChapter] = useState<number | null>(null);
   const [tab, setTab] = useState<Tab>('combat');
   const [, setFrame] = useState(0);
   const redraw = () => setFrame((f) => f + 1);
@@ -41,6 +45,19 @@ export function App() {
   if (audioRef.current === null) audioRef.current = createAudio();
   const [muted, setMuted] = useState(() => audioRef.current!.isMuted());
   useEffect(() => () => audioRef.current?.destroy(), []);
+
+  // Source unique de « le chapitre que la prochaine descente utilisera ». L'écran
+  // de combat le propose et le change, celui des toupies en affiche la
+  // composition : les deux doivent parler du même chapitre, y compris entre deux
+  // descentes, où `run.chapter` est encore celui qu'on vient de quitter. Tant que
+  // la descente court, `pickedChapter` est null et la suggestion vaut
+  // `run.chapter` — le calcul se réduit alors au chapitre du run. La règle de
+  // suggestion vit ici et nulle part ailleurs : le chapitre qui vient de s'ouvrir
+  // après un boss vaincu, celui qu'on vient de perdre sinon.
+  const run = runRef.current;
+  const chapterToPlay = pickedChapter ?? (run.phase === 'won'
+    ? Math.min(run.chapter + 1, maxPlayableChapter(metaRef.current))
+    : run.chapter);
 
   return (
     <div
@@ -99,11 +116,11 @@ export function App() {
           PixiJS à chaque changement d'onglet coûterait un rechargement complet
           des textures. On le masque, la boucle se met en pause. */}
       <div style={{ display: tab === 'combat' ? 'flex' : 'none', flexDirection: 'column', flex: '1 1 0', minHeight: 0 }}>
-        <CombatScreen runRef={runRef} metaRef={metaRef} running={tab === 'combat'} onTick={redraw} onMetaChanged={metaChanged} audio={audioRef.current} />
+        <CombatScreen runRef={runRef} metaRef={metaRef} running={tab === 'combat'} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={redraw} onMetaChanged={metaChanged} audio={audioRef.current} />
       </div>
       {tab === 'forge' ? <ForgeScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
       {tab === 'coffres' ? <ChestScreen metaRef={metaRef} onChanged={metaChanged} /> : null}
-      {tab === 'toupies' ? <ToupiesScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
+      {tab === 'toupies' ? <ToupiesScreen metaRef={metaRef} runRef={runRef} chapterToPlay={chapterToPlay} onChanged={metaChanged} /> : null}
 
       <TabBar tab={tab} onChange={setTab} pending={pendingTotal(metaRef.current)} />
     </div>

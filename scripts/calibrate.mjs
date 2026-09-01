@@ -126,8 +126,9 @@ function spend(meta, { buyChests }) {
  *
  * `counterPick` fait jouer un contre-pioqueur qui possède les quatre toupies.
  * `'salle'` rebascule à chaque salle ; `'descente'` ne choisit qu'au départ de la
- * descente — et comme seul le chapitre 1 existe, sa salle 1 est toujours du même
- * type, donc cette série revient à tenir un châssis fixe. C'est volontaire :
+ * descente — et comme les deux séries tournent en `upTo: 1` et ne quittent donc
+ * jamais le chapitre 1, sa salle 1 est toujours du même type : cette série revient
+ * à tenir un châssis fixe. C'est volontaire :
  * c'est le témoin apparié du verrou, identique en tout sauf le MOMENT du choix.
  * La vraie alternative d'un joueur qui ne triche pas est ailleurs — le meilleur
  * châssis fixe du tableau ci-dessus.

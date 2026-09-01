@@ -93,8 +93,13 @@ function hydrate(partial: Record<string, unknown>): MetaState {
     pending: (partial.pending as MetaState['pending']) ?? base.pending,
     // Migration 4 → 5 : le booléen devient un numéro. Un blob antérieur au 4
     // traverse la même branche et retombe sur 0, ce qui est exact.
+    // Normalisé comme tout le reste ici : `isComplete` ne vérifie que « c'est un
+    // nombre », et un `bestChapter` fractionnaire ou négatif ressortait tel quel
+    // pour donner un `maxPlayableChapter` fractionnaire, un `chapterOf` sur un
+    // index qui n'existe pas, donc un `TypeError` à la création du run — page
+    // blanche définitive, sans bandeau puisque le blob n'a pas été refusé.
     bestChapter: typeof partial.bestChapter === 'number'
-      ? partial.bestChapter
+      ? Math.max(0, Math.trunc(partial.bestChapter))
       : (partial.chapterValidated === true ? 1 : 0),
     toupies: hydrateToupies(partial.toupies),
     founderGiftClaimed: partial.founderGiftClaimed === true,

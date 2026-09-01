@@ -103,6 +103,12 @@ for (let i = 0; i < 2000 && !closed; i++) {
 }
 await page.mouse.up();
 check('le boss vaincu a fermé la descente', closed);
+// La liste de pastilles « Choisis ta descente » est le seul endroit où l'offre de
+// chapitres de l'interface s'observe : sans cette vérification, rien d'automatisé
+// ne dit que l'interface propose exactement ce que la simulation accepte après un
+// boss vaincu.
+check('le chapitre 2 est devenu proposé',
+  closed && (await page.getByRole('button', { name: /^2 — / }).count()) > 0);
 // Clic gardé : sans cette garde, un échec réel mourrait sur un timeout Playwright
 // de 30 s au lieu d'afficher le récapitulatif du script.
 if (closed) {

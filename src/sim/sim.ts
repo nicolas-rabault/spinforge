@@ -62,14 +62,17 @@ export function maxPlayableChapter(meta: MetaState): number {
  * pièces, elles, continuent de prendre effet dans la seconde par `syncRunStats`.
  *
  * Le chapitre est borné ici pour la même raison : une règle que seul l'appelant
- * respecte est une règle qu'un appelant peut oublier.
+ * respecte est une règle qu'un appelant peut oublier. `Math.trunc` fait partie de
+ * la borne : `chapterOf` indexe un tableau, et un chapitre fractionnaire y trouve
+ * `undefined` — la simulation se défend seule, sans compter sur la couche de
+ * sauvegarde pour lui livrer un entier.
  */
 export function startRun(meta: MetaState, chapter: number, seed: number): RunState {
   const toupie = meta.toupies.active;
   const run: RunState = {
     tick: 0,
     rngState: seed >>> 0 || 1,
-    chapter: Math.max(1, Math.min(chapter, maxPlayableChapter(meta))),
+    chapter: Math.min(Math.max(1, Math.trunc(chapter)), maxPlayableChapter(meta)),
     salle: 1,
     toupie,
     player: makePlayer(meta, toupie),

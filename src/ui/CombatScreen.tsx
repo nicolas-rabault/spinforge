@@ -28,11 +28,16 @@ function chapterChipStyle(selected: boolean) {
 }
 
 export function CombatScreen({
-  runRef, metaRef, running, onTick, onMetaChanged, audio,
+  runRef, metaRef, running, chapterToPlay, onPickChapter, onTick, onMetaChanged, audio,
 }: {
   runRef: { current: RunState };
   metaRef: { current: MetaState };
   running: boolean;
+  /** Le chapitre que la prochaine descente utilisera, calculé par `App` — choix
+   *  du joueur ou suggestion. L'écran des toupies lit exactement le même. */
+  chapterToPlay: number;
+  /** `null` rend la main à la suggestion : c'est ce que fait chaque descente lancée. */
+  onPickChapter: (chapter: number | null) => void;
   onTick: () => void;
   onMetaChanged: () => void;
   audio: Audio;
@@ -46,10 +51,6 @@ export function CombatScreen({
   // Le premier lancement explique ce qu'aucun repère à l'écran ne peut dire seul :
   // laquelle est la tienne, et que foncer vaut mieux qu'attendre le choc.
   const [hint, setHint] = useState(() => localStorage.getItem(ONBOARDED_KEY) !== '1');
-  // Choix explicite du joueur. Remis à null à chaque descente lancée : la
-  // suggestion (le chapitre perdu, ou celui qui vient de s'ouvrir) reprend alors
-  // la main sans qu'aucun effet n'ait à la recalculer.
-  const [picked, setPicked] = useState<number | null>(null);
 
   useEffect(() => {
     let disposed = false;
@@ -225,8 +226,6 @@ export function CombatScreen({
 
       {s.phase !== 'fighting' ? (() => {
         const maxChapter = maxPlayableChapter(metaRef.current);
-        const suggested = s.phase === 'won' ? Math.min(s.chapter + 1, maxChapter) : s.chapter;
-        const chapterToPlay = picked ?? suggested;
         return (
           <section
             style={{
@@ -249,7 +248,7 @@ export function CombatScreen({
             <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>Choisis ta descente</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {Array.from({ length: maxChapter }, (_, i) => i + 1).map((n) => (
-                <button key={n} onClick={() => setPicked(n)} style={chapterChipStyle(n === chapterToPlay)}>
+                <button key={n} onClick={() => onPickChapter(n)} style={chapterChipStyle(n === chapterToPlay)}>
                   {n} — {chapterOf(n).name}
                 </button>
               ))}
@@ -260,7 +259,7 @@ export function CombatScreen({
                 // consécutifs ne rejouent pas les mêmes gabarits d'arène, et aucune
                 // horloge n'entre dans la simulation.
                 runRef.current = startRun(metaRef.current, chapterToPlay, s.rngState);
-                setPicked(null);
+                onPickChapter(null);
                 onTick();
               }}
               style={{

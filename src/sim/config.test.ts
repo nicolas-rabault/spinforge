@@ -60,13 +60,6 @@ describe('balance.json', () => {
     expect(BALANCE.version).toBeGreaterThanOrEqual(1);
   });
 
-  it('a une table de types de bots complète pour le chapitre 1', () => {
-    const table = BALANCE.botTypes['1'];
-    expect(table).toHaveLength(BALANCE.chapter.sallesPerChapter);
-    const valid = ['attaque', 'endurance', 'defense', 'equilibre'];
-    for (const t of table) expect(valid).toContain(t);
-  });
-
   it('chaque chapitre jouable a une table de types complète', () => {
     for (let chapter = 1; chapter <= MAX_CHAPTER; chapter++) {
       const table = BOT_TYPES[String(chapter)];

@@ -62,10 +62,15 @@ function actionButtonStyle(enabled: boolean) {
 }
 
 export function ToupiesScreen({
-  metaRef, runRef, onChanged,
+  metaRef, runRef, chapterToPlay, onChanged,
 }: {
   metaRef: { current: MetaState };
   runRef: { current: RunState };
+  /** Le chapitre que la prochaine descente utilisera, calculé par `App` — et non
+   *  `runRef.current.chapter`, qui reste sur le chapitre qu'on vient de quitter
+   *  tant que la descente suivante n'est pas lancée. C'est justement la fenêtre
+   *  où l'on vient consulter cette composition pour choisir son châssis. */
+  chapterToPlay: number;
   onChanged: () => void;
 }) {
   const meta = metaRef.current;
@@ -77,7 +82,7 @@ export function ToupiesScreen({
   const waiting = pending.id !== piloted.id;
   const between = runRef.current.phase !== 'fighting';
   const giftAvailable = canClaimFounderGift(meta);
-  const groups = chapterGroups(runRef.current.chapter);
+  const groups = chapterGroups(chapterToPlay);
 
   // Une seule porte de mutation. Plus de `syncRunStats` ici : le run ne relit
   // jamais `meta.toupies.active`, c'est tout l'objet du verrou.
@@ -110,7 +115,7 @@ export function ToupiesScreen({
 
       <section style={cardStyle('var(--line)')}>
         <p style={{ margin: 0, font: '500 15px Oswald, ui-sans-serif, sans-serif' }}>
-          Chapitre {runRef.current.chapter} — composition
+          Chapitre {chapterToPlay} — composition
         </p>
         <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
           Attaque bat Endurance, qui bat Défense, qui bat Attaque : +{Math.round(TYPES.dominantBonus * 100)} %

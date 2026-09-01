@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "tickSeconds": 0.1,
   "arena": {
     "radius": 150, "friction": 0.94, "wallRestitution": 0.8, "restitution": 1.6,

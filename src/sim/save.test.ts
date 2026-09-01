@@ -166,6 +166,18 @@ describe('migration', () => {
     const { bestChapter: _absent, ...sans } = createInitialMeta(1);
     expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta: sans }))).toBeNull();
   });
+
+  // `isComplete` ne vérifie que « c'est un nombre ». Sans la normalisation de
+  // `hydrate`, un `bestChapter` de 1,5 donne un `maxPlayableChapter` de 2,5, que
+  // `chapterOf` va chercher dans `CHAPTERS[1.5]` : `undefined`, puis un
+  // `TypeError` à la création du run — page blanche, sans même le bandeau de
+  // sauvegarde récupérée, puisque le blob n'a pas été refusé.
+  it('normalise un bestChapter fractionnaire ou négatif en entier', () => {
+    const fraction = { ...filled(), bestChapter: 1.5 };
+    expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta: fraction }))!.bestChapter).toBe(1);
+    const negatif = { ...filled(), bestChapter: -3 };
+    expect(deserializeMeta(JSON.stringify({ v: SAVE_SCHEMA, meta: negatif }))!.bestChapter).toBe(0);
+  });
 });
 
 describe('isComplete renforcée', () => {
