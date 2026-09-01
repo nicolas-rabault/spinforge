@@ -46,7 +46,7 @@
     "scaling": {
       "spinPerSalle": 0.15,
       "attackPerSalle": 0.08,
-      "spinPerChapter": 1.2,
+      "spinPerChapter": 1.02,
       "attackPerChapter": 1.1
     },
     "spawnRing": 0.6,
