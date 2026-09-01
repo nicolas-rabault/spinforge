@@ -1,5 +1,5 @@
 import { t, type MessageKey } from '../i18n';
-import { PROFILE_AXES, type ProfileAxis } from '../sim/profile';
+import { HIGHER_IS_BETTER, PROFILE_AXES, type ProfileAxis } from '../sim/profile';
 
 /** Repris tel quel dans ForgeScreen, InventoryPanel et ToupiesScreen : les trois
  *  écrans qui montrent un profil de pièce ou de châssis doivent lire les mêmes
@@ -24,11 +24,11 @@ export function axisAbbr(axis: ProfileAxis): string {
   return t(`axis.abbr.${axis}` as MessageKey);
 }
 
-/** > 1 est un gain pour six axes sur sept. `spinDecay` est une perte de spin par
- *  seconde (voir `sim/profile.ts`) : là, c'est < 1 qui est le gain. Piège de sens
- *  à ne pas reproduire ici — la couleur suit cette règle, pas le signe du %. */
+/** > 1 est un gain pour six axes sur sept ; `spinDecay` est une perte, donc < 1
+ *  y est le gain. Le sens vient de `HIGHER_IS_BETTER` : le tester ici en plus
+ *  ferait deux endroits à corriger. */
 export function isGain(axis: ProfileAxis, value: number): boolean {
-  return axis === 'spinDecay' ? value < 1 : value > 1;
+  return HIGHER_IS_BETTER[axis] ? value > 1 : value < 1;
 }
 
 /** Le gabarit `axis.line` porte l'espace avant le signe pourcent : le français

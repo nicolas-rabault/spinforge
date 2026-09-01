@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { maxPlayableChapter, startRun } from '../sim/sim';
-import { pendingTotal } from '../sim/meta';
+import { attention, shoppingToupie } from './attention';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
 import { createAudio } from '../audio/audio';
 import { formatCredits, getLang, setLang, t } from '../i18n';
@@ -76,6 +76,11 @@ export function App() {
   // dépend de l'onglet — les écrans eux-mêmes n'en savent rien.
   const combat = tab === 'combat';
   const overlay = { position: 'absolute' as const, left: 0, right: 0, zIndex: 3 };
+
+  // Recalculé à chaque rendu : le point rouge est dérivé de l'état, jamais
+  // stocké. Le coût est une passe sur l'inventaire — l'arbre n'a de toute façon
+  // aucun `memo`, il se repropage entier à chaque tick.
+  const att = attention(metaRef.current, shoppingToupie(metaRef.current, runRef.current));
 
   return (
     <div
@@ -160,11 +165,16 @@ export function App() {
       <div style={{ position: 'absolute', inset: 0, display: combat ? 'block' : 'none' }}>
         <CombatScreen runRef={runRef} metaRef={metaRef} running={combat} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={redraw} onMetaChanged={metaChanged} audio={audioRef.current} />
       </div>
-      {tab === 'forge' ? <ForgeScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
+      {tab === 'forge' ? (
+        <ForgeScreen
+          metaRef={metaRef} runRef={runRef} att={att}
+          onGoToToupies={() => setTab('toupies')} onChanged={metaChanged}
+        />
+      ) : null}
       {tab === 'coffres' ? <ChestScreen metaRef={metaRef} onChanged={metaChanged} /> : null}
       {tab === 'toupies' ? <ToupiesScreen metaRef={metaRef} runRef={runRef} chapterToPlay={chapterToPlay} onChanged={metaChanged} /> : null}
 
-      <TabBar tab={tab} onChange={setTab} pending={pendingTotal(metaRef.current)} floating={combat} />
+      <TabBar tab={tab} onChange={setTab} att={att} floating={combat} />
     </div>
   );
 }
