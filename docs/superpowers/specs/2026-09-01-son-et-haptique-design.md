@@ -235,8 +235,12 @@ clic et l'impulsion de 8 ms.
 
 Trois propriétés qui rendent cette solution correcte et pas seulement courte :
 
-1. Les boutons `disabled` **n'émettent aucun événement de pointeur** — ils se taisent
-   sans qu'on ait à le coder.
+1. Les boutons `disabled` doivent être **filtrés explicitement**. Contrairement à ce
+   que cette spec affirmait d'abord, ils ne se taisent pas tout seuls : mesuré au
+   navigateur, un clic sur un bouton grisé tombe sur l'un de ses enfants (`<span>`),
+   et l'événement part normalement — `closest('button')` remonte alors au bouton
+   désactivé. Sans le filtre, un bouton grisé confirmerait par un son et une
+   vibration l'action qu'il refuse.
 2. Le type de clic est déclaratif : un `data-sfx="chest|fuse|upgrade"` sur les
    boutons qui engagent une dépense suffit à changer de son.
 3. **Le contexte audio naît là.** Aujourd'hui c'est `CombatScreen.onDown` qui appelle
