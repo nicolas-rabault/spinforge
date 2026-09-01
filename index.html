@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>SpinForge</title>
     <style>
-      html, body { margin: 0; background: #0b0e13; }
+      /* `overflow: hidden` : la secousse d'écran translate `#root` de quelques
+         pixels — sans ce garde-fou, chaque ouverture de coffre ferait
+         apparaître une barre de défilement le temps de l'animation. */
+      html, body { margin: 0; background: #0b0e13; overflow: hidden; }
       /* Chrome Android résout `vh` sur le viewport barre d'URL rétractée : à 100vh,
          le bas de l'app — la barre d'onglets — tombe sous la ligne de flottaison au
          chargement. `dvh` suit la hauteur réellement visible ; la paire laisse un

@@ -37,7 +37,7 @@ export const fr = {
   'chest.continue': 'Continuer',
   'chest.open': 'Ouvrir ×{n}',
   'chest.loot': 'Butin',
-  'chest.openOne': 'Ouvrir un {name}',
+  'chest.openAll': 'Ouvrir {n} × {name}',
   'chest.stored': '{best} — rangé avec le reste dans ton inventaire.',
   'chest.bronze.name': 'Coffre Bronze',
   'chest.arene.name': "Coffre d'Arène",

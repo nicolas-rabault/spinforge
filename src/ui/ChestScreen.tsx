@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { canOpen, chestPrice, grantChest, openChest } from '../sim/chest';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { canOpen, chestPrice, grantChests, openChest } from '../sim/chest';
 import { addPiece, pendingTotal } from '../sim/meta';
 import type { PieceInstance } from '../sim/piece';
 import { rankLabel } from './rank';
@@ -8,8 +8,11 @@ import { CHESTS } from '../sim/config';
 import { rankTier } from '../theme';
 import { formatCredits, t, type MessageKey } from '../i18n';
 import { tx } from '../i18n/tx';
+import { CHEST_QUAKE, CHEST_QUAKE_LIFE, REVEAL } from '../render/feel';
+import { quake } from './screenShake';
 import { ChestIcon } from './art/ChestIcon';
 import { PieceIcon } from './art/PieceIcon';
+import { Sparks } from './art/Sparks';
 import { RingMeter } from './art/RingMeter';
 import { OddsBar } from './art/OddsBar';
 import { SlotStrip } from './art/SlotStrip';
@@ -29,7 +32,15 @@ const CHEST_LIST: { kind: ChestKind; name: MessageKey }[] = [
 const OPEN_STEPS = [0, 0.3, 0.55, 0.75];
 const SHAKE_MS = 600;
 const STEP_MS = 110;
-const REVEAL_MS = 140;
+/** Taille d'une pièce révélée. Elle rétrécit quand le lot grossit, pour qu'un
+ *  butin de vingt coffres tienne encore dans le cadre. */
+const TILE = (count: number) => (count <= 10 ? 62 : count <= 24 ? 50 : 40);
+/** Gabarit partagé par la grille des pièces et par celle des gerbes : les deux
+ *  doivent se superposer case pour case, une seule définition l'assure. */
+const GRID: CSSProperties = {
+  position: 'absolute', inset: 0,
+  display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 7, alignContent: 'center',
+};
 
 type Phase = 'shake' | 'opening' | 'reveal';
 
@@ -68,8 +79,26 @@ export function ChestScreen({
       return () => clearTimeout(id);
     }
     if (revealed >= opening.pulls.length) return;
-    const id = setTimeout(() => setRevealed((n) => n + 1), REVEAL_MS);
+    // Le pas n'est plus fixe : il est dicté par la pièce qui vient d'apparaître.
+    // Une poignée de communs défile, une Légende arrête la séquence le temps
+    // qu'on la voie — c'est ce contraste qui fait la rareté, pas la couleur.
+    const shown = opening.pulls[revealed - 1];
+    const hold = REVEAL[shown ? rankTier(shown.rank) : 0].hold;
+    const id = setTimeout(() => setRevealed((n) => n + 1), hold * 1000);
     return () => clearTimeout(id);
+  }, [opening, phase, step, revealed]);
+
+  // Le couvercle qui cède, puis chaque pièce assez rare, secouent l'écran entier :
+  // enfermée dans la vignette du coffre, la puissance de l'ouverture ne se sent pas.
+  useEffect(() => {
+    if (!opening) return;
+    if (phase === 'opening' && step === 0) {
+      quake(CHEST_QUAKE[opening.kind], CHEST_QUAKE_LIFE);
+      return;
+    }
+    if (phase !== 'reveal' || revealed === 0) return;
+    const feel = REVEAL[rankTier(opening.pulls[revealed - 1].rank)];
+    if (feel.shake > 0) quake(feel.shake, feel.life);
   }, [opening, phase, step, revealed]);
 
   const start = (kind: ChestKind, drawn: PieceInstance[] | null) => {
@@ -87,9 +116,30 @@ export function ChestScreen({
     const done = phase === 'reveal' && revealed >= pulls.length;
     const openValue = phase === 'shake' ? 0 : OPEN_STEPS[Math.min(step, OPEN_STEPS.length - 1)];
     const best = pulls[pulls.length - 1];
+    const tile = TILE(pulls.length);
+    // La pièce qui vient d'apparaître commande le flash plein écran ; sa gerbe,
+    // elle, reste accrochée à sa vignette.
+    const last = revealed > 0 ? pulls[revealed - 1] : null;
+    const lastFeel = last ? REVEAL[rankTier(last.rank)] : null;
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '1 1 0', minHeight: 0 }}>
+        {last && lastFeel && lastFeel.flash > 0 ? (
+          // Remonté à chaque pièce (`key`) : sans quoi l'animation ne rejouerait
+          // pas pour la Légende suivante du même lot.
+          <span
+            key={revealed}
+            aria-hidden
+            className="sf-flash"
+            style={{
+              '--sf-flash': lastFeel.flash, '--sf-life': `${lastFeel.life}s`,
+              // Derrière le butin (`zIndex: 0` contre 1) : au-dessus, le voile
+              // doré lavait les étincelles qu'il était censé accompagner.
+              position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+              background: `radial-gradient(circle at 50% 45%, var(--rank-${rankTier(last.rank)}) 0%, transparent 62%)`,
+            } as CSSProperties}
+          />
+        ) : null}
         <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', paddingTop: 6 }}>
           {/* L'éclat part du coffre au moment où il s'ouvre : c'est ce qui fait
               de l'ouverture un événement plutôt qu'un changement d'écran. */}
@@ -108,17 +158,28 @@ export function ChestScreen({
           </span>
         </div>
 
-        <div
-          style={{
-            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 7,
-            flex: '1 1 0', minHeight: 0, overflowY: 'auto', alignContent: 'center',
-          }}
-        >
-          {pulls.slice(0, revealed).map((piece, i) => (
-            <div key={i} className="sf-pop" style={{ display: 'flex', justifyContent: 'center' }}>
-              <PieceIcon model={piece.model} rank={piece.rank} size={62} tile />
-            </div>
-          ))}
+        <div style={{ position: 'relative', zIndex: 1, flex: '1 1 0', minHeight: 0 }}>
+          <div style={{ ...GRID, overflowY: 'auto', overflowX: 'hidden' }}>
+            {pulls.slice(0, revealed).map((piece, i) => (
+              <div
+                key={i}
+                className="sf-pop"
+                style={{ display: 'flex', justifyContent: 'center', height: tile }}
+              >
+                <PieceIcon model={piece.model} rank={piece.rank} size={tile} tile />
+              </div>
+            ))}
+          </div>
+          {/* Les gerbes vivent dans une grille jumelle posée par-dessus : même
+              gabarit, même nombre de cases, donc chacune reste centrée sur sa
+              pièce — mais elle déborde sans être coupée par le cadre qui défile. */}
+          <div aria-hidden style={{ ...GRID, pointerEvents: 'none' }}>
+            {pulls.slice(0, revealed).map((piece, i) => (
+              <div key={i} style={{ position: 'relative', height: tile }}>
+                <Sparks rank={piece.rank} size={tile} />
+              </div>
+            ))}
+          </div>
         </div>
 
         {done ? (
@@ -164,8 +225,8 @@ export function ChestScreen({
             {CHEST_LIST.filter(({ kind }) => meta.pending[kind] > 0).map(({ kind, name }) => (
               <button
                 key={kind}
-                aria-label={t('chest.openOne', { name: t(name) })}
-                onClick={() => start(kind, grantChest(metaRef.current, kind))}
+                aria-label={t('chest.openAll', { n: meta.pending[kind], name: t(name) })}
+                onClick={() => start(kind, grantChests(metaRef.current, kind))}
                 className="sf-breathe"
                 style={{
                   position: 'relative', border: 'none', background: 'none', padding: 0, cursor: 'pointer',

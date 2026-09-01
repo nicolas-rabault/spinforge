@@ -29,3 +29,39 @@
 .sf-pop { animation: sf-pop 0.28s cubic-bezier(.2,1.5,.5,1) both; }
 .sf-burst { animation: sf-burst 0.5s ease-out forwards; }
 .sf-breathe { animation: sf-breathe 1.5s ease-in-out infinite; }
+
+/* Secousse de l'écran entier — amplitude et durée posées par `screenShake.ts`.
+   Les pas sont irréguliers exprès : une oscillation régulière se lit comme une
+   vibration de téléphone, pas comme un choc. */
+@keyframes sf-quake {
+  0% { transform: translate(0, 0); }
+  14% { transform: translate(calc(var(--sf-quake) * -1), calc(var(--sf-quake) * 0.4)); }
+  28% { transform: translate(calc(var(--sf-quake) * 0.85), calc(var(--sf-quake) * -0.55)); }
+  43% { transform: translate(calc(var(--sf-quake) * -0.6), calc(var(--sf-quake) * -0.3)); }
+  58% { transform: translate(calc(var(--sf-quake) * 0.45), calc(var(--sf-quake) * 0.35)); }
+  76% { transform: translate(calc(var(--sf-quake) * -0.22), calc(var(--sf-quake) * 0.12)); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Une étincelle : posée au centre de sa gerbe, elle part le long de son propre
+   axe (`rotate` puis `translateX`), ce qui suffit à ouvrir la gerbe en éventail
+   sans calculer un vecteur par particule. */
+@keyframes sf-spark {
+  0% { transform: translate(-50%, -50%) rotate(var(--sf-angle)) translateX(0) scaleX(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(var(--sf-angle)) translateX(var(--sf-reach)) scaleX(1.6); opacity: 0; }
+}
+
+@keyframes sf-ring {
+  0% { transform: translate(-50%, -50%) scale(0.15); opacity: 0.85; }
+  100% { transform: translate(-50%, -50%) scale(var(--sf-ring)); opacity: 0; }
+}
+
+@keyframes sf-flash {
+  0% { opacity: var(--sf-flash); }
+  100% { opacity: 0; }
+}
+
+.sf-quake { animation: sf-quake var(--sf-quake-life, .5s) ease-out; }
+.sf-spark { animation: sf-spark var(--sf-life) cubic-bezier(.12,.7,.3,1) forwards; }
+.sf-ring { animation: sf-ring var(--sf-life) cubic-bezier(.15,.75,.35,1) forwards; }
+.sf-flash { animation: sf-flash var(--sf-life) ease-out forwards; }

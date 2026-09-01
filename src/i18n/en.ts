@@ -33,7 +33,7 @@ export const en: Record<MessageKey, string> = {
   'chest.continue': 'Continue',
   'chest.open': 'Open ×{n}',
   'chest.loot': 'Loot',
-  'chest.openOne': 'Open one {name}',
+  'chest.openAll': 'Open {n} × {name}',
   'chest.stored': '{best} — stored with the rest in your inventory.',
   'chest.bronze.name': 'Bronze Chest',
   'chest.arene.name': 'Arena Chest',

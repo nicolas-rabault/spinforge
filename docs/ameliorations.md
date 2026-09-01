@@ -10,6 +10,48 @@ Statuts : ✅ corrigé · 🔧 en cours · 📋 à faire · 💭 à arbitrer
 
 ---
 
+## Session du 2026-09-01 — l'ouverture des coffres
+
+### ✅ 1. Vider son butin coffre par coffre est fastidieux
+
+> « Quand il y a plusieurs coffres à ouvrir, je veux qu'un clic ouvre tous les
+> coffres d'un coup. »
+
+Un clic sur un coffre du butin n'en ouvrait qu'un. Avec une douzaine de Bronzes en
+attente, il fallait douze allers-retours par l'écran de révélation.
+
+**Fait.** Le bouton vide toute la file de **son type** — les autres types gardent
+le leur, chacun son compte. `grantChest` est devenu `grantChests` : le lot consomme
+exactement le même flux de RNG que N ouvertures unitaires, pity compris, donc le
+raccourci ne change pas ce qu'on obtient (`src/sim/chest.test.ts`). Une seule
+animation de couvercle pour tout le lot, puis les pièces une à une.
+
+### ✅ 2. L'ouverture ne se sentait pas
+
+> « Il faut que tout l'écran vibre pour montrer la puissance de l'ouverture, et que
+> chaque objet apparaisse avec des effets proportionnels à la rareté. »
+
+**Fait.** Deux choses distinctes :
+
+- **La secousse est passée à l'écran entier** (`#root`, donc HUD et barre d'onglets
+  compris). Elle était jusque-là confinée à la vignette du coffre, où elle ne se
+  voyait pas. Amplitude par type : Bronze 7 px, Arène 11 px, Mythique 17 px.
+- **La révélation est devenue un crescendo.** Les tirages étant déjà triés du moins
+  bon au meilleur, chaque palier de rareté a son propre barème
+  (`REVEAL` dans `src/render/feel.ts`) : un Commun défile en 0,09 s sans rien
+  projeter, une Légende arrête la séquence 0,95 s, projette 28 étincelles épaisses
+  sur plus de deux fois sa taille, une onde de choc, un flash plein écran et une
+  secousse de 14 px. C'est le **contraste** qui dit la rareté, pas la couleur seule.
+
+Mesuré au navigateur (Playwright) : 12 Bronzes ouverts en un clic, secousse relevée
+à 7,2 px ; 8 Mythiques dont une Légende forcée par le pity, secousse à 14,2 px, et
+la file d'Arène laissée intacte.
+
+📋 **Reste à faire : le son.** L'ouverture est muette. Un choc de couvercle et un
+timbre par palier de rareté doubleraient l'effet à peu de frais.
+
+---
+
 ## Session du 2026-08-31 — refonte graphique
 
 > « Il faut que chaque toupie et chaque pièce de toupie soit représentée visuellement
