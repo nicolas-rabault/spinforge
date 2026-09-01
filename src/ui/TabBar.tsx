@@ -1,4 +1,6 @@
 import { t, tn, type MessageKey } from '../i18n';
+import { AlertDot } from './art/AlertDot';
+import type { Attention } from './attention';
 
 export type Tab = 'combat' | 'forge' | 'coffres' | 'toupies';
 
@@ -54,11 +56,12 @@ function TabIcon({ tab, color }: { tab: Tab; color: string }) {
 }
 
 export function TabBar({
-  tab, onChange, pending, floating,
+  tab, onChange, att, floating,
 }: {
   tab: Tab;
   onChange: (t: Tab) => void;
-  pending: number;
+  /** Ce qui attend le joueur — la barre en est le premier niveau d'affichage. */
+  att: Attention;
   /** En combat, la barre se pose SUR l'arène plein écran, sur un voile dégradé. */
   floating: boolean;
 }) {
@@ -97,19 +100,11 @@ export function TabBar({
           >
             <TabIcon tab={key} color={color} />
             {t(LABELS[key])}
-            {key === 'coffres' && pending > 0 ? (
-              <span
-                aria-label={tn('tab.chestsBadge', pending)}
-                style={{
-                  position: 'absolute', top: 4, right: 6, minWidth: 17, height: 17, borderRadius: 999,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '0 4px', fontSize: 11, fontVariantNumeric: 'tabular-nums',
-                  background: on ? 'var(--ink)' : 'var(--ember)', color: on ? 'var(--ember)' : 'var(--ink)',
-                }}
-              >
-                {pending}
-              </span>
+            {key === 'coffres' && att.coffres > 0 ? (
+              <AlertDot label={tn('tab.chestsBadge', att.coffres)} count={att.coffres} />
             ) : null}
+            {key === 'forge' && att.stacks.size > 0 ? <AlertDot label={t('alert.todo')} /> : null}
+            {key === 'toupies' && att.toupies ? <AlertDot label={t('alert.gift')} /> : null}
           </button>
         );
       })}
