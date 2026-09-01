@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { maxPlayableChapter, startRun } from '../sim/sim';
 import { farm, newFarmSession } from '../sim/farm';
 import { OFFLINE, SALLES_PER_CHAPTER } from '../sim/config';
-import type { MetaState } from '../sim/types';
 import { attention, shoppingToupie } from './attention';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
 import { audio } from '../audio/audio';
@@ -45,46 +44,32 @@ export function App() {
   // voile de fin de descente doit rester atteignable tant qu'on y reste).
   // Hors partie, la descente affichée tourne en DÉCOR : `handleRunTick`
   // plus bas l'empêche d'atteindre la salle du boss, et elle ne crédite
-  // rien (voir `combatMetaRef`) — la vraie monnaie vient de `farm`, plus
-  // bas encore. Au tout premier lancement, aucun chapitre n'est validé : le
-  // jeu démarre directement en partie pilotée, le décor n'ayant rien à
-  // farmer.
+  // rien (voir `combatMeta` plus bas) — la vraie monnaie vient de `farm`,
+  // plus bas encore. Au tout premier lancement, aucun chapitre n'est
+  // validé : le jeu démarre directement en partie pilotée, le décor n'ayant
+  // rien à farmer.
   const [playing, setPlaying] = useState(() => loaded.meta.bestChapter === 0);
-  // Miroir en ref de `playing`, lu par `combatMetaRef` ci-dessous : cette
-  // façade n'est construite qu'une fois (identité stable exigée par
-  // `useGameLoop`, qui redémarrerait sa boucle sinon) et ne peut donc pas
-  // fermer sur l'état React directement.
-  const playingRef = useRef(playing);
-  playingRef.current = playing;
 
   // Méta jetable du décor, cloné une fois au montage — `useState(() => …)`
   // et non `useRef(structuredClone(…))`, pour la même raison qu'`initialRun`
   // ci-dessus : l'argument d'un `useRef` est réévalué à chaque rendu, et
   // `structuredClone` n'est pas gratuit. `useGameLoop` y applique les
-  // récompenses du décor à travers `combatMetaRef` ; elles sont jetées avec
-  // lui. Écart purement cosmétique : le décor ne verra pas les améliorations
-  // achetées pendant qu'il tourne.
+  // récompenses du décor à travers `combatMeta` ci-dessous ; elles sont
+  // jetées avec lui. Écart purement cosmétique : le décor ne verra pas les
+  // améliorations achetées pendant qu'il tourne.
   const [decorMetaInit] = useState(() => structuredClone(loaded.meta));
   const decorMetaRef = useRef(decorMetaInit);
 
-  // Façade que `CombatScreen` reçoit à la place de `metaRef` : bascule, à
-  // chaque lecture, entre le vrai méta et celui du décor — sans que
-  // `useGameLoop` (qui y écrit via `applyRunReward`) ni `CombatScreen`
-  // (qui le lit pour l'art équipé et la liste de chapitres) n'aient à
-  // connaître l'existence de deux métas. Le décor n'existe que si un
-  // chapitre est validé ; sous ce seuil `playing` vaut déjà vrai (R1
-  // ci-dessus), donc cette façade pointe alors toujours vers le vrai méta.
-  const combatMetaRef = useRef({
-    get current(): MetaState {
-      return !playingRef.current && metaRef.current.bestChapter >= 1
-        ? decorMetaRef.current
-        : metaRef.current;
-    },
-    set current(v: MetaState) {
-      if (!playingRef.current && metaRef.current.bestChapter >= 1) decorMetaRef.current = v;
-      else metaRef.current = v;
-    },
-  }).current;
+  // Méta donné à `CombatScreen` à la place de `metaRef` : le vrai méta en
+  // partie pilotée, ou tant qu'aucun chapitre n'est validé (le décor n'existe
+  // pas encore, R1 ci-dessus) ; celui du décor sinon. Une simple sélection
+  // entre deux objets déjà stables (`metaRef`, `decorMetaRef` ne changent
+  // jamais d'identité) : son résultat ne change donc, lui aussi, qu'à la
+  // bascule elle-même — pas besoin de mémoïsation. `CombatScreen` se re-rend
+  // à chaque tick, ce choix couvre donc tous ses usages (art équipé, liste
+  // de chapitres du voile, « Nouvelle descente ») sans qu'il ait à savoir
+  // qu'un décor existe.
+  const combatMeta = playing || metaRef.current.bestChapter < 1 ? metaRef : decorMetaRef;
 
   // Le chapitre explicitement choisi par le joueur pour sa prochaine descente.
   // Remis à null à chaque descente lancée : la suggestion reprend alors la main
@@ -300,7 +285,7 @@ export function App() {
           PixiJS à chaque changement d'onglet coûterait un rechargement complet
           des textures. On le masque, la boucle se met en pause. */}
       <div style={{ position: 'absolute', inset: 0, display: combat ? 'block' : 'none' }}>
-        <CombatScreen runRef={runRef} metaRef={combatMetaRef} running={combat} piloted={playing} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={handleRunTick} onMetaChanged={metaChanged} />
+        <CombatScreen runRef={runRef} metaRef={combatMeta} running={combat} piloted={playing} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={handleRunTick} onMetaChanged={metaChanged} />
       </div>
       {tab === 'forge' ? (
         <ForgeScreen

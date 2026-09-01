@@ -104,13 +104,23 @@ export function CombatScreen({
           // `salleChanged` — il n'y serait jamais parvenu.
           if (events.chapterValidated) audio.bossDown();
           else if (events.salleChanged) {
+            // Une porte qui s'ouvre reste vraie même en décor : la salle a
+            // réellement changé. Pas de garde ici.
             audio.door();
             // Seul le boss garde une annonce écrite : nommer le Gardien du Hangar à
             // son entrée est de la mise en scène. Le type de l'adversaire, lui, se
             // lit désormais sur la toupie elle-même — badge d'avantage porté par le
             // bot — au lieu d'un bandeau « Salle 4 · Défense » qui nommait un type
             // sans dire ce qu'il fallait en faire.
-            if (run.salle === SALLES_PER_CHAPTER) {
+            //
+            // `piloted` ici : en décor, `handleRunTick` (App.tsx) referme la
+            // salle 10 avant qu'elle ne soit jouée — mais son remplacement du
+            // run et ce `setBossBanner` sont deux mises à jour d'état
+            // groupées par React dans le même passage, donc sans cette garde
+            // le bandeau resterait affiché par-dessus une descente déjà
+            // repartie en salle 1 : une annonce d'un combat qui n'aura pas
+            // lieu.
+            if (piloted && run.salle === SALLES_PER_CHAPTER) {
               setBossBanner(chapterBoss(run.chapter));
               window.setTimeout(() => setBossBanner(null), 2100);
             }
