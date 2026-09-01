@@ -541,6 +541,57 @@ avec 23 morts, premier coffre immédiat, passivité jamais validée).
 
 ---
 
+## Session du 2026-09-01 — guider le joueur
+
+> « Dans le menu de la forge, je voudrais que les éléments de la toupie comme
+> blade, disque, type et corps soient placés sous forme de stack de la même
+> manière que c'est stocké sur le haut de l'écran. […] J'aimerais que tu mettes
+> des points rouges sur les choses qui devraient être faites par le joueur. […]
+> L'idée, c'est de guider le joueur dans les menus pour le pousser à améliorer sa
+> toupie. L'objectif c'est de faire ressentir au joueur une amélioration continue
+> et importante. […] L'idée c'est d'avoir une très grande quantité d'amélioration
+> en continu comme dans les idle mobile. »
+
+**Diagnostic.** La Forge dessine la toupie comme une pile — `drawToupiePortrait`
+l'écrit noir sur blanc — puis pose dessous une grille 2×2 dont aucune case ne
+correspond à aucune hauteur de l'objet. Et rien, nulle part, ne dit au joueur
+qu'une pièce de son inventaire bat celle qu'il porte : c'est la seule information
+de la Forge qu'il faut calculer soi-même pour la connaître.
+
+La remarque couvre deux chantiers de tailles très différentes, découpés en deux
+lots.
+
+### Lot 1 — le guidage · 🔧 spec écrite
+
+Spec : `docs/superpowers/specs/2026-09-01-guidage-joueur-design.md`.
+
+- 🔧 **La Forge en pile.** Cinq lignes pleine largeur dans l'ordre du portrait —
+  Châssis (en-tête, mène à l'onglet Toupies), Lame, Noyau, Disque, Pointe.
+- 🔧 **Le point rouge.** Un marqueur unique à tous les étages — onglet, section,
+  filtre, vignette, ligne d'emplacement. Il ne marque que le **gratuit** : coffres
+  à ouvrir, fusions possibles, pièces dominantes à équiper, Fondateur à réclamer.
+  Jamais un achat : les crédits rentrent en continu, un point « tu peux payer »
+  serait allumé en permanence, et un point toujours allumé ne dit plus rien.
+- 🔧 **« Plus forte » se mesure, ne se devine pas.** Une pièce mérite son point
+  quand l'échange ne fait reculer **aucune** des sept stats et en relève au moins
+  une. Le rang seul mentirait : une pièce de rang supérieur au niveau 0 est
+  souvent plus faible qu'une équipée montée au niveau 8.
+- 🔧 **Rien n'est stocké.** Le point est dérivé de l'état à chaque rendu : il
+  s'éteint parce que l'action est faite, jamais parce qu'on a regardé l'écran.
+  Donc aucun champ de sauvegarde, aucun changement de schéma.
+
+### Lot 2 — la boucle de progression continue · 📋 à spécifier
+
+Quêtes et défis qui donnent des points, points qui donnent des crédits, crédits
+qui achètent des coffres, ouvertures de coffres qui redonnent des points. C'est le
+sous-système « quêtes quotidiennes » déjà inscrit au jalon 3 (`docs/roadmap.md`),
+avec sa monnaie, sa persistance et son écran. À spécifier séparément, après la
+fusion de `jalon-3-lot-a` — il touche `MetaState` et `SAVE_SCHEMA`, que cette
+branche-là réécrit en ce moment.
+
+---
+
+
 ## Comment mesurer (à réutiliser)
 
 Les chiffres ci-dessus viennent de sondes jetables, écrites comme des tests Vitest
