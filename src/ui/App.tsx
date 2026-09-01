@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createRun } from '../sim/sim';
 import { pendingTotal } from '../sim/meta';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
-import { createAudio } from '../audio/audio';
+import { audio } from '../audio/audio';
 import { formatCredits, getLang, setLang, t } from '../i18n';
 import { CombatScreen } from './CombatScreen';
 import { ForgeScreen } from './ForgeScreen';
@@ -34,10 +34,8 @@ export function App() {
   useEffect(() => installFlushOnHide(), []);
   useEffect(() => () => flushSave(), []);
 
-  const audioRef = useRef<ReturnType<typeof createAudio> | null>(null);
-  if (audioRef.current === null) audioRef.current = createAudio();
-  const [muted, setMuted] = useState(() => audioRef.current!.isMuted());
-  useEffect(() => () => audioRef.current?.destroy(), []);
+  const [sound, setSound] = useState(() => audio.settings());
+  const soundOn = sound.music || sound.sfx;
 
   // `t()` lit un singleton de module, ce qui évite d'enfiler une locale à travers
   // `axisLine`, `rankLabel` et `formatCredits`. Ce `useState` n'existe que pour
@@ -108,18 +106,18 @@ export function App() {
         </button>
         <button
           onClick={() => {
-            const next = !muted;
-            audioRef.current!.setMuted(next);
-            setMuted(next);
+            const next = !soundOn;
+            for (const key of ['music', 'sfx', 'haptics'] as const) audio.setSetting(key, next);
+            setSound(audio.settings());
           }}
-          aria-label={muted ? t('header.unmute') : t('header.mute')}
+          aria-label={soundOn ? t('header.mute') : t('header.unmute')}
           style={{
             width: 34, height: 34, borderRadius: 9, cursor: 'pointer',
             border: '1px solid var(--line)', background: 'rgba(19,25,34,.9)', color: 'var(--muted)',
             fontSize: 15, pointerEvents: 'auto',
           }}
         >
-          {muted ? '🔇' : '🔊'}
+          {soundOn ? '🔊' : '🔇'}
         </button>
       </header>
 
@@ -138,7 +136,7 @@ export function App() {
           PixiJS à chaque changement d'onglet coûterait un rechargement complet
           des textures. On le masque, la boucle se met en pause. */}
       <div style={{ position: 'absolute', inset: 0, display: combat ? 'block' : 'none' }}>
-        <CombatScreen runRef={runRef} metaRef={metaRef} running={tab === 'combat'} onTick={redraw} onMetaChanged={metaChanged} audio={audioRef.current} />
+        <CombatScreen runRef={runRef} metaRef={metaRef} running={tab === 'combat'} onTick={redraw} onMetaChanged={metaChanged} />
       </div>
       {tab === 'forge' ? <ForgeScreen metaRef={metaRef} runRef={runRef} onChanged={metaChanged} /> : null}
       {tab === 'coffres' ? <ChestScreen metaRef={metaRef} onChanged={metaChanged} /> : null}

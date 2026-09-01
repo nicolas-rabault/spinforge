@@ -1,200 +1,182 @@
-const STORAGE_KEY = 'spinforge.muted';
+import { MIX } from './mix';
+import { admitHit, createGate } from './gate';
+import { createHaptics, type Haptics } from './haptics';
+import { loadSettings, saveSettings, type AudioSettings } from './settings';
+import { burst, createBus, metalBody, tone, type Bus } from './synth';
 
-/**
- * Barème du son. Volumes délibérément bas : tout passe ensuite par un limiteur,
- * et l'arène peut produire dix chocs par seconde.
- */
-const MIX = {
-  master: 0.5,
-  /** Le rotor : bruit filtré (un souffle), jamais un oscillateur tonal — une dent
-   * de scie tenue à 60-250 Hz est un bourdon de scie sauteuse, pas une toupie. */
-  whirrGain: 0.055,
-  whirrFreqLow: 380,
-  whirrFreqHigh: 2200,
-  subGain: 0.05,
-  subFreqLow: 48,
-  subFreqHigh: 96,
-  /** Deux chocs plus rapprochés que ça se fondent en un seul son. Doit rester
-   * PLUS LONG que le tick de simulation (100 ms), sinon un contact prolongé
-   * refranchit la garde à chaque tick et ne se fait pas éclaircir du tout.
-   * Mesuré sur un run de 60 s : sans garde, jusqu'à 20 sons par seconde ; à
-   * 140 ms, pic à 5/s et moyenne à 2,2/s — c'est le genou de la courbe, allonger
-   * davantage ne baisse plus que la moyenne. */
-  hitGapS: 0.14,
-} as const;
+export type TapKind = 'tap' | 'chest' | 'fuse' | 'upgrade';
 
 export interface Audio {
-  /** À appeler au premier contact du doigt : les navigateurs l'exigent. */
+  /** À appeler au premier geste, où qu'il tombe : les navigateurs interdisent de
+   *  créer un contexte audio autrement. Idempotent. */
   start(): void;
-  /** Le rotor ne souffle que pendant un combat : muet en Forge et à la mort. */
+  /** Le rotor ne souffle que pendant un combat : `null` le coupe. */
   setSpin(ratio: number | null): void;
   hit(power: number): void;
   death(): void;
   door(): void;
-  setMuted(muted: boolean): void;
-  isMuted(): boolean;
+  settings(): AudioSettings;
+  setSetting(key: keyof AudioSettings, on: boolean): void;
   destroy(): void;
 }
 
-export function createAudio(): Audio {
-  let ctx: AudioContext | null = null;
-  let master: GainNode | null = null;
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
+function createAudio(): Audio {
+  let bus: Bus | null = null;
   let whirrFilter: BiquadFilterNode | null = null;
   let whirrGain: GainNode | null = null;
+  let whirrSource: AudioBufferSourceNode | null = null;
   let sub: OscillatorNode | null = null;
   let subGain: GainNode | null = null;
-  let whirrSource: AudioBufferSourceNode | null = null;
-  let muted = localStorage.getItem(STORAGE_KEY) === '1';
-  let noise: AudioBuffer | null = null;
-  let lastHitAt = -Infinity;
+  let spin = 0;
 
-  function buildNoise(context: AudioContext, seconds: number): AudioBuffer {
-    const buffer = context.createBuffer(1, Math.round(context.sampleRate * seconds), context.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-    return buffer;
+  const gate = createGate();
+  let settings = loadSettings(localStorage);
+  const haptics: Haptics = createHaptics(
+    typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
+      ? (pattern) => { navigator.vibrate(pattern); }
+      : null,
+    settings.haptics,
+  );
+
+  function live(): Bus | null {
+    if (!bus) return null;
+    if (bus.ctx.state === 'suspended') void bus.ctx.resume();
+    return bus;
   }
 
-  function ensure(): AudioContext | null {
-    if (!ctx) return null;
-    if (ctx.state === 'suspended') void ctx.resume();
-    return ctx;
-  }
-
-  /**
-   * Enveloppe percussive avec une attaque de quelques millisecondes : couper un
-   * son net à pleine amplitude produit un clic, et c'est ce clic — répété — qui
-   * rendait les impacts agressifs.
-   */
-  function envelope(context: AudioContext, peak: number, attack: number, duration: number): GainNode {
-    const env = context.createGain();
-    const t = context.currentTime;
-    env.gain.setValueAtTime(0.0001, t);
-    env.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + attack);
-    env.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-    return env;
-  }
-
-  function burst(freq: number, q: number, gain: number, duration: number): void {
-    const context = ensure();
-    if (!context || !master || !noise) return;
-    const src = context.createBufferSource();
-    src.buffer = noise;
-    src.playbackRate.value = 0.7 + Math.random() * 0.6; // pas deux chocs identiques
-    const filter = context.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = freq;
-    filter.Q.value = q;
-    src.connect(filter).connect(envelope(context, gain, 0.004, duration)).connect(master);
-    src.start();
-    src.stop(context.currentTime + duration);
-  }
-
-  function tone(from: number, to: number, duration: number, gain: number, type: OscillatorType = 'sine'): void {
-    const context = ensure();
-    if (!context || !master) return;
-    const osc = context.createOscillator();
-    osc.type = type;
-    osc.frequency.setValueAtTime(from, context.currentTime);
-    if (to !== from) osc.frequency.exponentialRampToValueAtTime(Math.max(20, to), context.currentTime + duration);
-    osc.connect(envelope(context, gain, 0.008, duration)).connect(master);
-    osc.start();
-    osc.stop(context.currentTime + duration);
+  /** Le rotor s'efface sous un choc fort, puis revient. Un son tenu qui
+   *  s'interrompt cesse d'être un son tenu : c'est ce qui le fait disparaître de
+   *  la conscience sans le retirer de la scène. */
+  function duck(power: number): void {
+    if (!bus || !whirrGain || power < MIX.duckPower) return;
+    const t = bus.ctx.currentTime;
+    const target = MIX.whirrGain * (0.25 + 0.75 * spin);
+    whirrGain.gain.cancelScheduledValues(t);
+    whirrGain.gain.setValueAtTime(target * MIX.duckWhirr, t);
+    whirrGain.gain.setTargetAtTime(target, t + MIX.duckHoldS, MIX.duckReleaseS);
   }
 
   return {
     start() {
-      if (ctx) {
-        void ctx.resume();
+      if (bus) {
+        void bus.ctx.resume();
         return;
       }
-      ctx = new AudioContext();
-      noise = buildNoise(ctx, 0.5);
+      bus = createBus();
+      bus.sfx.gain.value = settings.sfx ? MIX.sfxGain : 0;
+      bus.music.gain.value = settings.music ? MIX.musicGain : 0;
 
-      // Limiteur en sortie : l'arène peut empiler chocs, mort et transition de
-      // salle sur la même image, et c'est cette saturation qui écrête.
-      const limiter = ctx.createDynamicsCompressor();
-      limiter.threshold.value = -14;
-      limiter.knee.value = 14;
-      limiter.ratio.value = 8;
-      limiter.attack.value = 0.003;
-      limiter.release.value = 0.18;
-      limiter.connect(ctx.destination);
-
-      master = ctx.createGain();
-      master.gain.value = muted ? 0 : MIX.master;
-      master.connect(limiter);
-
-      whirrFilter = ctx.createBiquadFilter();
+      whirrFilter = bus.ctx.createBiquadFilter();
       whirrFilter.type = 'bandpass';
       whirrFilter.frequency.value = MIX.whirrFreqLow;
       whirrFilter.Q.value = 1.1;
-      whirrGain = ctx.createGain();
+      whirrGain = bus.ctx.createGain();
       whirrGain.gain.value = 0;
-      whirrSource = ctx.createBufferSource();
-      whirrSource.buffer = buildNoise(ctx, 2);
+      whirrSource = bus.ctx.createBufferSource();
+      whirrSource.buffer = bus.noise;
       whirrSource.loop = true;
-      whirrSource.connect(whirrFilter).connect(whirrGain).connect(master);
+      whirrSource.connect(whirrFilter).connect(whirrGain).connect(bus.sfx);
       whirrSource.start();
 
-      sub = ctx.createOscillator();
-      sub.type = 'sine';
+      sub = bus.ctx.createOscillator();
       sub.frequency.value = MIX.subFreqLow;
-      subGain = ctx.createGain();
+      subGain = bus.ctx.createGain();
       subGain.gain.value = 0;
-      sub.connect(subGain).connect(master);
+      sub.connect(subGain).connect(bus.sfx);
       sub.start();
     },
+
     setSpin(ratio) {
-      const context = ensure();
-      if (!context || !whirrFilter || !whirrGain || !sub || !subGain) return;
-      const t = context.currentTime;
+      const b = live();
+      if (!b || !whirrFilter || !whirrGain || !sub || !subGain) return;
+      const t = b.ctx.currentTime;
       if (ratio === null) {
+        spin = 0;
         whirrGain.gain.setTargetAtTime(0, t, 0.1);
         subGain.gain.setTargetAtTime(0, t, 0.1);
         return;
       }
-      const r = Math.max(0, Math.min(1, ratio));
-      whirrFilter.frequency.setTargetAtTime(MIX.whirrFreqLow + (MIX.whirrFreqHigh - MIX.whirrFreqLow) * r, t, 0.12);
-      sub.frequency.setTargetAtTime(MIX.subFreqLow + (MIX.subFreqHigh - MIX.subFreqLow) * r, t, 0.12);
-      // Le souffle s'efface avec le spin : une toupie qui meurt se tait.
-      whirrGain.gain.setTargetAtTime(MIX.whirrGain * (0.25 + 0.75 * r), t, 0.1);
-      subGain.gain.setTargetAtTime(MIX.subGain * r, t, 0.1);
+      spin = clamp01(ratio);
+      whirrFilter.frequency.setTargetAtTime(
+        MIX.whirrFreqLow + (MIX.whirrFreqHigh - MIX.whirrFreqLow) * spin, t, 0.12,
+      );
+      sub.frequency.setTargetAtTime(MIX.subFreqLow + (MIX.subFreqHigh - MIX.subFreqLow) * spin, t, 0.12);
+      whirrGain.gain.setTargetAtTime(MIX.whirrGain * (0.25 + 0.75 * spin), t, 0.1);
+      subGain.gain.setTargetAtTime(MIX.subGain * spin, t, 0.1);
     },
+
     hit(power) {
-      const context = ensure();
-      if (!context) return;
-      if (context.currentTime - lastHitAt < MIX.hitGapS) return;
-      lastHitAt = context.currentTime;
-      const p = Math.max(0, Math.min(1, power));
-      burst(900 + 1500 * p, 3.2, 0.04 + 0.08 * p, 0.05 + 0.03 * p);
-      // Le corps du choc : seuls les vrais coups font trembler l'arène.
-      if (p > 0.3) tone(140, 60, 0.1 + 0.06 * p, 0.05 * p);
+      const p = clamp01(power);
+      // La vibration est indépendante du son : elle a ses propres garde-fous, et
+      // elle doit fonctionner même quand les bruitages sont coupés.
+      haptics.hit(p, performance.now());
+      const b = live();
+      if (!b || !settings.sfx) return;
+      if (!admitHit(gate, b.ctx.currentTime, p)) return;
+      duck(p);
+      // Le transitoire : l'attaque, ce qui fait « maintenant ».
+      burst(b, b.sfx, {
+        type: 'highpass',
+        freq: MIX.hitClickHz,
+        gain: MIX.hitClickGain + MIX.hitClickSpan * p,
+        duration: MIX.hitClickS,
+        rate: 0.7 + Math.random() * 0.6,
+      });
+      // Le corps : c'est lui qui manquait. Plus le choc est fort, plus il est grave.
+      const detune = 1 + (Math.random() * 2 - 1) * MIX.hitDetune;
+      metalBody(b, b.sfx, {
+        freq: (MIX.hitBodyHz + MIX.hitBodySpan * p) * detune,
+        gain: MIX.hitBodyGain + MIX.hitBodyGainSpan * p,
+        decay: MIX.hitBodyDecayS + MIX.hitBodyDecaySpan * p,
+      });
+      // Le poids : seuls les vrais coups le méritent.
+      if (p > MIX.hitSubThreshold) {
+        tone(b, b.sfx, {
+          from: MIX.hitSubFrom, to: MIX.hitSubTo, duration: MIX.hitSubS, gain: MIX.hitSubGain * p,
+        });
+      }
     },
+
     death() {
-      tone(190, 55, 0.55, 0.08);
-      burst(520, 0.9, 0.05, 0.4);
+      haptics.buzz('death', performance.now());
+      const b = live();
+      if (!b || !settings.sfx) return;
+      metalBody(b, b.sfx, { freq: 190, gain: 0.07, decay: 0.55 });
+      tone(b, b.sfx, { from: 190, to: 55, duration: 0.55, gain: 0.06 });
+      burst(b, b.sfx, { freq: 520, q: 0.9, gain: 0.05, duration: 0.4 });
     },
+
     door() {
-      // Deux notes brèves qui montent (ré, la) — une porte qui s'ouvre, pas une alarme.
-      tone(587, 587, 0.11, 0.045);
-      window.setTimeout(() => tone(880, 880, 0.16, 0.04), 90);
-      tone(110, 70, 0.22, 0.05);
+      const b = live();
+      if (!b || !settings.sfx) return;
+      // Ré5 puis la5 : deux degrés de ré phrygien, donc deux notes qui
+      // s'accordent avec la musique au lieu de lui rentrer dedans.
+      tone(b, b.sfx, { from: 587.33, duration: 0.11, gain: 0.045 });
+      tone(b, b.sfx, { from: 880, duration: 0.16, gain: 0.04, at: b.ctx.currentTime + 0.09 });
+      tone(b, b.sfx, { from: 110, to: 70, duration: 0.22, gain: 0.05 });
     },
-    setMuted(next) {
-      muted = next;
-      localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
-      if (master && ctx) master.gain.setTargetAtTime(next ? 0 : MIX.master, ctx.currentTime, 0.03);
+
+    settings() {
+      return { ...settings };
     },
-    isMuted() {
-      return muted;
+
+    setSetting(key, on) {
+      settings = { ...settings, [key]: on };
+      saveSettings(localStorage, settings);
+      if (key === 'haptics') haptics.setEnabled(on);
+      if (!bus) return;
+      const t = bus.ctx.currentTime;
+      if (key === 'sfx') bus.sfx.gain.setTargetAtTime(on ? MIX.sfxGain : 0, t, 0.03);
+      if (key === 'music') bus.music.gain.setTargetAtTime(on ? MIX.musicGain : 0, t, 0.03);
     },
+
     destroy() {
       whirrSource?.stop();
       sub?.stop();
-      void ctx?.close();
-      ctx = null;
-      master = null;
+      void bus?.ctx.close();
+      bus = null;
       whirrFilter = null;
       whirrGain = null;
       whirrSource = null;
@@ -203,3 +185,11 @@ export function createAudio(): Audio {
     },
   };
 }
+
+/**
+ * Singleton de module, sur le modèle de `src/i18n/`. Cinq composants ont besoin du
+ * son, dont deux à deux niveaux de profondeur : enfiler une prop `audio` à travers
+ * `ForgeScreen` → `InventoryPanel` → `PieceSheet` coûterait plus que ça ne prouve.
+ * Le contexte WebAudio, lui, ne naît qu'au premier geste — voir `start()`.
+ */
+export const audio: Audio = createAudio();

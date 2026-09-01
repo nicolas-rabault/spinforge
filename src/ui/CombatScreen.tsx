@@ -9,20 +9,19 @@ import { SALLES_PER_CHAPTER } from '../sim/config';
 import { resetRun } from '../sim/sim';
 import { PipTrack } from './art/PipTrack';
 import type { MetaState, RunState, Vec } from '../sim/types';
-import type { Audio } from '../audio/audio';
+import { audio } from '../audio/audio';
 
 const DEAD_ZONE_PX = 8;
 const ONBOARDED_KEY = 'spinforge.onboarded';
 
 export function CombatScreen({
-  runRef, metaRef, running, onTick, onMetaChanged, audio,
+  runRef, metaRef, running, onTick, onMetaChanged,
 }: {
   runRef: { current: RunState };
   metaRef: { current: MetaState };
   running: boolean;
   onTick: () => void;
   onMetaChanged: () => void;
-  audio: Audio;
 }) {
   const steerRef = useRef<Vec | null>(null);
   const originRef = useRef<Vec | null>(null);
@@ -51,7 +50,7 @@ export function CombatScreen({
     // La boucle est en pause en Forge : plus personne n'appelle setSpin, et le
     // rotor sonnerait indéfiniment à sa dernière fréquence.
     if (!running) audio.setSpin(null);
-  }, [running, audio]);
+  }, [running]);
 
   useGameLoop(
     runRef,
