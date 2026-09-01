@@ -169,6 +169,12 @@ function createAudio(): Audio {
       const b = live();
       if (!b || !settings.sfx) return;
       if (!admitHit(gate, b.ctx.currentTime, p)) return;
+      // Volontairement après le garde `settings.sfx` : le ducking fait de la
+      // place à un son de choc. Si les bruitages sont coupés, ce son ne joue
+      // pas — creuser la musique ouvrirait alors un trou que rien ne vient
+      // remplir, et le joueur l'entendrait hoqueter sans raison. Couper les
+      // bruitages demande le silence sur les impacts, pas une musique qui
+      // tressaute à chaque contact.
       duck(p);
       // Le transitoire : l'attaque, ce qui fait « maintenant ».
       burst(b, b.sfx, {
