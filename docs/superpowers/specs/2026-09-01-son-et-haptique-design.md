@@ -101,7 +101,7 @@ comme un raté de lecture.
 
 | Couche | Recette | Apparaît à |
 |---|---|---|
-| **Bourdon** | sinus ré1 (36,7 Hz) + bruit passe-bas 180 Hz, tenus | toujours |
+| **Bourdon** | sinus ré2 (73,4 Hz, une octave au-dessus de la racine ré1) + bruit passe-bas 180 Hz, tenus | toujours |
 | **Pouls** | grosse caisse synthétique : sinus 110 → 44 Hz en 90 ms, temps forts | intensité ≥ 0,25 |
 | **Enclume** | bruit dans un filtre en peigne accordé sur ré — la signature « forge » | ≥ 0,55 |
 | **Motif** | 4 notes à l'arpège (ré4, la4, si♭4, fa4), double-croches pointées | ≥ 0,65 |
@@ -149,7 +149,7 @@ l'effet mitraillette perçu, indépendamment du débit réel.
 ### Le rotor — conservé, mais rendu à sa place
 
 `whirrGain` 0,055 → **0,018**, `subGain` 0,05 → **0,020**, et surtout : il est
-**ducké à 35 % pendant 200 ms après chaque choc**. Un son tenu qui s'interrompt
+**ducké à 35 % pendant 150 ms après chaque choc** (§ 4). Un son tenu qui s'interrompt
 cesse d'être un son tenu ; c'est ce qui le fait disparaître de la conscience sans le
 supprimer de la scène.
 
@@ -161,7 +161,7 @@ supprimer de la scène.
 | `door()` | ré5 puis la5 (inchangé — ce sont déjà des degrés du mode, elles s'accordent avec la musique) | 0,27 s |
 | `reward(chests)` | **les pièces dans la caisse** : 4 grains (+1 si un coffre est tombé), bruit passe-bande 1 800 → 3 200 Hz Q 6, 25 ms chacun, espacés de 45 ± 15 ms, hauteur montante — puis un fond de caisse, sinus 90 Hz, 90 ms | ~0,3 s |
 | `chestShake()` | grondement : bruit passe-bas 220 Hz modulé en amplitude | 0,60 s (= `SHAKE_MS`) |
-| `chestStep(i)` | craquement par pose : bruit passe-bande 700 Hz Q 2, 40 ms, hauteur montante avec `i` | 3 × 0,11 s |
+| `chestStep(i)` | craquement par pose : bruit passe-bande 700 Hz Q 2, 40 ms, hauteur montante avec `i` | 4 × 0,11 s (`OPEN_STEPS`) |
 | `chestOpened()` | éclat : bruit passe-haut + accord ré/la | 0,35 s |
 | `pieceRevealed(tier)` | « ting » : sinus + partiel, hauteur par palier de rang — 622 / 784 / 932 / 1 175 Hz (mi♭5, sol5, si♭5, ré6, tous degrés de ré phrygien) | 0,18 s |
 | `chestDone(bestTier)` | trois notes montantes, la dernière donnée par le meilleur palier tiré | 0,45 s |

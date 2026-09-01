@@ -719,8 +719,12 @@ précédentes parce qu'elle ne peut pas être coupée : `audio.ts` est consommé
 - Produit : `Bus { ctx, sfx, music, noise }`, `createBus()`, `noiseBuffer()`,
   `envelope()`, `burst()`, `tone()`, `metalBody()`, `comb()` ;
   et le singleton `audio` avec, à ce stade, `start`, `setSpin`, `hit`, `death`,
-  `door`, `settings`, `setSetting`, `destroy`. Les tâches 5, 7 et 8 étendent ce
-  singleton sans changer ce qui est là.
+  `door`, `settings`, `setSetting`. Les tâches 5, 7 et 8 étendent ce singleton sans
+  changer ce qui est là.
+
+  > `destroy()` a été retiré en cours de route : le passage de la façade en
+  > singleton de module l'a laissé sans appelant, et un singleton de module ne
+  > meurt pas. Le plan est corrigé ici et plus bas ; la spec l'était déjà.
 
 - [ ] **Étape 1 : écrire `src/audio/synth.ts`**
 
@@ -910,7 +914,6 @@ export interface Audio {
   door(): void;
   settings(): AudioSettings;
   setSetting(key: keyof AudioSettings, on: boolean): void;
-  destroy(): void;
 }
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
@@ -1063,18 +1066,6 @@ function createAudio(): Audio {
       const t = bus.ctx.currentTime;
       if (key === 'sfx') bus.sfx.gain.setTargetAtTime(on ? MIX.sfxGain : 0, t, 0.03);
       if (key === 'music') bus.music.gain.setTargetAtTime(on ? MIX.musicGain : 0, t, 0.03);
-    },
-
-    destroy() {
-      whirrSource?.stop();
-      sub?.stop();
-      void bus?.ctx.close();
-      bus = null;
-      whirrFilter = null;
-      whirrGain = null;
-      whirrSource = null;
-      sub = null;
-      subGain = null;
     },
   };
 }
@@ -1233,7 +1224,7 @@ Le choc n'était qu'une bouffée de bruit filtré : il claquait sans rien peser.
 se joue maintenant en trois composantes — transitoire, corps inharmonique aux
 ratios de plaque, sub au-delà du seuil — et sa fondamentale DESCEND avec la
 puissance, comme un vrai impact. Le rotor passe de 0,055 à 0,018 et s'efface
-200 ms sous chaque choc fort.
+150 ms sous chaque choc fort (`MIX.duckHoldS`).
 
 La façade devient un singleton de module, comme l'i18n : cinq composants en ont
 besoin, dont deux à deux niveaux de profondeur.
@@ -1432,8 +1423,8 @@ par son :
       <button onClick={fire(() => audio.reward(1200, 1))} style={BTN}>Récompense de salle</button>
       <button onClick={fire(() => audio.bossDown())} style={BTN}>Boss vaincu</button>
       <button onClick={fire(() => audio.chestShake())} style={BTN}>Coffre — secousse</button>
-      <button onClick={fire(() => [0, 1, 2].forEach((i) => setTimeout(() => audio.chestStep(i), i * 110)))} style={BTN}>
-        Coffre — les trois poses
+      <button onClick={fire(() => OPEN_STEPS.forEach((_, i) => setTimeout(() => audio.chestStep(i), i * STEP_MS)))} style={BTN}>
+        Coffre — les {OPEN_STEPS.length} poses
       </button>
       <button onClick={fire(() => audio.chestOpened())} style={BTN}>Coffre — le couvercle cède</button>
       <button onClick={fire(() => audio.pieceRevealed(tier))} style={BTN}>Pièce révélée (palier {tier})</button>
@@ -1733,21 +1724,16 @@ import { SALLES_PER_CHAPTER } from '../sim/config';
 import { LAYERS, MIX } from './mix';
 import { burst, comb, noiseBuffer, tone, type Bus } from './synth';
 
-/** Ré phrygien, en demi-tons depuis la fondamentale. Le mode le plus sombre qui
- *  reste chantable — et son demi-ton ré → mi♭ EST la tension du boss. */
-export const PHRYGIAN = [0, 1, 3, 5, 7, 8, 10] as const;
-/** Le motif : ré, la, si♭, fa. */
-export const MOTIF = [0, 7, 8, 3] as const;
-/** La nappe de tension : le mi♭ tenu contre le bourdon en ré. */
-export const TENSION = 1;
-
 export type LayerName = keyof typeof LAYERS;
+```
 
-/** Hauteur d'un degré du mode, à l'octave demandée au-dessus de la racine. */
-export function noteHz(semitone: number, octave: number): number {
-  return MIX.rootHz * Math.pow(2, octave + semitone / 12);
-}
+> Le plan plaçait ici `PHRYGIAN`, `MOTIF`, `TENSION` et `noteHz()`, et faisait
+> sonner le bourdon sur `MIX.rootHz * 2`. Ces hauteurs ont depuis rejoint la table
+> `NOTE` de `mix.ts`, d'où `MUSIC` et `SFX` puisent toutes les deux : `music.ts` ne
+> garde plus que le calendrier rythmique. Les extraits qui suivent gardent la forme
+> du plan, pas les noms finaux.
 
+```ts
 /** L'intensité est une fonction pure du contexte : c'est ce qui permet de la
  *  tester, et ce qui garantit que deux écrans ne se disputent pas la musique. */
 export function intensityFor(combat: boolean, salle: number, dead: boolean): number {
@@ -2019,7 +2005,9 @@ avec, à côté de `duck` :
   }
 ```
 
-et dans `destroy()` : `document.removeEventListener('visibilitychange', onVisibility);`
+L'écouteur n'est jamais retiré : la façade est un singleton de module, elle vit
+aussi longtemps que la page. Le plan prescrivait ici un `removeEventListener` dans
+`destroy()`, une méthode qui n'existe plus.
 
 - [ ] **Étape 3 : piloter l'intensité depuis `src/ui/App.tsx`**
 
@@ -2237,7 +2225,9 @@ Attendu : aucune erreur, tous les tests passent.
 Ouvrir `/spinforge/`, aller sur Coffres, ouvrir un Bronze ×1 puis un ×10 :
 
 1. Le grondement accompagne la secousse, **pas après**.
-2. Les trois poses du couvercle font trois craquements montants.
+2. Les quatre poses du couvercle (`OPEN_STEPS`) font quatre craquements montants —
+   autant dans le jeu que sur le banc d'essai, qui lit les poses au lieu de les
+   recopier.
 3. Le couvercle qui cède sonne **une** fois.
 4. Sur un ×10, les « ting » montent avec la rareté et le meilleur tirage finit la
    séquence.
