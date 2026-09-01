@@ -717,7 +717,7 @@ précédentes parce qu'elle ne peut pas être coupée : `audio.ts` est consommé
 - Consomme : `MIX` (t1), `admitHit`/`createGate` (t1), `createHaptics` (t3),
   `loadSettings`/`saveSettings` (t2).
 - Produit : `Bus { ctx, sfx, music, noise }`, `createBus()`, `noiseBuffer()`,
-  `envelope()`, `burst()`, `tone()`, `metalBody()`, `sweep()`, `comb()` ;
+  `envelope()`, `burst()`, `tone()`, `metalBody()`, `comb()` ;
   et le singleton `audio` avec, à ce stade, `start`, `setSpin`, `hit`, `death`,
   `door`, `settings`, `setSetting`, `destroy`. Les tâches 5, 7 et 8 étendent ce
   singleton sans changer ce qui est là.
