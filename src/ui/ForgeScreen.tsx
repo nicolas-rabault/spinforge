@@ -1,3 +1,4 @@
+import { audio } from '../audio/audio';
 import { formatCredits, t, type MessageKey } from '../i18n';
 import { playerStats, tryUpgrade, upgradeCost } from '../sim/economy';
 import { syncRunStats } from '../sim/sim';
@@ -144,10 +145,12 @@ export function ForgeScreen({
                 disabled={!affordable}
                 onClick={() => {
                   if (tryUpgrade(metaRef.current, row.key)) {
+                    audio.upgrade();
                     syncRunStats(runRef.current, metaRef.current);
                     onChanged();
                   }
                 }}
+                data-sfx="upgrade"
                 style={{
                   ...ROW, cursor: affordable ? 'pointer' : 'default',
                   color: affordable ? 'var(--text)' : 'var(--muted)', opacity: affordable ? 1 : 0.55,

@@ -9,7 +9,8 @@ import { SALLES_PER_CHAPTER } from '../sim/config';
 import { maxPlayableChapter, startRun } from '../sim/sim';
 import { PipTrack } from './art/PipTrack';
 import type { MetaState, RunState, Vec } from '../sim/types';
-import type { Audio } from '../audio/audio';
+import { audio } from '../audio/audio';
+import { MIX } from '../audio/mix';
 
 const DEAD_ZONE_PX = 8;
 const ONBOARDED_KEY = 'spinforge.onboarded';
@@ -25,7 +26,7 @@ function chapterChipStyle(selected: boolean) {
 }
 
 export function CombatScreen({
-  runRef, metaRef, running, chapterToPlay, onPickChapter, onTick, onMetaChanged, audio,
+  runRef, metaRef, running, chapterToPlay, onPickChapter, onTick, onMetaChanged,
 }: {
   runRef: { current: RunState };
   metaRef: { current: MetaState };
@@ -37,7 +38,6 @@ export function CombatScreen({
   onPickChapter: (chapter: number | null) => void;
   onTick: () => void;
   onMetaChanged: () => void;
-  audio: Audio;
 }) {
   const steerRef = useRef<Vec | null>(null);
   const originRef = useRef<Vec | null>(null);
@@ -66,7 +66,7 @@ export function CombatScreen({
     // La boucle est en pause en Forge : plus personne n'appelle setSpin, et le
     // rotor sonnerait indéfiniment à sa dernière fréquence.
     if (!running) audio.setSpin(null);
-  }, [running, audio]);
+  }, [running]);
 
   useGameLoop(
     runRef,
@@ -79,9 +79,13 @@ export function CombatScreen({
         const events = arenaRef.current?.consumeEvents();
         if (events) {
           // Les frôlements entre bots ne méritent pas un son ; les tiens, toujours.
-          for (const hit of events.hits) if (hit.id === 'player' || hit.power > 0.25) audio.hit(hit.power);
+          for (const hit of events.hits) if (hit.id === 'player' || hit.power > MIX.hitBotThreshold) audio.hit(hit.power);
           if (events.deaths.some((d) => d.isPlayer)) audio.death();
-          if (events.salleChanged) {
+          // Le boss vaincu ferme la descente : la salle ne change plus en le
+          // battant, donc ce son ne peut plus vivre dans la branche
+          // `salleChanged` — il n'y serait jamais parvenu.
+          if (events.chapterValidated) audio.bossDown();
+          else if (events.salleChanged) {
             audio.door();
             // Seul le boss garde une annonce écrite : nommer le Gardien du Hangar à
             // son entrée est de la mise en scène. Le type de l'adversaire, lui, se
@@ -102,15 +106,15 @@ export function CombatScreen({
       },
       draw: (run, alpha) =>
         arenaRef.current?.draw(run, alpha, playerArt(metaRef.current.equipped, run.toupie)),
-      onReward: () => { onMetaChanged(); },
+      onReward: (reward) => {
+        audio.reward(reward.chests.length);
+        onMetaChanged();
+      },
     },
     running,
   );
 
   const onDown = (e: React.PointerEvent) => {
-    // Doit démarrer même si le doigt tombe sur un bouton : le contexte audio
-    // ne peut naître qu'au premier geste, avant le garde anti-glissement.
-    audio.start();
     // Glisser n'importe où pilote la toupie — sauf sur un bouton.
     if ((e.target as HTMLElement).closest('button')) return;
     if (pointerRef.current !== null) return;

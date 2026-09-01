@@ -118,7 +118,19 @@ describe('observe — progression', () => {
   it('ne signale rien quand rien ne bouge', () => {
     const p = topSnap();
     const r = observe(snapshot([p]), snapshot([p]));
-    expect(r).toEqual({ hits: [], deaths: [], salleChanged: false, bossEntered: false });
+    expect(r).toEqual({ hits: [], deaths: [], salleChanged: false, bossEntered: false, chapterValidated: false });
+  });
+
+  // Vérifié par mutation : dérivé du retour salle 10 -> salle 1 comme autrefois,
+  // ce test rougit — le boss ne ramène plus la salle à 1, il ferme la descente.
+  it('signale le boss vaincu sur la bascule de phase, pas sur un retour de salle', () => {
+    const p = topSnap();
+    const combat = snapshot([p], { salle: SALLES_PER_CHAPTER, phase: 'fighting' });
+    const gagne = snapshot([p], { salle: SALLES_PER_CHAPTER, phase: 'won' });
+    expect(observe(combat, gagne).chapterValidated).toBe(true);
+    // Une seule fois : l'événement tient à la transition, pas à un drapeau levé.
+    expect(observe(gagne, gagne).chapterValidated).toBe(false);
+    expect(observe(combat, combat).chapterValidated).toBe(false);
   });
 });
 

@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { maxPlayableChapter, startRun } from '../sim/sim';
 import { attention, shoppingToupie } from './attention';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
-import { createAudio } from '../audio/audio';
+import { audio } from '../audio/audio';
+import { intensityFor } from '../audio/music';
 import { formatCredits, getLang, setLang, t } from '../i18n';
+import { AudioSettings } from './AudioSettings';
 import { CombatScreen } from './CombatScreen';
 import { ForgeScreen } from './ForgeScreen';
 import { ChestScreen } from './ChestScreen';
@@ -41,10 +43,16 @@ export function App() {
   useEffect(() => installFlushOnHide(), []);
   useEffect(() => () => flushSave(), []);
 
-  const audioRef = useRef<ReturnType<typeof createAudio> | null>(null);
-  if (audioRef.current === null) audioRef.current = createAudio();
-  const [muted, setMuted] = useState(() => audioRef.current!.isMuted());
-  useEffect(() => () => audioRef.current?.destroy(), []);
+  // App se re-rend à chaque tick : l'effet ne se déclenche donc que quand l'un des
+  // trois vrais paramètres change, et `setIntensity` ignore une valeur identique.
+  const run = runRef.current;
+  useEffect(() => {
+    audio.setIntensity(intensityFor(tab === 'combat', run.salle, run.phase === 'dead'));
+  }, [tab, run.salle, run.phase]);
+
+  const [soundOpen, setSoundOpen] = useState(false);
+  const [sound, setSound] = useState(() => audio.settings());
+  const soundOn = sound.music || sound.sfx;
 
   // Source unique de « le chapitre que la prochaine descente utilisera ». L'écran
   // de combat le propose et le change, celui des toupies en affiche la
@@ -53,8 +61,8 @@ export function App() {
   // la descente court, `pickedChapter` est null et la suggestion vaut
   // `run.chapter` — le calcul se réduit alors au chapitre du run. La règle de
   // suggestion vit ici et nulle part ailleurs : le chapitre qui vient de s'ouvrir
-  // après un boss vaincu, celui qu'on vient de perdre sinon.
-  const run = runRef.current;
+  // après un boss vaincu, celui qu'on vient de perdre sinon. `run` est déjà lu
+  // plus haut, pour l'intensité musicale.
   const chapterToPlay = pickedChapter ?? (run.phase === 'won'
     ? Math.min(run.chapter + 1, maxPlayableChapter(metaRef.current))
     : run.chapter);
@@ -84,6 +92,23 @@ export function App() {
 
   return (
     <div
+      onPointerDownCapture={(e) => {
+        // Le contexte audio ne peut naître qu'au premier geste, et il doit naître
+        // ICI : porté par `CombatScreen`, il laissait sans aucun son un joueur qui
+        // démarre l'application sur l'onglet Coffres. Reste avant le filtre
+        // ci-dessous : ce premier geste peut tomber sur un bouton grisé.
+        audio.start();
+        // Un seul écouteur plutôt que seize `onClick`, mais un bouton `disabled`
+        // ne se tait pas tout seul : mesuré sur « Fusionner » désactivé, un clic
+        // dont la cible est un enfant du bouton (un `<span>` d'icône) traverse
+        // quand même jusqu'à la racine — seul l'élément visé directement est
+        // supprimé. Sans ce garde, un bouton grisé confirmait une action qui
+        // n'avait pas eu lieu.
+        const button = (e.target as HTMLElement).closest('button');
+        if (!button || button.disabled) return;
+        const kind = button.dataset.sfx;
+        audio.tap(kind === 'chest' || kind === 'fuse' || kind === 'upgrade' ? kind : 'tap');
+      }}
       style={{
         height: '100%', boxSizing: 'border-box', maxWidth: 460, margin: '0 auto',
         position: 'relative', padding: combat ? 0 : '14px 16px 12px',
@@ -132,19 +157,15 @@ export function App() {
           {lang === 'fr' ? 'EN' : 'FR'}
         </button>
         <button
-          onClick={() => {
-            const next = !muted;
-            audioRef.current!.setMuted(next);
-            setMuted(next);
-          }}
-          aria-label={muted ? t('header.unmute') : t('header.mute')}
+          onClick={() => setSoundOpen((open) => !open)}
+          aria-label={t('audio.settings')}
           style={{
             width: 34, height: 34, borderRadius: 9, cursor: 'pointer',
             border: '1px solid var(--line)', background: 'rgba(19,25,34,.9)', color: 'var(--muted)',
             fontSize: 15, pointerEvents: 'auto',
           }}
         >
-          {muted ? '🔇' : '🔊'}
+          {soundOn ? '🔊' : '🔇'}
         </button>
       </header>
 
@@ -163,7 +184,7 @@ export function App() {
           PixiJS à chaque changement d'onglet coûterait un rechargement complet
           des textures. On le masque, la boucle se met en pause. */}
       <div style={{ position: 'absolute', inset: 0, display: combat ? 'block' : 'none' }}>
-        <CombatScreen runRef={runRef} metaRef={metaRef} running={combat} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={redraw} onMetaChanged={metaChanged} audio={audioRef.current} />
+        <CombatScreen runRef={runRef} metaRef={metaRef} running={combat} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={redraw} onMetaChanged={metaChanged} />
       </div>
       {tab === 'forge' ? (
         <ForgeScreen
@@ -175,6 +196,14 @@ export function App() {
       {tab === 'toupies' ? <ToupiesScreen metaRef={metaRef} runRef={runRef} chapterToPlay={chapterToPlay} onChanged={metaChanged} /> : null}
 
       <TabBar tab={tab} onChange={setTab} att={att} floating={combat} />
+
+      {soundOpen ? (
+        <AudioSettings
+          settings={sound}
+          onChanged={() => setSound(audio.settings())}
+          onClose={() => setSoundOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

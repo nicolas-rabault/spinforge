@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
+import { audio } from '../audio/audio';
 import { canOpen, chestPrice, grantChests, openChest } from '../sim/chest';
 import { addPiece, pendingTotal } from '../sim/meta';
 import type { PieceInstance } from '../sim/piece';
@@ -29,10 +30,12 @@ const CHEST_LIST: { kind: ChestKind; name: MessageKey }[] = [
  *  `chestUrl` mémoïse par valeur d'ouverture, et une valeur par image ferait
  *  exploser le cache pour un gain que l'œil ne voit pas à cette vitesse.
  *  Le dernier pas s'arrête à 0,75 : au-delà, le couvercle pivoté sort de sa boîte
- *  de dessin et se fait rogner par le conteneur. */
-const OPEN_STEPS = [0, 0.3, 0.55, 0.75];
+ *  de dessin et se fait rogner par le conteneur.
+ *  Exportées avec `STEP_MS` : le banc d'essai sonore rejoue cette séquence, et il
+ *  n'en reproduit le son que s'il en lit le compte ici plutôt que de le recopier. */
+export const OPEN_STEPS = [0, 0.3, 0.55, 0.75];
 const SHAKE_MS = 600;
-const STEP_MS = 110;
+export const STEP_MS = 110;
 /** Taille d'une pièce révélée. Elle rétrécit quand le lot grossit, pour qu'un
  *  butin de vingt coffres tienne encore dans le cadre. */
 const TILE = (count: number) => (count <= 10 ? 62 : count <= 24 ? 50 : 40);
@@ -89,17 +92,32 @@ export function ChestScreen({
     return () => clearTimeout(id);
   }, [opening, phase, step, revealed]);
 
-  // Le couvercle qui cède, puis chaque pièce assez rare, secouent l'écran entier :
-  // enfermée dans la vignette du coffre, la puissance de l'ouverture ne se sent pas.
+  // Ce que l'ouverture fait sentir : l'écran tremble, et le son suit exactement
+  // les mêmes transitions — un seul effet, donc aucune dérive possible entre ce
+  // qu'on voit et ce qu'on entend.
   useEffect(() => {
     if (!opening) return;
-    if (phase === 'opening' && step === 0) {
-      quake(CHEST_QUAKE[opening.kind], CHEST_QUAKE_LIFE);
+    if (phase === 'shake') {
+      audio.chestShake();
       return;
     }
-    if (phase !== 'reveal' || revealed === 0) return;
-    const feel = REVEAL[rankTier(opening.pulls[revealed - 1].rank)];
+    if (phase === 'opening') {
+      audio.chestStep(step);
+      if (step === 0) quake(CHEST_QUAKE[opening.kind], CHEST_QUAKE_LIFE);
+      return;
+    }
+    if (revealed === 0) {
+      // Le couvercle a fini de céder : c'est ici que la main doit le sentir.
+      audio.chestOpened();
+      return;
+    }
+    const piece = opening.pulls[revealed - 1];
+    const feel = REVEAL[rankTier(piece.rank)];
+    audio.pieceRevealed(rankTier(piece.rank));
     if (feel.shake > 0) quake(feel.shake, feel.life);
+    if (revealed >= opening.pulls.length) {
+      audio.chestDone(rankTier(opening.pulls[opening.pulls.length - 1].rank));
+    }
   }, [opening, phase, step, revealed]);
 
   const start = (kind: ChestKind, drawn: PieceInstance[] | null) => {
@@ -228,6 +246,7 @@ export function ChestScreen({
                 key={kind}
                 aria-label={t('chest.openAll', { n: meta.pending[kind], name: t(name) })}
                 onClick={() => start(kind, grantChests(metaRef.current, kind))}
+                data-sfx="chest"
                 className="sf-breathe"
                 style={{
                   position: 'relative', border: 'none', background: 'none', padding: 0, cursor: 'pointer',
@@ -300,6 +319,7 @@ export function ChestScreen({
                     key={count}
                     disabled={!affordable}
                     onClick={() => start(kind, openChest(metaRef.current, kind, count))}
+                    data-sfx="chest"
                     style={{
                       flex: '1 1 0', minHeight: 46, borderRadius: 10, cursor: affordable ? 'pointer' : 'default',
                       border: '1px solid var(--line)', background: 'var(--bg)',

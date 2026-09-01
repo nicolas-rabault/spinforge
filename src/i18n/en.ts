@@ -21,10 +21,13 @@ export const en: Record<MessageKey, string> = {
 
   'header.credits': 'Credits',
   'header.gems': 'Gems',
-  'header.mute': 'Mute',
-  'header.unmute': 'Unmute',
   'header.switchLang': 'Switch to French',
   'save.recovered': 'Your save could not be read and was not loaded. It has been set aside; a new game has started.',
+
+  'audio.settings': 'Sound settings',
+  'audio.music': 'Music',
+  'audio.sfx': 'Sound effects',
+  'audio.haptics': 'Vibration',
 
   'combat.pips': 'Room {n} of {total}',
   'combat.hint.title': '▾ YOUR TOP IS THE ONE WITH THE CHEVRON',

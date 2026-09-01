@@ -27,6 +27,8 @@ export interface RenderEvents {
   deaths: DeathEvent[];
   salleChanged: boolean;
   bossEntered: boolean;
+  /** Le boss vient de tomber. */
+  chapterValidated: boolean;
 }
 
 function nearest(from: TopSnapshot, tops: TopSnapshot[]): { nx: number; ny: number } {
@@ -98,5 +100,10 @@ export function observe(before: Snapshot, after: Snapshot): RenderEvents {
     deaths,
     salleChanged: before.salle !== after.salle,
     bossEntered: before.salle !== SALLES_PER_CHAPTER && after.salle === SALLES_PER_CHAPTER,
+    // Dérivé de la phase, et non d'un retour de la salle 10 vers la salle 1 :
+    // depuis que le boss ferme la descente, ce retour n'existe plus. Même idiome
+    // que la mort ci-dessus. Ce champ avait été supprimé faute de consommateur ;
+    // le jalon du son lui en a donné un (`audio.bossDown`).
+    chapterValidated: before.phase !== 'won' && after.phase === 'won',
   };
 }
