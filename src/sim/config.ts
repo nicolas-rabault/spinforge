@@ -94,6 +94,14 @@ export interface Balance {
     rewardBase: number; rewardGrowth: number; rewardPerChapter: number; bossRewardMult: number;
     bossGems: number;
   };
+  /** Le farm. `rate` s'applique au TEMPS SIMULÉ, jamais aux gains : absent 4 h à
+   *  20 % ⇒ on simule 48 min de jeu réel. Un seul chiffre gouverne donc crédits,
+   *  gemmes et coffres à la fois, sans règle d'arrondi à inventer pour chacun. */
+  offline: {
+    rate: number; capHours: number;
+    winbackAfterHours: number; winbackMult: number;
+    minSeconds: number;
+  };
   toupieShop: { priceGems: number };
   loot: { bySalle: LootRule & { fromSalle: number }; boss: LootRule };
   pieceEffect: { lameAttack: number; disqueDefense: number; pointeSpeed: number; pointeDecay: number; noyauSpin: number };
@@ -151,6 +159,7 @@ export const BOT_SPAWN_RING = BALANCE.bot.spawnRing;
 export const BOT_AI = BALANCE.bot.ai;
 export const BOSS = BALANCE.boss;
 export const ECON = BALANCE.econ;
+export const OFFLINE = BALANCE.offline;
 export const TOUPIE_SHOP = BALANCE.toupieShop;
 export const PIECE_EFFECT = BALANCE.pieceEffect;
 export const CHASSIS = BALANCE.chassis;

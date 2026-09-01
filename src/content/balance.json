@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "tickSeconds": 0.1,
   "arena": {
     "radius": 150, "friction": 0.94, "wallRestitution": 0.8, "restitution": 1.6,
@@ -57,6 +57,13 @@
     "upgradeBase": 100, "upgradeGrowth": 1.08,
     "rewardBase": 104, "rewardGrowth": 1.13, "rewardPerChapter": 1.15, "bossRewardMult": 10,
     "bossGems": 60
+  },
+  "offline": {
+    "rate": 0.2,
+    "capHours": 4,
+    "winbackAfterHours": 12,
+    "winbackMult": 1.5,
+    "minSeconds": 60
   },
   "toupieShop": { "priceGems": 900 },
   "loot": {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ARENA, BALANCE, BOTS_PER_SALLE, BOT_TYPES, BREACH, CHESTS, FUSION, LAYOUTS, LOOT,
-  MAX_CHAPTER, PLAYER_SPAWN, RARITY, SALLES_PER_CHAPTER, SHARD, TALENTS, TOUPIE_SHOP,
+  MAX_CHAPTER, OFFLINE, PLAYER_SPAWN, RARITY, SALLES_PER_CHAPTER, SHARD, TALENTS, TOUPIE_SHOP,
   TYPES, ZONES,
 } from './config';
 import { PROFILE_AXES } from './profile';
@@ -202,6 +202,16 @@ describe('balance.json', () => {
       expect(rule.extraChance).toBeGreaterThan(0);
       expect(rule.extraChance).toBeLessThan(1);
     }
+  });
+
+  it('expose des réglages de farm cohérents', () => {
+    expect(OFFLINE.rate).toBeGreaterThan(0);
+    // Le farm doit rapporter STRICTEMENT moins qu'une minute jouée : c'est le
+    // pilier « le jeu actif paie mieux à la minute ».
+    expect(OFFLINE.rate).toBeLessThan(1);
+    expect(OFFLINE.capHours).toBeGreaterThan(0);
+    expect(OFFLINE.winbackMult).toBeGreaterThanOrEqual(1);
+    expect(OFFLINE.minSeconds).toBeGreaterThan(0);
   });
 });
 
