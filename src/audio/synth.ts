@@ -23,11 +23,11 @@ export function createBus(): Bus {
   // Limiteur en sortie : l'arène peut empiler chocs, mort et transition de salle
   // sur la même image, et c'est cette saturation-là qui écrête.
   const limiter = ctx.createDynamicsCompressor();
-  limiter.threshold.value = -14;
-  limiter.knee.value = 14;
-  limiter.ratio.value = 8;
-  limiter.attack.value = 0.003;
-  limiter.release.value = 0.18;
+  limiter.threshold.value = MIX.limiterThresholdDb;
+  limiter.knee.value = MIX.limiterKneeDb;
+  limiter.ratio.value = MIX.limiterRatio;
+  limiter.attack.value = MIX.limiterAttackS;
+  limiter.release.value = MIX.limiterReleaseS;
   limiter.connect(ctx.destination);
 
   const master = ctx.createGain();
@@ -70,6 +70,7 @@ export interface BurstOptions {
   at?: number;
   rate?: number;
   toFreq?: number;
+  attack?: number;
 }
 
 /** Une bouffée de bruit filtré : tout ce qui claque, souffle ou craque. */
@@ -85,8 +86,8 @@ export function burst(bus: Bus, dest: AudioNode, o: BurstOptions): void {
   if (o.toFreq !== undefined) {
     filter.frequency.exponentialRampToValueAtTime(Math.max(20, o.toFreq), at + o.duration);
   }
-  filter.Q.value = o.q ?? 1;
-  src.connect(filter).connect(envelope(ctx, at, o.gain, 0.004, o.duration)).connect(dest);
+  filter.Q.value = o.q ?? MIX.burstQ;
+  src.connect(filter).connect(envelope(ctx, at, o.gain, o.attack ?? MIX.burstAttackS, o.duration)).connect(dest);
   src.start(at);
   src.stop(at + o.duration);
 }

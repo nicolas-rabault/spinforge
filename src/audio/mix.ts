@@ -9,6 +9,20 @@ export const MIX = {
   master: 0.5,
   musicGain: 0.3,
   sfxGain: 0.85,
+  /** Fondu au basculement d'un interrupteur (musique, bruitages). */
+  settingFadeS: 0.03,
+
+  // — le limiteur en sortie : les gains sont délibérément bas parce que TOUT
+  //   passe par lui, et l'arène peut empiler jusqu'à dix chocs par seconde —
+  limiterThresholdDb: -14,
+  limiterKneeDb: 14,
+  limiterRatio: 8,
+  limiterAttackS: 0.003,
+  limiterReleaseS: 0.18,
+
+  // — primitives : réglages par défaut d'un burst() qui n'en précise pas —
+  burstQ: 1,
+  burstAttackS: 0.004,
 
   // — le choc —
   /** Garde entre deux chocs. Mesurée : sans elle, l'arène monte à 20 sons/s.
@@ -23,6 +37,11 @@ export const MIX = {
   hitClickS: 0.008,
   hitClickGain: 0.05,
   hitClickSpan: 0.1,
+  /** Variation de la vitesse de lecture du transitoire — même rôle que
+   *  `hitDetune`, mais sur le bruit plutôt que sur le corps tonal : deux
+   *  anti-répétitions différentes, sur les deux couches du choc. */
+  hitClickRateBase: 0.7,
+  hitClickRateSpan: 0.6,
   /** La fondamentale DESCEND quand la puissance monte : un gros choc est plus grave. */
   hitBodyHz: 520,
   hitBodySpan: -180,
@@ -45,9 +64,22 @@ export const MIX = {
   whirrGain: 0.018,
   whirrFreqLow: 380,
   whirrFreqHigh: 2200,
+  /** Facteur de qualité du passe-bande du souffle. */
+  whirrQ: 1.1,
+  /** Palier de croisière du souffle à un spin donné : un plancher (le rotor ne
+   *  s'éteint jamais tout à fait tant qu'il tourne) plus une part proportionnelle
+   *  au spin. Partagés par `duck()` et `setSpin()` via `whirrTarget()` — la même
+   *  cible des deux côtés, pour qu'un duck revienne exactement en régime de
+   *  croisière plutôt que sur une valeur qui aurait divergé en silence. */
+  whirrGainFloor: 0.25,
+  whirrGainSpan: 0.75,
   subGain: 0.02,
   subFreqLow: 48,
   subFreqHigh: 96,
+  /** Lissage de `setSpin()` : temps de convergence de `setTargetAtTime`, distinct
+   *  pour le gain et pour la fréquence — ce ne sont pas les mêmes valeurs. */
+  spinGainSmoothS: 0.1,
+  spinFreqSmoothS: 0.12,
 
   // — ducking : un son tenu qui s'interrompt cesse d'être un son tenu —
   duckPower: 0.45,
@@ -116,8 +148,6 @@ export const SFX = {
     burst: { freq: 520, q: 0.9, gain: 0.05, duration: 0.4 },
   },
   door: {
-    /** Ré5 puis la5 : deux degrés de ré phrygien, deux notes qui s'accordent
-     *  avec la musique au lieu de lui rentrer dedans. */
     first: { from: 587.33, duration: 0.11, gain: 0.045 },
     /** Jouée `secondDelayS` après la première. */
     second: { from: 880, duration: 0.16, gain: 0.04 },

@@ -22,6 +22,12 @@ export interface Audio {
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
+/** Le palier de croisière du souffle à un spin donné. Partagé par `duck()` (qui y
+ *  revient après un choc) et `setSpin()` (qui y va en régime établi) : sans ce
+ *  partage, les deux pourraient un jour diverger si les poids n'étaient retouchés
+ *  que d'un côté, et le retour après un duck s'entendrait comme un saut. */
+const whirrTarget = (spin: number) => MIX.whirrGain * (MIX.whirrGainFloor + MIX.whirrGainSpan * spin);
+
 function createAudio(): Audio {
   let bus: Bus | null = null;
   let whirrFilter: BiquadFilterNode | null = null;
@@ -52,7 +58,7 @@ function createAudio(): Audio {
   function duck(power: number): void {
     if (!bus || !whirrGain || power < MIX.duckPower) return;
     const t = bus.ctx.currentTime;
-    const target = MIX.whirrGain * (0.25 + 0.75 * spin);
+    const target = whirrTarget(spin);
     whirrGain.gain.cancelScheduledValues(t);
     whirrGain.gain.setValueAtTime(target * MIX.duckWhirr, t);
     whirrGain.gain.setTargetAtTime(target, t + MIX.duckHoldS, MIX.duckReleaseS);
@@ -75,7 +81,7 @@ function createAudio(): Audio {
       whirrFilter = bus.ctx.createBiquadFilter();
       whirrFilter.type = 'bandpass';
       whirrFilter.frequency.value = MIX.whirrFreqLow;
-      whirrFilter.Q.value = 1.1;
+      whirrFilter.Q.value = MIX.whirrQ;
       whirrGain = bus.ctx.createGain();
       whirrGain.gain.value = 0;
       whirrSource = bus.ctx.createBufferSource();
@@ -98,18 +104,20 @@ function createAudio(): Audio {
       const t = b.ctx.currentTime;
       if (ratio === null) {
         spin = 0;
-        whirrGain.gain.setTargetAtTime(0, t, 0.1);
-        subGain.gain.setTargetAtTime(0, t, 0.1);
+        whirrGain.gain.setTargetAtTime(0, t, MIX.spinGainSmoothS);
+        subGain.gain.setTargetAtTime(0, t, MIX.spinGainSmoothS);
         return;
       }
       spin = clamp01(ratio);
       whirrFilter.frequency.setTargetAtTime(
-        MIX.whirrFreqLow + (MIX.whirrFreqHigh - MIX.whirrFreqLow) * spin, t, 0.12,
+        MIX.whirrFreqLow + (MIX.whirrFreqHigh - MIX.whirrFreqLow) * spin, t, MIX.spinFreqSmoothS,
       );
-      sub.frequency.setTargetAtTime(MIX.subFreqLow + (MIX.subFreqHigh - MIX.subFreqLow) * spin, t, 0.12);
+      sub.frequency.setTargetAtTime(
+        MIX.subFreqLow + (MIX.subFreqHigh - MIX.subFreqLow) * spin, t, MIX.spinFreqSmoothS,
+      );
       // Le souffle s'efface avec le spin : une toupie qui meurt se tait.
-      whirrGain.gain.setTargetAtTime(MIX.whirrGain * (0.25 + 0.75 * spin), t, 0.1);
-      subGain.gain.setTargetAtTime(MIX.subGain * spin, t, 0.1);
+      whirrGain.gain.setTargetAtTime(whirrTarget(spin), t, MIX.spinGainSmoothS);
+      subGain.gain.setTargetAtTime(MIX.subGain * spin, t, MIX.spinGainSmoothS);
     },
 
     hit(power) {
@@ -127,7 +135,7 @@ function createAudio(): Audio {
         freq: MIX.hitClickHz,
         gain: MIX.hitClickGain + MIX.hitClickSpan * p,
         duration: MIX.hitClickS,
-        rate: 0.7 + Math.random() * 0.6, // pas deux chocs identiques
+        rate: MIX.hitClickRateBase + Math.random() * MIX.hitClickRateSpan, // pas deux chocs identiques
       });
       // Le corps : c'est lui qui manquait. Plus le choc est fort, plus il est grave.
       const detune = 1 + (Math.random() * 2 - 1) * MIX.hitDetune;
@@ -156,6 +164,7 @@ function createAudio(): Audio {
     door() {
       const b = live();
       if (!b || !settings.sfx) return;
+      // Deux notes brèves qui montent — une porte qui s'ouvre, pas une alarme.
       // Ré5 puis la5 : deux degrés de ré phrygien, donc deux notes qui
       // s'accordent avec la musique au lieu de lui rentrer dedans.
       tone(b, b.sfx, SFX.door.first);
@@ -173,8 +182,8 @@ function createAudio(): Audio {
       if (key === 'haptics') haptics.setEnabled(on);
       if (!bus) return;
       const t = bus.ctx.currentTime;
-      if (key === 'sfx') bus.sfx.gain.setTargetAtTime(on ? MIX.sfxGain : 0, t, 0.03);
-      if (key === 'music') bus.music.gain.setTargetAtTime(on ? MIX.musicGain : 0, t, 0.03);
+      if (key === 'sfx') bus.sfx.gain.setTargetAtTime(on ? MIX.sfxGain : 0, t, MIX.settingFadeS);
+      if (key === 'music') bus.music.gain.setTargetAtTime(on ? MIX.musicGain : 0, t, MIX.settingFadeS);
     },
 
     destroy() {
