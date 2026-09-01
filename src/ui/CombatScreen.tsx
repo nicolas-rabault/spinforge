@@ -95,9 +95,6 @@ export function CombatScreen({
   );
 
   const onDown = (e: React.PointerEvent) => {
-    // Doit démarrer même si le doigt tombe sur un bouton : le contexte audio
-    // ne peut naître qu'au premier geste, avant le garde anti-glissement.
-    audio.start();
     // Glisser n'importe où pilote la toupie — sauf sur un bouton.
     if ((e.target as HTMLElement).closest('button')) return;
     if (pointerRef.current !== null) return;

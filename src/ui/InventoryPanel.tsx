@@ -252,6 +252,7 @@ function PieceSheet({
           <button
             disabled={!fusable}
             onClick={onFuse}
+            data-sfx="fuse"
             style={{
               flex: '1 1 0', minHeight: 46, borderRadius: 10, cursor: fusable ? 'pointer' : 'default',
               border: `1px solid ${fusable ? 'var(--zoneBoost)' : 'var(--line)'}`,

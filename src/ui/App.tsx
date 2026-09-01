@@ -67,6 +67,19 @@ export function App() {
 
   return (
     <div
+      onPointerDownCapture={(e) => {
+        // Le contexte audio ne peut naître qu'au premier geste, et il doit naître
+        // ICI : porté par `CombatScreen`, il laissait sans aucun son un joueur qui
+        // démarre l'application sur l'onglet Coffres.
+        audio.start();
+        // Un seul écouteur plutôt que seize `onClick` : les boutons `disabled`
+        // n'émettent aucun événement de pointeur, ils se taisent tout seuls, et
+        // le prochain bouton ajouté sonnera sans qu'on y pense.
+        const button = (e.target as HTMLElement).closest('button');
+        if (!button) return;
+        const kind = button.dataset.sfx;
+        audio.tap(kind === 'chest' || kind === 'fuse' || kind === 'upgrade' ? kind : 'tap');
+      }}
       style={{
         height: '100%', boxSizing: 'border-box', maxWidth: 460, margin: '0 auto',
         position: 'relative', padding: combat ? 0 : '14px 16px 12px',

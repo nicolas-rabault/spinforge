@@ -227,6 +227,7 @@ export function ChestScreen({
                 key={kind}
                 aria-label={t('chest.openAll', { n: meta.pending[kind], name: t(name) })}
                 onClick={() => start(kind, grantChests(metaRef.current, kind))}
+                data-sfx="chest"
                 className="sf-breathe"
                 style={{
                   position: 'relative', border: 'none', background: 'none', padding: 0, cursor: 'pointer',
@@ -298,6 +299,7 @@ export function ChestScreen({
                     key={count}
                     disabled={!affordable}
                     onClick={() => start(kind, openChest(metaRef.current, kind, count))}
+                    data-sfx="chest"
                     style={{
                       flex: '1 1 0', minHeight: 46, borderRadius: 10, cursor: affordable ? 'pointer' : 'default',
                       border: '1px solid var(--line)', background: 'var(--bg)',

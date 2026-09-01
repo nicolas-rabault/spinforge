@@ -100,6 +100,7 @@ export function ForgeScreen({
                   onChanged();
                 }
               }}
+              data-sfx="upgrade"
               style={{
                 textAlign: 'left', padding: 8, borderRadius: 11, cursor: affordable ? 'pointer' : 'default',
                 border: '1px solid var(--line)', background: 'var(--panel)',
