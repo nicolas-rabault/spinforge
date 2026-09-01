@@ -164,7 +164,7 @@ supprimer de la scène.
 | `chestShake()` | grondement : bruit passe-bas 220 Hz modulé en amplitude | 0,60 s (= `SHAKE_MS`) |
 | `chestStep(i)` | craquement par pose : bruit passe-bande 700 Hz Q 2, 40 ms, hauteur montante avec `i` | 3 × 0,11 s |
 | `chestOpened()` | éclat : bruit passe-haut + accord ré/la | 0,35 s |
-| `pieceRevealed(tier)` | « ting » : sinus + partiel, hauteur par palier de rang — 660 / 784 / 988 / 1 175 Hz (mi5, sol5, si5, ré6, tous dans le mode) | 0,18 s |
+| `pieceRevealed(tier)` | « ting » : sinus + partiel, hauteur par palier de rang — 622 / 784 / 932 / 1 175 Hz (mi♭5, sol5, si♭5, ré6, tous degrés de ré phrygien) | 0,18 s |
 | `chestDone(bestTier)` | trois notes montantes, la dernière donnée par le meilleur palier tiré | 0,45 s |
 | `bossDown()` | le chapitre tombe : coup d'enclume plein + accord ré/la/ré montant | 0,9 s |
 | `fuse()` | balayage 300 → 2 000 Hz sur 0,35 s, puis coup d'enclume accordé sur ré | 0,7 s |
