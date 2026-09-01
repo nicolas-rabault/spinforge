@@ -95,14 +95,20 @@ for (let i = 0; i < 2000 && !closed; i++) {
   await page.mouse.move(cx + Math.cos((i / 14) * 6.283) * 70, cy + Math.sin((i / 14) * 6.283) * 70);
   await page.waitForTimeout(120);
   if ((await hud(page)).includes('SALLE 10')) boss = true;
-  // Le boss vaincu ferme la descente : c'est le bouton de relance qui l'atteste,
-  // plus le retour en salle 1 qui n'existe plus.
-  closed = boss && (await page.getByRole('button', { name: /Nouvelle descente/ }).count()) > 0;
+  // Les deux fins de descente affichent « Nouvelle descente » : c'est le texte de
+  // victoire qui distingue le boss vaincu d'une mort en salle 10. Motif large
+  // (`/validé/`) : la tâche 4 remplace le bouton par un panneau titré
+  // « Chapitre 1 validé », numéro compris.
+  closed = boss && (await page.getByText(/validé/).count()) > 0;
 }
 await page.mouse.up();
 check('le boss vaincu a fermé la descente', closed);
-await page.getByRole('button', { name: /Nouvelle descente/ }).click();
-await page.waitForTimeout(400);
+// Clic gardé : sans cette garde, un échec réel mourrait sur un timeout Playwright
+// de 30 s au lieu d'afficher le récapitulatif du script.
+if (closed) {
+  await page.getByRole('button', { name: /Nouvelle descente/ }).click();
+  await page.waitForTimeout(400);
+}
 await page.getByRole('button', { name: 'Toupies' }).click();
 await page.waitForTimeout(300);
 check('Carapace est devenue « Pilotée »',

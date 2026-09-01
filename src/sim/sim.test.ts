@@ -299,6 +299,13 @@ describe('startRun', () => {
     expect(run.salle).toBe(2); // une frontière de salle a bien été franchie
     expect(run.toupie).toBe('brasier-solaire');
     expect(run.player.type).toBe('equilibre');
+    // Accel et masse viennent du `stats` de `syncRunStats`, là où le type est
+    // écrit sur une ligne à part : sans ces deux-là, la mutation d'une seule
+    // ligne — `playerStats(meta, meta.toupies.active)` — laisserait ce test vert.
+    // Carapace Abyssale pèse ×0,80 sur l'accel et ×1,40 sur la masse, contre le
+    // profil neutre de Brasier Solaire.
+    expect(run.player.accel).toBeCloseTo(PLAYER_BASE.accel, 6);
+    expect(run.player.mass).toBeCloseTo(1, 6);
     // Le choix en attente ne monte qu'à la descente suivante.
     expect(startRun(meta, 1, 2).toupie).toBe('carapace-abyssale');
   });
