@@ -241,8 +241,12 @@ export interface Attention {
   coffres: number;
   /** Piles d'inventaire marquées, par clé `model:rank`. */
   stacks: Set<string>;
-  /** Emplacements dont la pièce équipée est battue par une pile de l'inventaire. */
-  slots: Set<Slot>;
+  /** Emplacements dont une pile marquée relève — les filtres de l'inventaire. */
+  markedSlots: Set<Slot>;
+  /** Emplacements dont la pièce équipée est **battue** — les lignes de la pile
+   *  en Forge. Distinct de `markedSlots` : fusionner ne change pas la toupie
+   *  montée, il n'y a donc rien à faire sur la ligne. */
+  betterSlots: Set<Slot>;
   /** Un Fondateur attend d'être réclamé. */
   toupies: boolean;
 }
@@ -259,17 +263,25 @@ Sources, **toutes gratuites** :
 | pile à équiper | `dominatesEquipped(...)` | §2.2, nouveau |
 | Fondateur à réclamer | `canClaimFounderGift(meta)` | existe (`sim/meta.ts`) |
 
-`slots` se déduit de `stacks` : un emplacement est marqué si une pile **dominante**
-(pas seulement fusionnable) vise cet emplacement — fusionner ne change pas la
-toupie montée, ce n'est pas une action de la ligne d'emplacement.
+Deux jeux d'emplacements, pas un : une pile **marquée** (dominante *ou*
+fusionnable) verse son emplacement dans `markedSlots`, qui pilote les filtres de
+l'inventaire — fusionner y a sa place, l'écran ne fait qu'indiquer où regarder.
+Seule une pile qui **domine** verse en plus son emplacement dans `betterSlots`,
+qui pilote les lignes d'emplacement de la Forge — fusionner ne change pas la
+toupie montée, ce n'est pas une action de la ligne d'emplacement, donc une pile
+seulement fusionnable ne doit pas y allumer de point.
 
 `Attention` est un instantané, recalculé à chaque rendu de `App`. Le coût est
 borné : une passe sur `meta.inventory`, deux `playerStats` par pile — quelques
 dizaines de multiplications. `App` se rend à chaque tick pendant le combat, mais
 `attention` n'y est appelée que pour les écrans de menu et la barre d'onglets ;
 le calcul est refait au même rythme que le reste de l'arbre React, qui n'a aucun
-`memo`. Si le profilage montrait un coût réel, le remède serait un `useMemo` sur
-`meta.inventory.length` — pas une valeur stockée dans la sauvegarde.
+`memo`. Si le profilage montrait un coût réel, le remède serait un `useMemo`
+gardé par un compteur monotone incrémenté dans `App.metaChanged` — le point
+unique par lequel passe déjà toute mutation du méta — et non par
+`meta.inventory.length`, qui reste inchangé quand un niveau s'achète, qu'une
+pile s'équipe, qu'un coffre allonge une pile existante ou que le Fondateur se
+réclame, alors que le point rouge, lui, doit bouger.
 
 ### 2.4 La carte
 
@@ -286,7 +298,7 @@ langage — le prix en braise.
 | Onglet **Combat** | jamais | — |
 | Coffres → vignette de butin | `meta.pending[kind] > 0`, lu directement — l'écran Coffres connaît déjà le détail par type | point nu, coin haut-droit (le compte reste dans sa pastille braise en bas-droite) |
 | Coffres → cartes d'achat | jamais | — |
-| Forge → ligne d'emplacement | `att.slots.has(slot)` | point nu, coin haut-droit |
+| Forge → ligne d'emplacement | `att.betterSlots.has(slot)` | point nu, coin haut-droit |
 | Forge → ligne Châssis | jamais (Lot 1) | — |
 | Inventaire → filtre d'emplacement | une pile marquée vise cet emplacement | point nu |
 | Inventaire → filtre « Tous » | `att.stacks.size > 0` | point nu |
@@ -386,8 +398,8 @@ verrou du châssis).
 | Test | Ce qu'il garde | Mutation qui doit le faire rougir |
 |---|---|---|
 | `pending` non vide ⇒ `coffres.total` le reflète | le compte de la barre d'onglets | renvoyer `0` |
-| une pile fusionnable est dans `stacks`, pas dans `slots` | fusionner n'est pas une action d'emplacement | ajouter les fusionnables à `slots` |
-| une pile dominante est dans `stacks` **et** dans `slots` | la remontée vers la ligne d'emplacement | ne remplir que `stacks` |
+| une pile fusionnable est dans `stacks` et dans `markedSlots`, pas dans `betterSlots` | fusionner n'est pas une action d'emplacement | ajouter les fusionnables à `betterSlots` |
+| une pile dominante est dans `stacks`, `markedSlots` **et** `betterSlots` | la remontée vers la ligne d'emplacement | ne remplir que `stacks` |
 | une pile dominante d'un autre emplacement ne marque pas cet emplacement-ci | le routage par `slot` | marquer tous les emplacements |
 | inventaire vide ⇒ tout est éteint | qu'un point ne s'allume pas tout seul | renvoyer un `Set` non vide |
 

@@ -1,6 +1,7 @@
 import { modelById } from '../content/pieces';
 import { playerStats } from './economy';
 import { HIGHER_IS_BETTER, PROFILE_AXES } from './profile';
+import { talentsOf } from './talents';
 import type { ToupieId } from '../content/toupies';
 import type { MetaState } from './types';
 
@@ -8,7 +9,8 @@ import type { MetaState } from './types';
  * Monter cette pièce à la place de celle qui occupe son emplacement ferait-il
  * gagner **sans rien coûter** ?
  *
- * Vrai quand aucune des sept stats ne recule et qu'au moins une avance.
+ * Vrai quand aucune des sept stats ne recule, qu'aucun talent n'est perdu, et
+ * qu'au moins une stat avance.
  *
  * Comparer le rang seul mentirait : `factor = (1 + perLevel × niveau) ×
  * rarityMult(rang)`, donc une pièce de rang supérieur au niveau 0 est
@@ -25,6 +27,12 @@ export function dominatesEquipped(
   meta: MetaState, toupie: ToupieId, model: string, rank: number, level: number,
 ): boolean {
   const slot = modelById(model).slot;
+  // Les talents ne sont pas des stats : `playerStats` ne les voit pas. Un rang
+  // franchi débloque un talent de pièce, donc descendre de rang en fait perdre —
+  // et un talent perdu est quelque chose qui recule. `talentsOf` est monotone en
+  // rang pour un emplacement donné, donc comparer les comptes suffit à prouver
+  // l'inclusion.
+  if (talentsOf(slot, rank).length < talentsOf(slot, meta.equipped[slot].rank).length) return false;
   const before = playerStats(meta, toupie);
   const after = playerStats(
     { ...meta, equipped: { ...meta.equipped, [slot]: { model, rank, level } } },

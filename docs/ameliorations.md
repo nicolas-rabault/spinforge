@@ -604,14 +604,30 @@ meurtrière).
 
 - 📋 **À trier — les étiquettes de points sur les boutons qui ont déjà un
   `aria-label`.** Un `aria-label` explicite sur un bouton l'emporte sur le nom
-  dérivé de son contenu : sur les filtres d'inventaire et sur la ligne Châssis, un
-  lecteur d'écran n'annonce donc pas l'étiquette du point imbriqué. Sur la barre
-  d'onglets, où les boutons n'ont pas d'`aria-label` explicite, l'étiquette **est**
-  annoncée — constaté à l'exécution (« Forge quelque chose à faire »). Les deux
-  sites à corriger ensemble, ou pas du tout.
+  dérivé de son contenu : sur les filtres d'emplacement de l'inventaire, sur les
+  vignettes de pile de l'inventaire et sur les coffres de butin (les trois dans
+  `InventoryPanel.tsx` et `ChestScreen.tsx`), un lecteur d'écran n'annonce donc
+  pas l'étiquette du point imbriqué. Sur la barre d'onglets, où les boutons n'ont
+  pas d'`aria-label` explicite, l'étiquette **est** annoncée — constaté à
+  l'exécution (« Forge quelque chose à faire »). La ligne Châssis de la Forge ne
+  porte aucun point (la spec l'exclut), donc n'est pas concernée par ce
+  problème-là — mais son propre `aria-label` (`forge.changeToupie`) masque de la
+  même façon le nom et le type de la toupie affichés dans la ligne. Quatre
+  correctifs d'une ligne, de la même nature : à faire ensemble, ou pas du tout.
 - 📋 **Les points du butin flottent un peu.** Les décalages négatifs qui les
   sortent de la vignette de coffre les détachent nettement du dessin. Lisible, mais
   à resserrer si ça gêne à l'usage.
+- 📋 **À surveiller — un inventaire tardif saturé pourrait tout allumer.**
+  `canFuse` compte les exemplaires identiques ; sur une partie avancée, les
+  doublons s'accumulent et une large part des piles devient fusionnable en
+  permanence. Le point de l'onglet Forge et la plupart des vignettes resteraient
+  alors allumés en continu — exactement l'échec que la règle invoque pour exclure
+  les achats (« un point toujours allumé ne dit plus rien »), atteint cette fois
+  par les fusions plutôt que par le prix. La vérification en navigateur n'a
+  couvert que le début de partie ; rien n'est tranché ici, mais un remède
+  probable serait de ne marquer que la meilleure pile fusionnable par
+  emplacement, ou de cesser de signaler une fusion devenue routinière. À revoir
+  avec une sauvegarde de fin de jalon en main.
 
 ### Lot 2 — la boucle de progression continue · 📋 à spécifier
 
@@ -623,7 +639,6 @@ fusion de `jalon-3-lot-a` — il touche `MetaState` et `SAVE_SCHEMA`, que cette
 branche-là réécrit en ce moment.
 
 ---
-
 
 ## Comment mesurer (à réutiliser)
 

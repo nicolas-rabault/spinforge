@@ -134,7 +134,7 @@ export function InventoryPanel({
           const fusable = canFuse(meta, s.model, s.rank);
           return (
             <button
-              key={`${s.model}:${s.rank}`}
+              key={stackKey(s.model, s.rank)}
               onClick={() => setSelected({ model: s.model, rank: s.rank })}
               aria-label={tn('inventory.copies', s.levels.length, {
                 name: modelLabel(s.model), rank: rankLabel(s.rank),
