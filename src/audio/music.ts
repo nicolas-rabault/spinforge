@@ -109,6 +109,22 @@ export function createMusic(): Music {
     }
   }
 
+  /** Le corps de `setIntensity`, appelé aussi à la fin de `attach()`. `App` règle
+   *  l'intensité dès son montage, donc AVANT le premier geste qui crée le contexte
+   *  audio : sans ce rappel, la valeur restait mémorisée sans jamais être appliquée,
+   *  et comme `intensityFor` rend la même chose pour les salles 1 à 9, l'effet
+   *  suivant était avalé par le garde d'égalité — le séquenceur n'était jamais
+   *  démarré de toute la partie. Mesuré : zéro `setInterval` de 25 ms créé. */
+  function applyIntensity(): void {
+    if (!bus || !droneGain || !tensionGain) return;
+    const t = bus.ctx.currentTime;
+    const fade = intensity === 0 ? MIX.deathFadeS : MIX.layerFadeS;
+    const droneTarget = MUSIC.drone.gainBase * (MUSIC.drone.gainFloor + MUSIC.drone.gainSpan * intensity);
+    droneGain.gain.setTargetAtTime(intensity > 0 ? droneTarget : 0, t, fade);
+    tensionGain.gain.setTargetAtTime(intensity >= LAYERS.tension ? MUSIC.tension.gain : 0, t, fade);
+    runTimer(intensity > 0);
+  }
+
   function runTimer(on: boolean): void {
     if (on && timer === null && bus) {
       nextAt = Math.max(nextAt, bus.ctx.currentTime);
@@ -162,19 +178,16 @@ export function createMusic(): Music {
       // Un seul filtre en peigne pour toutes les frappes d'enclume : en recréer un
       // par note laisserait autant de boucles de délai vivantes derrière soi.
       anvilIn = comb(next, duckNode, noteHz(0, 5), MUSIC.anvil.combFeedback);
+
+      // L'intensité a déjà été demandée avant que ce bus n'existe : on la rattrape.
+      applyIntensity();
     },
 
     setIntensity(value) {
       const target = Math.max(0, Math.min(1, value));
       if (target === intensity) return;
       intensity = target;
-      if (!bus || !droneGain || !tensionGain) return;
-      const t = bus.ctx.currentTime;
-      const fade = target === 0 ? MIX.deathFadeS : MIX.layerFadeS;
-      const droneTarget = MUSIC.drone.gainBase * (MUSIC.drone.gainFloor + MUSIC.drone.gainSpan * target);
-      droneGain.gain.setTargetAtTime(target > 0 ? droneTarget : 0, t, fade);
-      tensionGain.gain.setTargetAtTime(target >= LAYERS.tension ? MUSIC.tension.gain : 0, t, fade);
-      runTimer(target > 0);
+      applyIntensity();
     },
 
     duck() {
