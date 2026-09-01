@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { audio } from '../audio/audio';
 import { equipFromStack } from '../sim/meta';
 import { canFuse, fusionProgress, tryFuse } from '../sim/fusion';
 import type { Slot } from '../sim/piece';
@@ -69,9 +70,15 @@ export function InventoryPanel({
   // la fiche se referme d'elle-même plutôt que d'afficher un objet qui n'est plus là.
   if (selected && !stack) setSelected(null);
 
-  const act = (fn: (m: MetaState, model: string, rank: number) => boolean) => {
+  const act = (
+    fn: (m: MetaState, model: string, rank: number) => boolean,
+    sound: () => void,
+  ) => {
     if (!selected) return;
     if (fn(metaRef.current, selected.model, selected.rank)) {
+      // Après le succès seulement : une fusion refusée faute de doublons ne doit
+      // pas sonner comme une fusion réussie.
+      sound();
       setSelected(null);
       onChanged();
     }
@@ -173,8 +180,8 @@ export function InventoryPanel({
           rank={stack.rank}
           count={stack.levels.length}
           onClose={() => setSelected(null)}
-          onEquip={() => act(equipFromStack)}
-          onFuse={() => act(tryFuse)}
+          onEquip={() => act(equipFromStack, () => audio.equip())}
+          onFuse={() => act(tryFuse, () => audio.fuse())}
         />
       ) : null}
     </>
