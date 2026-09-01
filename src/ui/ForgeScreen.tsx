@@ -13,6 +13,7 @@ import { PieceIcon } from './art/PieceIcon';
 import { ToupiePortrait } from './art/ToupiePortrait';
 import { StatRadar } from './art/StatRadar';
 import { InventoryPanel } from './InventoryPanel';
+import type { Attention } from './attention';
 import type { MetaState, RunState, Stats } from '../sim/types';
 
 interface SlotRow {
@@ -34,10 +35,12 @@ const SLOTS: SlotRow[] = [
 ];
 
 export function ForgeScreen({
-  metaRef, runRef, onChanged,
+  metaRef, runRef, att, onChanged,
 }: {
   metaRef: { current: MetaState };
   runRef: { current: RunState };
+  /** Ce qui attend le joueur, calculé une fois par `App`. */
+  att: Attention;
   onChanged: () => void;
 }) {
   const meta = metaRef.current;
@@ -130,6 +133,7 @@ export function ForgeScreen({
 
       <InventoryPanel
         metaRef={metaRef}
+        att={att}
         onChanged={() => { syncRunStats(runRef.current, metaRef.current); onChanged(); }}
       />
     </div>
