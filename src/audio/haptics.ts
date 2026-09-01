@@ -25,11 +25,12 @@ export function createHapticsState(): HapticsState {
 }
 
 /** Le motif d'un choc, ou `null` s'il est trop faible pour mériter la main.
- *  Sans ce seuil, une mêlée fait buzzer le téléphone en continu. */
+ *  Sans ce seuil, une mêlée fait buzzer le téléphone en continu.
+ *  `power` arrive déjà borné dans [0, 1] par son unique appelant : le reborner ici
+ *  ne protégerait rien, ça masquerait un appelant fautif. */
 export function hitPattern(power: number): number[] | null {
   if (power < MIX.hapticHitThreshold) return null;
-  const clamped = Math.max(0, Math.min(1, power));
-  return [Math.round(MIX.hapticHitBaseMs + MIX.hapticHitSpanMs * clamped)];
+  return [Math.round(MIX.hapticHitBaseMs + MIX.hapticHitSpanMs * power)];
 }
 
 /**

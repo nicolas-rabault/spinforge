@@ -53,7 +53,6 @@ function createAudio(): Audio {
    *  avec 0,25 s — le rotor était déjà revenu à 86 % de sa croisière à la fin d'un
    *  palier censé le tenir à 35 %. */
   let whirrDuck: GainNode | null = null;
-  let whirrSource: AudioBufferSourceNode | null = null;
   let sub: OscillatorNode | null = null;
   let subGain: GainNode | null = null;
   let spin = 0;
@@ -124,7 +123,8 @@ function createAudio(): Audio {
       whirrGain = bus.ctx.createGain();
       whirrGain.gain.value = 0;
       whirrDuck = bus.ctx.createGain();
-      whirrSource = bus.ctx.createBufferSource();
+      // Bouclé pour toujours : rien ne l'arrête jamais, seul son gain le tait.
+      const whirrSource = bus.ctx.createBufferSource();
       whirrSource.buffer = bus.noise;
       whirrSource.loop = true;
       whirrSource.connect(whirrFilter).connect(whirrGain).connect(whirrDuck).connect(bus.sfx);
@@ -170,8 +170,13 @@ function createAudio(): Audio {
 
     hit(power) {
       const p = clamp01(power);
-      // La vibration est indépendante du son : elle a ses propres garde-fous, et
-      // elle doit fonctionner même quand les bruitages sont coupés.
+      // Volontairement AVANT `admitHit` : la vibration ne suit pas la garde du son.
+      // Elle a les siennes — 60 ms d'intervalle et 220 ms par seconde glissante —
+      // et elles répondent à une autre contrainte, le moteur haptique d'Android qui
+      // écrase les motifs empilés. Faire suivre la hiérarchisation du son à la main
+      // lui ferait perdre les chocs qu'un choc plus fort vient d'avaler, alors que
+      // c'est précisément le gros choc qu'on veut sentir. Elle doit aussi
+      // fonctionner quand les bruitages sont coupés, d'où sa place avant le garde.
       haptics.hit(p, performance.now());
       const b = live();
       if (!b || !settings.sfx) return;

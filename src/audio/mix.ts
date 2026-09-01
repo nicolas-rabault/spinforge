@@ -81,6 +81,10 @@ export const MIX = {
    *  vite que la fondamentale : plus ce facteur est grand, plus le corps
    *  métallique perd ses harmoniques hautes tôt dans le son. */
   metalRolloff: 1.6,
+  /** Longueur du tampon de bruit blanc partagé par tous les sons percussifs. Assez
+   *  long pour qu'une lecture à vitesse variable n'en fasse jamais entendre la
+   *  boucle sur un son court. */
+  noiseBufferS: 2,
 
   // — le choc —
   /** Garde entre deux chocs. Mesurée : sans elle, l'arène monte à 20 sons/s.
@@ -210,6 +214,10 @@ export const MUSIC = {
     gainBase: 0.09,
     gainFloor: 0.5,
     gainSpan: 0.5,
+    /** Longueur du tampon de souffle du bourdon. Plus long que celui des percussions
+     *  (`MIX.noiseBufferS`) : bouclé en continu sous un son tenu, un tampon court
+     *  s'entend battre à sa propre période. */
+    noiseBufferS: 3,
   },
   pulse: {
     from: NOTE.A2,

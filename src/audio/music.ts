@@ -139,7 +139,7 @@ export function createMusic(): Music {
       droneOsc.connect(droneGain);
       droneOsc.start();
       const droneNoise = ctx.createBufferSource();
-      droneNoise.buffer = noiseBuffer(ctx, 3);
+      droneNoise.buffer = noiseBuffer(ctx, MUSIC.drone.noiseBufferS);
       droneNoise.loop = true;
       const droneFilter = ctx.createBiquadFilter();
       droneFilter.type = 'lowpass';

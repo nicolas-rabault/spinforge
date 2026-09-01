@@ -1,6 +1,7 @@
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { audio } from '../audio/audio';
+import { OPEN_STEPS, STEP_MS } from '../ui/ChestScreen';
 import type { RankTier } from '../theme';
 
 /**
@@ -64,8 +65,10 @@ function Soundboard() {
       <button onClick={fire(() => audio.reward(1))} style={BTN}>Récompense de salle</button>
       <button onClick={fire(() => audio.bossDown())} style={BTN}>Boss vaincu</button>
       <button onClick={fire(() => audio.chestShake())} style={BTN}>Coffre — secousse</button>
-      <button onClick={fire(() => [0, 1, 2].forEach((i) => setTimeout(() => audio.chestStep(i), i * 110)))} style={BTN}>
-        Coffre — les trois poses
+      {/* Les poses viennent de `ChestScreen` : recopiées, le banc a déjà joué trois
+          craquements là où le jeu en joue quatre. */}
+      <button onClick={fire(() => OPEN_STEPS.forEach((_, i) => setTimeout(() => audio.chestStep(i), i * STEP_MS)))} style={BTN}>
+        Coffre — les {OPEN_STEPS.length} poses
       </button>
       <button onClick={fire(() => audio.chestOpened())} style={BTN}>Coffre — le couvercle cède</button>
       <button onClick={fire(() => audio.pieceRevealed(tier))} style={BTN}>Pièce révélée (palier {tier})</button>

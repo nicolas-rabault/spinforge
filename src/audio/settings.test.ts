@@ -26,8 +26,12 @@ describe('les réglages du son', () => {
   });
 
   it("migre un ancien son actif vers les trois allumés", () => {
-    expect(loadSettings(fakeStore({ 'spinforge.muted': '0' })))
-      .toEqual({ music: true, sfx: true, haptics: true });
+    const store = fakeStore({ 'spinforge.muted': '0' });
+    expect(loadSettings(store)).toEqual({ music: true, sfx: true, haptics: true });
+    // Sans cette ligne le test reste vert quand on supprime toute la migration :
+    // « installation neuve » rend exactement le même trio allumé. C'est la clé
+    // consommée qui distingue les deux chemins.
+    expect(store.dump()['spinforge.muted']).toBeUndefined();
   });
 
   it('ignore un JSON corrompu au lieu de casser le démarrage', () => {

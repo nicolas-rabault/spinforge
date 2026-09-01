@@ -6,7 +6,9 @@ export interface Bus {
   sfx: GainNode;
   /** Où branche la musique. Séparée pour pouvoir la couper seule, et la ducker. */
   music: GainNode;
-  /** Une seconde de bruit blanc, réutilisée par tous les sons percussifs. */
+  /** Le tampon de bruit blanc (`MIX.noiseBufferS`), réutilisé par tous les sons
+   *  percussifs — un seul, parce qu'en recréer un par son coûterait plus cher que
+   *  tout le reste du bruitage. */
   noise: AudioBuffer;
 }
 
@@ -42,7 +44,7 @@ export function createBus(): Bus {
   music.gain.value = MIX.musicGain;
   music.connect(master);
 
-  return { ctx, sfx, music, noise: noiseBuffer(ctx, 2) };
+  return { ctx, sfx, music, noise: noiseBuffer(ctx, MIX.noiseBufferS) };
 }
 
 /**

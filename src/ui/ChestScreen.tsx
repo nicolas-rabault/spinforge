@@ -29,10 +29,12 @@ const CHEST_LIST: { kind: ChestKind; name: MessageKey }[] = [
  *  `chestUrl` mémoïse par valeur d'ouverture, et une valeur par image ferait
  *  exploser le cache pour un gain que l'œil ne voit pas à cette vitesse.
  *  Le dernier pas s'arrête à 0,75 : au-delà, le couvercle pivoté sort de sa boîte
- *  de dessin et se fait rogner par le conteneur. */
-const OPEN_STEPS = [0, 0.3, 0.55, 0.75];
+ *  de dessin et se fait rogner par le conteneur.
+ *  Exportées avec `STEP_MS` : le banc d'essai sonore rejoue cette séquence, et il
+ *  n'en reproduit le son que s'il en lit le compte ici plutôt que de le recopier. */
+export const OPEN_STEPS = [0, 0.3, 0.55, 0.75];
 const SHAKE_MS = 600;
-const STEP_MS = 110;
+export const STEP_MS = 110;
 /** Taille d'une pièce révélée. Elle rétrécit quand le lot grossit, pour qu'un
  *  butin de vingt coffres tienne encore dans le cadre. */
 const TILE = (count: number) => (count <= 10 ? 62 : count <= 24 ? 50 : 40);
