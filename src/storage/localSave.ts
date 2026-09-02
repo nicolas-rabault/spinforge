@@ -44,10 +44,16 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 let pending: MetaState | null = null;
 
 /** Écrit le méta en y estampillant l'instant présent. C'est le seul endroit du
- *  projet où l'horloge entre dans le méta. */
+ *  projet où l'horloge entre dans le méta.
+ *
+ *  L'estampille est posée SUR le méta vivant avant d'être sérialisée, et non
+ *  sur une copie : sérialiser une valeur que l'objet en mémoire ne porte pas
+ *  laissait `meta.lastSeenAt` figé à sa valeur de chargement toute la session,
+ *  divergeant un peu plus à chaque écriture de ce que le disque contient. */
 function write(meta: MetaState): void {
+  meta.lastSeenAt = Date.now();
   try {
-    localStorage.setItem(KEY, serializeMeta({ ...meta, lastSeenAt: Date.now() }));
+    localStorage.setItem(KEY, serializeMeta(meta));
   } catch {
     // Stockage indisponible (navigation privée, quota) : la partie continue.
   }
