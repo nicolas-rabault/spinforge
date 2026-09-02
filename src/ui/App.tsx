@@ -195,15 +195,30 @@ export function App() {
   // Source unique de « le chapitre que la prochaine descente utilisera ». L'écran
   // de combat le propose et le change, celui des toupies en affiche la
   // composition : les deux doivent parler du même chapitre, y compris entre deux
-  // descentes, où `run.chapter` est encore celui qu'on vient de quitter. Tant que
-  // la descente court, `pickedChapter` est null et la suggestion vaut
-  // `run.chapter` — le calcul se réduit alors au chapitre du run. La règle de
-  // suggestion vit ici et nulle part ailleurs : le chapitre qui vient de s'ouvrir
-  // après un boss vaincu, celui qu'on vient de perdre sinon. `run` est déjà lu
-  // plus haut, pour l'intensité musicale.
-  const chapterToPlay = pickedChapter ?? (run.phase === 'won'
-    ? Math.min(run.chapter + 1, maxPlayableChapter(metaRef.current))
-    : run.chapter);
+  // descentes, où `run.chapter` est encore celui qu'on vient de quitter. La règle
+  // de suggestion vit ici et nulle part ailleurs, et elle a trois branches.
+  //
+  // En DÉCOR, `run.chapter` vaut `bestChapter` — c'est juste, le farm rejoue le
+  // meilleur chapitre validé — mais en hériter proposerait au joueur qui revient
+  // du contenu qu'il a déjà fait, à moins qu'il ne remarque la pastille suivante.
+  // Le décor suggère donc le chapitre le plus haut qu'il ait le droit de jouer,
+  // comme le faisait la descente initiale de l'app avant ce lot. Seul le DÉFAUT
+  // change : les pastilles inférieures restent offertes, et farmer un chapitre
+  // plus facile reste un choix de joueur.
+  //
+  // Sur le voile de fin de descente, rien ne bouge : le chapitre qui vient de
+  // s'ouvrir après un boss vaincu, celui qu'on vient de perdre sinon.
+  //
+  // `run` est déjà lu plus haut, pour l'intensité musicale. La condition du décor
+  // est celle-là même qui monte l'invite dans `CombatScreen` : descente vivante
+  // que personne ne pilote.
+  const chapterToPlay = pickedChapter ?? (
+    run.phase !== 'fighting'
+      ? (run.phase === 'won'
+          ? Math.min(run.chapter + 1, maxPlayableChapter(metaRef.current))
+          : run.chapter)
+      : playing ? run.chapter : maxPlayableChapter(metaRef.current)
+  );
 
   // `t()` lit un singleton de module, ce qui évite d'enfiler une locale à travers
   // `axisLine`, `rankLabel` et `formatCredits`. Ce `useState` n'existe que pour
