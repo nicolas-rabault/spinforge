@@ -36,7 +36,6 @@ export interface FarmReport {
   gems: number;
   chests: Record<ChestKind, number>;
   salles: number;
-  runs: number;
   chapter: number;
 }
 
@@ -44,7 +43,7 @@ function emptyReport(chapter: number): FarmReport {
   return {
     seconds: 0, credits: 0, gems: 0,
     chests: { bronze: 0, arene: 0, mythique: 0 },
-    salles: 0, runs: 0, chapter,
+    salles: 0, chapter,
   };
 }
 
@@ -93,7 +92,6 @@ export function farm(
 
   if (session.run === null || session.chapter !== meta.bestChapter) {
     reopen(meta, session, seed);
-    report.runs++;
   }
 
   for (let i = 0; i < ticks; i++) {
@@ -111,7 +109,6 @@ export function farm(
     // Salle du boss atteinte, ou descente close : on en ouvre une autre.
     if (run.salle >= SALLES_PER_CHAPTER || run.phase !== 'fighting') {
       reopen(meta, session, seed);
-      report.runs++;
     }
   }
   return report;
