@@ -26,22 +26,33 @@ complet des quatre balayages (quarante graines) :
   l'intégration de `fc827ee` (première mesure, dix graines) — 3 minutes de moins, pas dix : un
   effet modeste comparé au reste de cette passe.
 - ✅ **Le combat de boss s'allonge, et se rapproche enfin de sa cible.** `fc827ee`, à lui seul
-  et sans le vouloir, avait raccourci le combat de boss à environ 37-38 s — bien en dessous de
-  la cible de cahier des charges (~45 s), un boss expédié. Cette passe le rallonge à
-  **46,40 s**, à 1,4 s de la cible — tenue pour la première fois depuis le jalon 2.5 (87 s) et
-  l'intégration (64,8 s).
+  et sans le vouloir, avait raccourci le combat de boss à entre 36,8 et 40,7 s à quarante
+  graines — bien en dessous de la cible de cahier des charges (~45 s), un boss expédié. Cette
+  passe le rallonge à **46,40 s**, mesurée entre 42,4 et 47,6 s sur quatre jeux de graines
+  disjoints à cette valeur — la cible ~45 s tombe dans cette bande, tenue pour la première fois
+  depuis le jalon 2.5 (87 s) et l'intégration (64,8 s).
 - 🔧 **Choisir Tigre Foudre plutôt que Carapace Abyssale coûte toujours beaucoup plus cher, mais
   nettement moins qu'avant cette passe.** Juste après `fc827ee` (première mesure, dix graines),
   valider le chapitre 1 prenait 108 descentes avec Tigre Foudre contre 10 avec Carapace
   Abyssale (×10,80) — un choix de châssis présenté comme cosmétique qui décidait en réalité
   d'un ordre de grandeur de temps de jeu. À quarante graines, sur ce même réglage d'avant cette
-  passe (`damageK` 1,30), l'écart valait ×9,30 — la comparaison à mesure égale avec le résultat
-  ci-dessous. Après cette passe (`damageK` 1,10) : **39 descentes contre 8 (×4,88)** — une
+  passe (`damageK` 1,30), l'écart valait ×9,30 (93 descentes contre 10) — la comparaison à
+  mesure égale avec le résultat ci-dessous. Après cette passe (`damageK` 1,10) : **39 descentes
+  contre 8 (×4,88)** — une
   réduction d'environ ×1,9, pas ×2,2. Le déplacement est entièrement porté par
   `combat.damageK` ; aucun profil de châssis n'a été touché — ce n'est pas le mandat de cette
   passe. **Ce n'est pas résolu** : ×4,88 reste très au-dessus de la cible affichée < ×2, et
   refermer davantage demande une décision d'équilibrage sur les châssis eux-mêmes — un mandat
   qui n'a toujours pas été donné.
+- 🔧 **Le mur du chapitre 4 est de retour — l'effet le plus large de cette passe, ressenti après
+  les trois premiers chapitres.** Une mesure prise en tout début de passe, avant que
+  `bot.scaling.spinPerChapter` ne soit recalé, donnait le chapitre 4 comme le moins cher des
+  trois marches (+0,08 h contre +0,12 h et +0,15 h pour les chapitres 2 et 3) — au point que la
+  spec de cette passe affirmait alors « il n'y a plus de mur du tout après le chapitre 1 »,
+  affirmation depuis rétractée. Aux valeurs retenues, c'est l'inverse : le chapitre 4 est de
+  nouveau le marginal le plus cher, **+0,21 h** contre +0,12 h (ch. 2) et +0,15 h (ch. 3),
+  robuste sur trois jeux de graines disjoints. Détail : `docs/game-design.md` § Économie et
+  `docs/superpowers/specs/2026-09-02-remesure-cinq-constantes-design.md` § 2.2 (rétractée).
 
 **Remarque de méthode, pour le projet lui-même.** Deux affirmations publiées dans ce dépôt —
 « le chapitre 3 redevient plus cher que le chapitre 2 (+0,15 contre +0,12) » et « le chapitre 4
@@ -73,6 +84,10 @@ balayages complets (26 puis 33 mesures, dix graines chacune) :
 **Valeurs retenues** : `bot.scaling.spinPerChapter` **1,02** (provisoire depuis la tâche 6 :
 1,2) · `bot.scaling.attackPerChapter` **1,10** (provisoire 1,1, inchangée par la mesure) ·
 `econ.rewardPerChapter` **1,15** (provisoire 1,25).
+
+**Supersédée le 2026-09-02** : `bot.scaling.spinPerChapter` est passé de 1,02 à **1,05** par la
+remesure des cinq constantes (session ci-dessus) — 1,02 reste le relevé d'origine de ce lot, à
+dix graines, historique et non invalidé, mais ce n'est plus la valeur du dépôt.
 
 | | validé | coût cumulé | coût marginal | descentes | plus meurtrière (absolu) | garde-fou 1 | par tentative |
 |---|---|---|---|---|---|---|---|
@@ -1004,6 +1019,13 @@ paragraphe « Décision annulée en cours de route »).
   Quatre des huit garde-fous n'ont pas bougé (premier coffre 0,00 h, passivité jamais validée,
   verrou du châssis actif, salle 10 la plus meurtrière dans les quatre chapitres). La ligne de
   base courante et la raison du déplacement : section « Lot B » de `docs/roadmap.md`.
+
+  **Seconde mise à jour, même date — les chiffres du paragraphe ci-dessus (0,42 h en
+  20 descentes, ×10,80) sont eux aussi déjà dépassés, et le seul horodatage ne le dit pas.**
+  Ils décrivaient l'effet de `fc827ee` seul, avant que la passe de remesure des cinq constantes
+  du même jour ne recale `combat.damageK` et `bot.scaling.spinPerChapter`. **La ligne de base
+  actuelle du dépôt : chapitre 1 à 0,37 h en 17 descentes, écart entre châssis à ×4,88** —
+  détail complet, « Troisième mise à jour » de la section « Lot B » de `docs/roadmap.md`.
 
   **L'argument de fond, lui, est renforcé plutôt qu'affaibli.** Cette remarque disait que le
   harnais est un instrument de mesure et qu'on ne change pas l'instrument pendant qu'on

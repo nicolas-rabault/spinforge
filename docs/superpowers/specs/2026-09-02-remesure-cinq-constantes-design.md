@@ -89,6 +89,23 @@ chapitre 1 à ~0,37 h, donc les chapitres 2 à 4 réunis (~0,30 h) restent moins
 premier, sur les quatre jeux disjoints. C'est un rapport de 3 à 1, très au-dessus du plancher
 de ±0,02 h. **Le jeu n'a plus de mur après le chapitre 1, et ça, c'est mesuré.**
 
+> **Correction du 2026-09-02, après la passe complète — cette section est rétractée, pas
+> seulement nuancée.** Deux défauts, l'un arithmétique et déjà présent au moment où cette
+> section a été écrite, l'autre de fond et découvert seulement à la fin de la passe :
+>
+> D'abord l'arithmétique : « un rapport de 3 à 1 » pour 0,37 h contre ~0,30 h est faux quel
+> que soit l'état du reste de la passe — 0,37 / 0,30 fait un rapport de 1,23 à 1, pas 3 à 1.
+>
+> Ensuite le fond, qui rend le titre de cette section faux plutôt qu'imprécis : cette mesure a
+> été prise avec `bot.scaling.spinPerChapter` et `econ.rewardPerChapter` encore à leurs valeurs
+> d'avant cette passe, avant les balayages du § 6. Aux valeurs finalement retenues
+> (`spinPerChapter` 1,05), les trois marges valent **+0,12 / +0,15 / +0,21 h** pour un
+> chapitre 1 à **0,37 h** — les chapitres 2 à 4 réunis coûtent **0,48 h, plus cher que le
+> chapitre 1**, pas moins cher. **Le mur n'a pas disparu après le chapitre 1 : il est revenu**,
+> et c'est le résultat le plus important de cette passe, pas un détail corrigé au passage.
+> Historique complet, chiffres à jour compris : `docs/game-design.md` § Économie et
+> `docs/roadmap.md`, dette « jalon 3, lot A ».
+
 **2.3 · `npm run verrou` a échoué une fois, et le budget de 90 s est trop mince.** Trois
 vérifications en échec sur la passe 1 : « bloquée en salle 10 après 91 s réelles, 205 s
 simulées », soit 2,25× le temps réel là où le commentaire du script documente ~11×.
@@ -233,6 +250,22 @@ châssis » de devenir un prétexte à sacrifier un garde-fou.
    mouvement.
 8. **La durée du chapitre 1** : indicative. Le projet a déjà refusé de sacrifier un garde-fou
    pour six minutes de chapitre ; cette passe ne le fera pas non plus.
+9. **Règle terminale — à mesure égale, retenir le point le plus proche de la valeur commitée.**
+   *Absente du mandat initial ci-dessus ; introduite en cours de passe le 2026-09-02, une fois
+   les garde-fous durs et les trois départages numérotés 6-8 sortis muets sur deux des cinq
+   constantes (`combat.damageK` et `bot.scaling.spinPerChapter`) — chacun laissait plusieurs
+   candidats mesurablement à égalité, sans qu'aucun ne les sépare. Documentée dans le journal
+   de balayage plutôt que dans cette spec au moment où elle a servi :
+   `docs/superpowers/plans/2026-09-02-calibration-remesure.md`.* Elle formalise, à l'intérieur
+   d'un groupe à égalité, ce que la borne 1 du mandat (§ 1) impose déjà à l'échelle du projet
+   entier : **une constante ne se déplace que de la distance que la mesure exige, jamais
+   plus.** Déplacer une constante à l'intérieur d'un groupe à égalité sans elle serait mesurer
+   sans raison mesurée — exactement ce que cette règle interdit. Elle a choisi `damageK = 1,10`
+   dans `{0,95 ; 1,00 ; 1,05 ; 1,10}` (le plus proche de la valeur commitée 1,30) et
+   `spinPerChapter = 1,05` dans `{1,05 ; 1,08}` (le plus proche de la valeur commitée 1,02).
+   Si le palier entier reste indécis et que la valeur commitée en fait partie, la règle produit
+   trivialement cette même valeur, à distance zéro — ce n'est pas un cas séparé, c'est arrivé à
+   `econ.rewardBase`.
 
 Un départage ne peut **jamais** faire retenir un point hors palier. Un palier est une suite de
 valeurs **consécutives** qui tiennent les cinq garde-fous durs ; un point isolé qui les tient

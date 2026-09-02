@@ -67,7 +67,7 @@ const RAYON_PX = 70;
  *  la marge à 90 s est trop mince pour un harnais qui vit hors de `npm run test`
  *  et qu'aucune suite ne surveille. 300 s la rétablit sans rien coûter — une
  *  descente vraiment bloquée échoue de toute façon, seulement plus tard. */
-const BUDGET_MS = Number(process.env.BUDGET_MS ?? 300000);
+const BUDGET_MS = 300000;
 /** Cadence d'observation. Chaque relevé coûte un aller-retour cher et vole du temps
  *  au fil principal : on observe peu, la simulation n'en dépend pas. */
 const RELEVE_MS = 700;

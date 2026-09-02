@@ -120,6 +120,11 @@ ce projet l'a payé deux fois (jalons 1.5 et 2b).
 **Mesuré au harnais `npm run calibrate`, dix graines** (`bot.scaling.spinPerChapter` **1,02**
 · `bot.scaling.attackPerChapter` **1,10** · `econ.rewardPerChapter` **1,15**) :
 
+**Supersédée le 2026-09-02** : `bot.scaling.spinPerChapter` est passé de 1,02 à **1,05** par la
+remesure des cinq constantes (« Troisième mise à jour » de la section « Lot B » ci-dessous et
+`docs/superpowers/plans/2026-09-02-calibration-remesure.md`) — 1,02 reste le relevé d'origine
+du lot A, à dix graines, historique et non invalidé, mais ce n'est plus la valeur du dépôt.
+
 | | validé | coût cumulé | coût marginal | descentes | plus meurtrière (absolu) | garde-fou 1 | par tentative |
 |---|---|---|---|---|---|---|---|
 | ch. 1 | 10/10 | 0,32 h | +0,32 h | 9 | salle 10, 23 morts | oui | salle 10, 70 % |
@@ -225,7 +230,7 @@ l'ordre des trois marges entre elles (ch. 2, ch. 3, ch. 4) en faisait partie —
 / +0,08 h à dix graines contre +0,10 h / +0,08 h / +0,10 h à quarante, l'ordre change d'un jeu
 à l'autre.
 
-**Ce lot n'a contribué au premier de ces déplacements, et c'est mesuré, pas plaidé** : la
+**Ce lot n'a pas contribué au premier de ces déplacements, et c'est mesuré, pas plaidé** : la
 ligne de base à dix graines, juste après `fc827ee` et avant l'élargissement du jeu de graines,
 est identique sur `main` seul et sur l'arbre fusionné (`docs/superpowers/plans/2026-09-01-jalon-3-lot-b-farm.md`,
 § mise à jour de l'étalon). C'est la seule comparaison `main`-seul documentée ; elle n'a pas été
@@ -759,10 +764,12 @@ bloquant.
 
   **Mise à jour (2026-09-02) : la cible est tenue — mais pas par une chute continue depuis
   64,8 s.** Entre-temps, `fc827ee` seul, sans qu'aucune constante de combat n'ait bougé, avait
-  déjà fait chuter le boss **sous** la cible : ~36,8 à 37,6 s à quarante graines,
+  déjà fait chuter le boss **sous** la cible : ~36,8 à 40,7 s à quarante graines,
   `combat.damageK` encore à 1,30 — un boss expédié, pas un boss dans la cible. La passe de
   remesure des cinq constantes a ensuite déplacé `combat.damageK` de 1,30 à 1,10 (ci-dessus),
-  ce qui **rallonge** le combat à **46,40 s** — à 1,4 s de la cible ~45 s. C'est donc un
+  ce qui **rallonge** le combat à **46,40 s** — mesurée entre 42,4 et 47,6 s sur quatre jeux
+  de graines disjoints à cette valeur (`docs/superpowers/plans/2026-09-02-calibration-remesure.md`),
+  et la cible ~45 s tombe dans cette bande. C'est donc un
   dépassement corrigé, pas la cible atteinte pour la première fois par une descente continue
   depuis les 87 s du jalon 2.5 et les 64,8 s de l'intégration. Détail :
   `docs/superpowers/plans/2026-09-02-calibration-remesure.md`.
@@ -859,7 +866,10 @@ bloquant.
   quarante graines — pas les ×10,80 cités plus haut, qui viennent d'une mesure à dix graines
   sur un tout autre jeu de graines et ne se comparent pas terme à terme à ×4,88. Sur quatre
   jeux disjoints, les deux distributions ne se recouvrent pas — `[×4,88 ; ×6,63]` contre
-  `[×8,90 ; ×10,78]` — mais l'amélioration à mesure égale vaut environ ×1,9, pas ×2,2. Refermé
+  `[×8,00 ; ×10,78]` (plancher élargi à ×8,00 : un cinquième jeu disjoint de quarante graines,
+  mesuré aux mêmes réglages au § 3 de la spec de cette passe, descend sous le ×8,90 relevé sur
+  ce jeu-ci de quatre — le non-recouvrement tient malgré tout, ×8,00 restant au-dessus du
+  plafond ×6,63 de 1,10) — mais l'amélioration à mesure égale vaut environ ×1,9, pas ×2,2. Refermé
   par `combat.damageK` seul (1,30 → 1,10). Ce qui reste : ×4,88 est encore très au-dessus de la
   cible affichée < ×2, et aucune valeur de `damageK` balayée sur la grille `[0,80 ; 1,70]` n'en
   approche, pas même la plus basse testée (0,80, ×3,83) — refermer davantage demande le bloc
@@ -870,7 +880,9 @@ bloquant.
   relevé châssis du rapport final). Ce relevé se retrouve identique dans les quatre rapports
   complets du journal — pas comme quatre confirmations indépendantes, mais parce que le
   chapitre 1 et le comparatif châssis ne dépendent que de `damageK` et `rewardBase`, tous deux
-  gelés aux mêmes valeurs sur les quatre balayages ; c'est la même mesure imprimée quatre fois,
+  gelés aux mêmes valeurs dans les quatre rapports complets à la valeur retenue, un par
+  balayage — pas dans les quatre balayages eux-mêmes, dont chacun a justement fait varier l'une
+  des deux sur sa propre grille ; c'est la même mesure finale imprimée quatre fois,
   pas quatre mesures distinctes. Si c'était déjà le cas *avant* `fc827ee` reste **non mesuré
   par cette passe non plus** : aucun de ses balayages ne porte sur l'ancienne physique de
   collision, et rien ici ne permet de trancher dans un sens ou dans l'autre — la question reste

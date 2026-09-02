@@ -21,11 +21,12 @@ Piliers non négociables :
 - **Durée cible du combat de boss (salle 10, chapitre 1) : ~45 s**, repère de cahier des
   charges (jalon 1.5). Pas atteinte par une chute continue depuis 183 s au lancement (87 s au
   jalon 2.5, 64,8 s après l'intégration du jalon 2b) : `fc827ee` seul, sans qu'aucune constante
-  de combat n'ait bougé, avait déjà fait chuter le boss **sous** la cible, à ~36,8-37,6 s à
+  de combat n'ait bougé, avait déjà fait chuter le boss **sous** la cible, à ~36,8-40,7 s à
   quarante graines — un boss expédié. La remesure des cinq constantes du 2026-09-02 a ensuite
-  déplacé `combat.damageK` de 1,30 à 1,10, ce qui **rallonge** le combat à **46,40 s**, à 1,4 s
-  de la cible : un dépassement corrigé, tenue pour la première fois. Historique complet :
-  « Dette connue (jalon 2.5) », `docs/roadmap.md`.
+  déplacé `combat.damageK` de 1,30 à 1,10, ce qui **rallonge** le combat à **46,40 s** —
+  mesurée entre 42,4 et 47,6 s sur quatre jeux de graines disjoints à cette valeur, et la
+  cible ~45 s tombe dans cette bande : un dépassement corrigé, tenue pour la première fois.
+  Historique complet : « Dette connue (jalon 2.5) », `docs/roadmap.md`.
 - **Types** : Attaque > Endurance > Défense > Attaque. Le type dominant inflige **+25 %**.
   La règle est **symétrique** — un bot dont le type domine celui du joueur frappe plus fort
   lui aussi, et c'est ce qui fait de la contre-pioche une décision. **Équilibre est hors du

@@ -173,10 +173,17 @@ canonique, plus trois jeux `k = 100..139`, `200..239`, `300..339`).
 | descentes ch. 1 à 1,30 | 20 | 19 | 18 | 20 | `[18 ; 20]` |
 
 **Les deux distributions de l'écart châssis ne se recouvrent à aucun point** :
-`[×4,88 ; ×6,63]` contre `[×8,90 ; ×10,78]`. C'est une mesure directe, pas une extension de
+`[×4,88 ; ×6,63]` contre `[×8,90 ; ×10,78]` sur ce jeu-ci de quatre échantillons disjoints. Un
+cinquième échantillon disjoint de quarante graines existe déjà dans ce dépôt, aux mêmes
+réglages (`damageK` figé à 1,30) : le jeu 3 du § 3 de la spec mesure ×8,00 — sous le plancher
+de ×8,90 relevé ici. Le plancher honnête, toutes mesures à quarante graines confondues à 1,30,
+est donc `×8,00`, pas `×8,90`. **Le non-recouvrement survit malgré tout** : ×8,00 reste
+au-dessus du plafond ×6,63 mesuré à 1,10, donc `[×4,88 ; ×6,63]` contre `[×8,00 ; ×10,78]` ne se
+touchent toujours pas. C'est une mesure directe, pas une extension de
 l'heuristique — et elle **contredit** l'heuristique : la règle du facteur ~2 aurait déclaré
-×6,63 (le pire jeu à 1,10) et ×8,90 (le meilleur jeu à 1,30) à égalité (facteur 1,34, sous 2),
-alors que les distributions complètes ne se touchent jamais. **Une heuristique a été remplacée
+×6,63 (le pire jeu à 1,10) et ×8,90 (le meilleur jeu de ce relevé-ci à 1,30) à égalité (facteur
+1,34, sous 2), alors que les distributions complètes ne se touchent jamais, même en comptant le
+plancher élargi. **Une heuristique a été remplacée
 par une mesure, et la mesure l'a contredite.** C'est le résultat le plus important de ce
 correctif, plus important que la valeur retenue elle-même : la discipline « arbitrer en bandes,
 pas au centième » était la bonne discipline, mais son seuil numérique (« facteur ~2 ») avait été
@@ -833,13 +840,21 @@ une **borne** — rester sous 60 s sans expédier le boss — pas une fonction d
 minimiser autour de 45 s. Sous cette lecture, les cinq points la tiennent tous très
 confortablement (46,10 à 50,00 s, loin des 60 s) : **départage 7 ne sépare aucun des cinq.**
 
-Une différence réelle existe malgré tout sur cette colonne, et la passer sous silence serait
-inexact : l'étendue mesurée (46,10 à 50,00 s → 3,90 s) dépasse le plancher de bruit de cette
-même colonne (1,4 s, section damageK, départage 7). Ce n'est donc pas du bruit — mais ce n'est
-pas non plus un critère de décision sous la lecture littérale du départage 7, qui ne pose qu'un
-seuil, pas un minimum à atteindre. Note à titre indicatif, sans valeur de décision : `104`
-(46,40 s) et `108` (46,10 s) sont les deux valeurs numériquement les plus proches de la cible
-illustrative ~45 s, à 0,30 s l'une de l'autre — un écart, lui, sous le plancher de bruit.
+Une différence existe sur cette colonne, mais la qualifier demande le bon plancher de bruit. Le
+chiffre cité ici dans une version antérieure de cette section (1,4 s) venait d'une mesure
+**unique** (§ 3 de la spec, quatre jeux disjoints, `damageK` figé à 1,30) — exactement l'erreur
+que la leçon n° 2 de ce journal nomme : « un seuil de bruit mesuré une fois, à une seule valeur
+du paramètre balayé, n'est pas transportable sans vérification ». Le plancher réel de cette
+même colonne, mesuré directement aux deux candidats de `damageK` sur quatre jeux disjoints
+chacun (section « Correction méthodologique » plus haut dans ce journal) : `[42,4 ; 47,6]` s à
+1,10 (étendue 5,2 s) et `[36,8 ; 40,7]` s à 1,30 (étendue 3,9 s). L'étendue mesurée ici entre
+les cinq candidats de `rewardBase` (46,10 à 50,00 s → 3,90 s) tient donc **à l'intérieur** de ce
+plancher, pas au-dessus : ce n'est pas un signal distinguable du bruit — l'inverse de ce
+qu'affirmait la version précédente de cette section. La conclusion ne change pas pour autant :
+sous la lecture littérale du départage 7 — une borne, pas un minimum à atteindre — les cinq
+points la tiennent tous confortablement, qu'on les juge bruités ou non. Note à titre indicatif,
+sans valeur de décision : `104` (46,40 s) et `108` (46,10 s) sont les deux valeurs numériquement
+les plus proches de la cible illustrative ~45 s, à 0,30 s l'une de l'autre.
 
 ### Départage 8 — durée du chapitre 1
 
