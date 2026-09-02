@@ -1,9 +1,10 @@
 # Remesure des cinq constantes après `fc827ee` — journal de calibration
 
 > Spec : `docs/superpowers/specs/2026-09-02-remesure-cinq-constantes-design.md`. Plan :
-> `docs/superpowers/plans/2026-09-02-remesure-cinq-constantes.md`. Ce fichier est complété
-> tâche après tâche par les temps 1 et 2 (combat puis économie) ; il ne porte pour l'instant
-> que le combat.
+> `docs/superpowers/plans/2026-09-02-remesure-cinq-constantes.md`. Ce fichier a été complété
+> tâche après tâche par les temps 1 et 2 (combat puis économie) ; il porte désormais les cinq
+> constantes de la passe, combat et économie confondus — c'est la dernière, `econ.rewardPerChapter`
+> (tâche 7), qui le referme.
 
 ## Le mandat, en bref
 
@@ -1071,3 +1072,367 @@ rapport complet déjà relevé aux deux sections précédentes de ce journal (`d
   (`damageK = 1,10`, `spinPerChapter = 1,05`, `attackPerChapter = 1,10`,
   `rewardBase = 104`) — tâche 7 de cette passe, commit séparé, toujours pas de combat dans le
   même commit que l'économie.
+
+---
+
+# L'économie (suite et fin) — `econ.rewardPerChapter`
+
+> Tâche 7 de `docs/superpowers/plans/2026-09-02-remesure-cinq-constantes.md` — la cinquième et
+> dernière constante de cette passe. Les quatre déjà retenues sont gelées sur tout ce balayage :
+> `combat.damageK` 1,10, `bot.scaling.spinPerChapter` 1,05, `bot.scaling.attackPerChapter` 1,10,
+> `econ.rewardBase` 104. `econ.rewardPerChapter` porte l'exposant `chapitre − 1`, comme les deux
+> `bot.scaling.*` à la tâche 5 : il ne touche pas le chapitre 1.
+
+## Contrôle d'instrument : le chapitre 1 est identique aux douze points, une deuxième fois
+
+Même discipline qu'à la tâche 5 : un facteur d'exposant `chapitre − 1` ne doit rien changer à ce
+que le chapitre 1 mesure, et ça se vérifie directement plutôt que de se supposer. Sur les douze
+points de la grille `econ.rewardPerChapter ∈ {0,90 · 1,00 · 1,02 · 1,05 · 1,08 · 1,10 · 1,13 ·
+1,15 · 1,18 · 1,20 · 1,25 · 1,30}`, une seule valeur distincte pour le quadruplet (chapitre 1 en
+heures, descentes, durée de la salle 10, écart entre châssis) :
+
+```
+["0.37", "17.00", "46.40", 4.88]
+```
+
+C'est la deuxième fois dans cette passe que ce contrôle passe sans exception (la première à la
+tâche 5, pour les deux `bot.scaling.*`). Il porte une conséquence pour la suite de cette section :
+les **trois départages numérotés** (écart châssis, durée de la salle 10 du chapitre 1, durée du
+chapitre 1) sont chacun une grandeur du chapitre 1 — et le chapitre 1 est ici, par construction,
+identique aux douze points. Le résultat de cette section n'est donc pas seulement « aucun
+départage n'a séparé les candidats », c'est « aucun des trois départages numérotés **ne pouvait**
+séparer les candidats sur ce bouton précis » — développé plus bas, après le balayage brut.
+
+## Le balayage brut — douze points, quarante graines
+
+Le chapitre 1, la salle 10 du chapitre 1 et l'écart entre châssis étant identiques partout
+(ci-dessus), ils sont donnés une fois en tête de tableau plutôt que répétés à chaque ligne :
+`ch. 1 = 0,37 h / 17 descentes`, `salle 10 ch. 1 = 46,40 s`, `écart châssis = ×4,88`. Le verrou
+du châssis reste actif et le premier coffre reste à 0,00 h sur toute la grille (comme aux tâches
+précédentes) ; la passivité reste « jamais » en 20 h simulées, y compris sur les deux points hors
+domaine et sur les deux points où le garde-fou 1 casse.
+
+| `rewardPerChapter` | GF1 (ch1→4) | graines (ch1→4) | marges ch. 2/3/4 |
+|---|---|---|---|
+| 0,90 (diagnostic) | oui·oui·oui·oui | 40·40·40·40 | +0,13 / +0,13 / +0,13 |
+| 1,00 (diagnostic) | oui·oui·oui·oui | 40·40·40·40 | +0,13 / +0,13 / +0,12 |
+| 1,02 | oui·oui·oui·oui | 40·40·40·40 | +0,13 / +0,13 / +0,19 |
+| 1,05 | oui·oui·oui·oui | 40·40·40·40 | +0,13 / +0,14 / +0,18 |
+| 1,08 | oui·oui·oui·oui | 40·40·40·40 | +0,12 / +0,16 / +0,12 |
+| 1,10 | oui·oui·oui·oui | 40·40·40·40 | +0,13 / +0,16 / +0,17 |
+| 1,13 | oui·oui·oui·oui | 40·40·40·40 | +0,10 / +0,15 / +0,22 |
+| **1,15 (retenue)** | **oui·oui·oui·oui** | **40·40·40·40** | **+0,12 / +0,15 / +0,21** |
+| 1,18 | oui·oui·oui·oui | 40·40·40·40 | +0,15 / +0,12 / +0,24 |
+| 1,20 | oui·oui·oui·oui | 40·40·40·40 | +0,09 / +0,12 / +0,21 |
+| 1,25 | oui·oui·oui·**NON** | 40·40·40·**38** | +0,14 / +0,13 / +0,18 |
+| 1,30 | oui·oui·oui·**NON** | 40·40·40·**29** | +0,10 / +0,18 / +0,37 |
+
+## Le palier des garde-fous durs, et où il casse
+
+`[0,90 ; 1,20]` tient les cinq garde-fous durs sans exception, dix points de suite. Le palier
+casse à `1,25` : au chapitre 4, la salle la plus meurtrière n'est plus la 10 mais la 3
+(1 451 morts recensées sur la salle 3, contre 141 sur la salle 10 du même chapitre à la valeur
+retenue `1,15` — garde-fou 1 cassé) et seules 38 graines sur 40 valident encore ce chapitre
+(garde-fou 5). Les deux se dégradent ensemble à `1,30` : toujours la salle 3 la plus meurtrière
+au chapitre 4 (11 404 morts), et 29 graines sur 40 seulement. Aux deux points, la casse reste
+localisée au chapitre 4 — les chapitres 1 à 3 tiennent `oui` et `40/40` aux deux valeurs.
+
+## La contrainte de signe : domaine `> 1,0`, non rouverte
+
+Décidée au lot A, rappelée en tête de ce journal (borne 1 du mandat) et déjà réaffirmée dans le
+brief de cette tâche : un facteur `< 1` ferait payer *moins* une salle d'un chapitre *plus dur*,
+or le farm hors-ligne est verrouillé sur le meilleur chapitre validé (pilier n° 5 de
+`CLAUDE.md`) — progresser ferait donc **baisser** le revenu hors-ligne. `0,90` et `1,00` ne
+sont donc jamais des candidats, quelle que soit leur performance sur les garde-fous ou les
+départages. Le tableau ci-dessus les inclut malgré tout, marqués « diagnostic » : c'est
+précisément à `1,00` qu'ils servent, développé plus bas (« Le mur du chapitre 4 tient à deux
+constantes »). Cette décision n'est pas rouverte ici.
+
+## Départage : ne retenir que les points intérieurs du palier
+
+Même règle qu'aux trois sections précédentes (spec § 4) : un point n'est un candidat que si ses
+deux voisins **directs de la grille testée** tiennent eux aussi les cinq garde-fous durs.
+Appliqué ici, restreint au domaine `> 1,0` par la contrainte de signe : `1,20` a pour voisin
+supérieur `1,25`, qui casse — `1,20` est donc exclu, au même titre que `1,16` l'était pour
+`spinPerChapter` à la tâche 5. Tous les autres points de `{1,02 ; … ; 1,18}` ont leurs deux
+voisins directs à l'intérieur du palier démontré (y compris `1,02`, dont le voisin inférieur
+`1,00` tient les cinq garde-fous durs même s'il n'est pas lui-même un candidat éligible).
+
+**Candidats intérieurs : `{1,02 ; 1,05 ; 1,08 ; 1,10 ; 1,13 ; 1,15 ; 1,18}`.**
+
+## Les départages numérotés ne peuvent rien séparer ici — et c'est structurel, pas un manque de mesure
+
+Aux trois sections précédentes, les départages 6 (écart châssis), 7 (durée de la salle 10 du
+chapitre 1) et 8 (durée du chapitre 1) tranchaient parfois, ou étaient à égalité *dans la marge
+de bruit*. Ici, les sept candidats intérieurs partagent une **valeur unique et identique** sur
+les trois : `écart = ×4,88`, `salle 10 ch. 1 = 46,40 s`, `ch. 1 = 0,37 h` — le contrôle
+d'instrument, ci-dessus, l'a déjà établi. Ce n'est pas une égalité *dans* la marge de bruit,
+c'est une égalité **exacte**, parce que les trois départages numérotés portent tous sur des
+grandeurs du chapitre 1, et que `rewardPerChapter` porte l'exposant `chapitre − 1` : à ce
+chapitre, son exposant vaut 0, et il ne peut *structurellement* rien changer à ces trois mesures,
+quelle que soit sa valeur. Ce n'est donc pas une propriété de ce balayage — c'est une propriété
+du bouton lui-même, qui aurait été la même avec n'importe quelle grille testée. Le seul critère
+qui reste disponible pour départager les sept candidats est la **forme de la courbe de coût
+marginal** (marges des chapitres 2 à 4) — le même critère que la tâche 5 a dû mobiliser pour
+`spinPerChapter`, mais qui devient ici, faute d'alternative, le seul critère plutôt qu'un
+critère de renfort.
+
+## Le départage par la forme de la courbe, et la valeur retenue
+
+Sur le relevé canonique, l'écart entre la marge du chapitre 4 et le maximum des marges des
+chapitres 2 et 3 (« ch. 4 le plus cher, de combien ») aux sept candidats intérieurs :
+
+| `rewardPerChapter` | marges ch. 2/3/4 | max(ch.2, ch.3) | écart ch.4 − max | tient « ch. 4 le plus cher » (plancher 0,04 h) |
+|---|---|---|---|---|
+| 1,02 | +0,13 / +0,13 / +0,19 | +0,13 | +0,06 | oui |
+| 1,05 | +0,13 / +0,14 / +0,18 | +0,14 | +0,04 | à la limite du plancher |
+| 1,08 | +0,12 / +0,16 / +0,12 | +0,16 | **−0,04** | non — ch. 3 plus cher que ch. 4 |
+| 1,10 | +0,13 / +0,16 / +0,17 | +0,16 | +0,01 | non — dans le plancher |
+| 1,13 | +0,10 / +0,15 / +0,22 | +0,15 | +0,07 | oui |
+| **1,15 (retenue)** | **+0,12 / +0,15 / +0,21** | **+0,15** | **+0,06** | **oui** |
+| 1,18 | +0,15 / +0,12 / +0,24 | +0,15 | +0,09 | oui |
+
+Sur ce seul relevé canonique, `1,18` a le plus grand écart des sept (+0,09) et la marge de
+chapitre 4 la plus élevée (+0,24) — le rival le plus sérieux si l'on cherchait à déplacer la
+valeur retenue. Mais son avance sur `1,15` au chapitre 4 (+0,24 contre +0,21) ne fait que **0,03
+h** — sous le plancher de bruit de coût marginal de cette passe (~0,04 h, résiduel ±0,02 h,
+établi à la section `damageK`) : ce n'est pas une mesure, c'est du bruit.
+
+Et surtout : **`1,15` est le seul des sept candidats dont la forme a été vérifiée sur jeux
+disjoints** — pas dans ce balayage, mais dans celui de la tâche 5. Le balayage de forme de la
+tâche 5 gelait `econ.rewardPerChapter` à 1,15 en testant `spinPerChapter`, et l'un de ses trois
+candidats testés valait `spinPerChapter = 1,05` — exactement la valeur retenue par cette même
+tâche 5, et donc exactement la combinaison de cette section-ci. La table de forme de la tâche 5
+(section « La forme de la courbe, vérifiée sur jeux disjoints avant d'être écrite ») donne, à ce
+point précis, sur le jeu canonique et deux jeux disjoints (`k=100..139`, `k=200..239`) :
+
+| jeu | marge ch. 2 | marge ch. 3 | marge ch. 4 |
+|---|---|---|---|
+| canonique | +0,12 | +0,15 | +0,21 |
+| `k=100` | +0,09 | +0,13 | +0,19 |
+| `k=200` | +0,12 | +0,11 | +0,24 |
+
+L'étendue du chapitre 4 sur les trois jeux, `[+0,19 ; +0,24]`, ne recouvre à aucun point celle du
+chapitre 3, `[+0,11 ; +0,15]` — sans recouvrement, la même lecture qu'à la tâche 5. Aucun des six
+autres candidats intérieurs n'a cette confirmation : chacun n'a qu'une seule mesure canonique,
+exactement le type de lecture à un seul jeu de graines dont la tâche 5 a montré qu'il pouvait
+mentir (`spinPerChapter = 1,02`, retenu par un seul relevé canonique, s'est révélé non robuste
+sur jeux disjoints). Aucun candidat ne bat donc `1,15` sur ce critère, et `1,15` porte une
+preuve que les six autres n'ont pas. La règle de repli du mandat s'applique telle quelle : « si
+le palier entier reste indécis, la valeur commitée est conservée » — ici appliquée à un groupe
+où aucun département ne sépare, et où la valeur commitée est en outre le seul membre
+confirmé sur jeux disjoints.
+
+**`econ.rewardPerChapter` : confirmée à 1,15. Aucun changement à `src/content/balance.json`.**
+
+C'est la deuxième confirmation sans changement de cette passe (la première : `econ.rewardBase =
+104`, tâche 6) — un résultat de la mesure, pas une tâche restée incomplète.
+
+## Le mur du chapitre 4 tient à deux constantes, pas une
+
+C'est le résultat le plus important de cette section, et il dépasse ce seul bouton.
+
+Le point diagnostic `rewardPerChapter = 1,00` isole, par construction, l'effet du facteur
+`rewardPerChapter` : à `1,00`, `Math.pow(1, n) = 1` pour tout chapitre `n`, le revenu par salle
+est donc identique aux quatre chapitres, et toute forme observée dans les marges provient
+uniquement de la difficulté (les deux `bot.scaling.*`, gelés à `spinPerChapter = 1,05` et
+`attackPerChapter = 1,10` sur tout ce balayage). Or à ce point, la courbe de coût marginal est
+**plate** : `+0,13 / +0,13 / +0,12` — aucun écart au-dessus du plancher de bruit de 0,04 h entre
+les trois chapitres. **La difficulté seule, à la valeur de `spinPerChapter` désormais retenue,
+ne produit pas le mur du chapitre 4.**
+
+Ce résultat prend tout son sens à côté de celui de la tâche 5 : à `spinPerChapter = 1,02` (la
+valeur qui était en place *avant* cette passe), avec `rewardPerChapter` alors gelé à 1,15, le
+mur n'était déjà pas tenu de façon robuste — chapitre 4 le moins cher des trois sur un jeu de
+graines disjoint sur trois. Les deux mesures, prises ensemble, disent que ni la difficulté seule
+(`rewardPerChapter = 1,00`, cette tâche) ni l'économie seule à son ancienne valeur de difficulté
+(`spinPerChapter = 1,02`, tâche 5) ne suffit à tenir le mur — il faut les deux constantes
+retenues ensemble (`spinPerChapter = 1,05` **et** `rewardPerChapter > 1,00`, concrètement 1,15)
+pour que le chapitre 4 se détache mesurablement des chapitres 2 et 3. Ce projet n'avait jamais
+mesuré cela avant cette passe.
+
+**À ne pas lire au-delà de ce qui est mesuré** : ceci n'établit ni une carte à deux dimensions du
+domaine (`spinPerChapter × rewardPerChapter` n'a été balayé qu'à un seul point croisé,
+`spin = 1,05` fixe pendant ce balayage-ci de `rewardPerChapter`, `rewardPerChapter = 1,15` fixe
+pendant celui de `spinPerChapter` à la tâche 5), ni un seuil précis pour aucune des deux
+constantes en dessous duquel le mur casserait. Ce qui est mesuré, précisément : à `spin = 1,05`,
+`rewardPerChapter = 1,00` donne une courbe plate ; à `rewardPerChapter = 1,15`,
+`spin = 1,02` ne tient pas le mur de façon robuste. Deux points, pas une surface.
+
+## L'économie n'a pas bougé dans cette passe
+
+Ligne à part, parce qu'elle contraste avec le reste de la passe : les deux constantes
+d'économie de ce mandat, `rewardBase` (104, tâche 6) et `rewardPerChapter` (1,15, cette tâche),
+sont toutes deux **confirmées**, sans changement. Ce sont les trois constantes de combat
+(`damageK`, `spinPerChapter`, `attackPerChapter`) qui avaient dérivé sous `fc827ee` et qu'il a
+fallu reposer (tâches 4 et 5). Rappel utile pour la suite : le trouble venait de la détection de
+collision, un mécanisme de combat — l'économie n'y était pour rien, et la mesure le confirme
+plutôt que de le supposer.
+
+## Ce que ce balayage a appris
+
+### 1. Un contrôle d'instrument qui passe deux fois de suite cesse d'être un simple garde-fou — il devient une propriété exploitable du bouton
+
+Le contrôle « chapitre 1 identique » a été conçu comme une vérification de non-régression (la
+tâche 5 l'a introduit pour cette raison). Ici, il a fait plus : parce qu'il passe avec une
+**égalité exacte**, pas seulement une égalité sous le plancher de bruit, il permet de savoir
+*avant* de départager qu'aucun des trois départages numérotés ne pourra rien séparer — sans
+avoir à mesurer chacun des sept candidats sur ce point pour le découvrir. Un bouton dont
+l'exposant vaut 0 au chapitre 1 rend structurellement caduques les trois départages qui ne
+portent que sur le chapitre 1.
+
+### 2. Une confirmation de forme obtenue "par accident" reste une confirmation
+
+Le balayage de forme sur jeux disjoints qui départage cette section n'a pas été mesuré pour
+cette tâche : c'est celui de la tâche 5, qui gelait `rewardPerChapter` à 1,15 en balayant
+`spinPerChapter`. Le hasard des deux mandats (l'un balayait `spin` à `rewardPerChapter` fixé,
+l'autre balaie `rewardPerChapter` à `spin` fixé) a produit un point de recouvrement exact. Ce
+n'est pas moins rigoureux qu'une mesure faite exprès pour cette tâche — c'est la même mesure,
+au même point, et il aurait été un gaspillage de la relancer. Mais ça ne se généralise pas :
+sans ce recouvrement fortuit, aucun des sept candidats n'aurait eu de confirmation sur jeux
+disjoints, et la règle de repli aurait dû s'appliquer à un groupe où le membre retenu n'aurait
+eu, lui non plus, qu'une mesure canonique unique — toujours suffisant pour la règle de repli
+(elle ne demande pas de confirmation, seulement l'absence de tout candidat mesurément
+supérieur), mais moins confortable.
+
+### 3. Le mur du chapitre 4 n'est la propriété d'aucune constante seule — c'est la première fois que cette passe le mesure directement
+
+Les quatre tâches précédentes de cette passe ont chacune testé un bouton à la fois, combat gelé
+ou économie gelée selon le temps. Le point diagnostic de cette tâche (`rewardPerChapter = 1,00`)
+est le premier de la passe à isoler l'effet de la difficulté seule sur la forme de la courbe, et
+il montre qu'elle ne suffit pas. Mis à côté du résultat de la tâche 5 sur `spinPerChapter =
+1,02`, la conclusion — deux constantes, une de combat et une d'économie, sont chacune
+nécessaires et ni l'une ni l'autre seule suffisante — est un résultat que la structure de cette
+passe (un bouton à la fois) ne pouvait produire qu'à la toute fin, en mettant deux sections en
+regard l'une de l'autre.
+
+## Lecture des garde-fous et départages à la valeur retenue (`rewardPerChapter = 1,15`)
+
+| Garde-fou / départage | État | Mesure |
+|---|---|---|
+| 1. Salle 10 la plus meurtrière — 4 chapitres | **TENU** | `oui×4` |
+| 2. Passivité « jamais » | **TENU** | jamais en 20 h simulées |
+| 3. Premier coffre immédiat | **TENU** | 0,00 h |
+| 4. Verrou du châssis actif | **TENU** | actif |
+| 5. 40/40 graines, 4 chapitres | **TENU** | `40/40/40/40` |
+| contrainte de signe — domaine `> 1,0` | **NON ROUVERTE** | `0,90` et `1,00` diagnostics, jamais candidats |
+| interne — points intérieurs seulement | **DÉCIDE** (exclut `1,20`) | voisin `1,25` casse GF1/GF5 |
+| 6. Écart châssis (départage) | ne peut pas séparer | ×4,88, identique aux 7 candidats (exposant 0 au ch. 1) |
+| 7. Salle 10 ch. 1 (départage) | ne peut pas séparer | 46,40 s, identique aux 7 candidats |
+| 8. Durée du chapitre 1 (départage) | ne peut pas séparer | 0,37 h, identique aux 7 candidats |
+| forme — confirmée sur jeux disjoints | **DÉCIDE** | seul `1,15` confirmé (recouvrement avec la tâche 5) ; `1,18` (meilleur du relevé canonique) ne bat `1,15` que de 0,03 h, sous le plancher |
+| repli — palier indécis → valeur commitée conservée | **DÉCIDE** | 1,15 déjà membre du groupe, et seul membre confirmé |
+
+## Rapport complet à la valeur retenue (`econ.rewardPerChapter = 1,15`, quarante graines)
+
+```
+=== Calibration — 40 graines ===
+Premier coffre ouvert    : médiane 0.00 h
+
+--- Chapitre 1 : validé par 40/40 graines · 0.37 h cumulées (+0.37 h) · 17.00 descentes · salle la plus meurtrière [10,229]
+    salle 10 la plus meurtrière : oui
+    (lecture par tentative : salle 10, 85 % de létalité)
+    salle 1 : 4.50 s  (vidée 730 fois, morts 0) · 0 % létalité/tentative
+    salle 2 : 4.30 s  (vidée 730 fois, morts 0) · 0 % létalité/tentative
+    salle 3 : 5.20 s  (vidée 727 fois, morts 3) · 0 % létalité/tentative
+    salle 4 : 9.80 s  (vidée 722 fois, morts 5) · 1 % létalité/tentative
+    salle 5 : 10.50 s  (vidée 675 fois, morts 47) · 7 % létalité/tentative
+    salle 6 : 11.10 s  (vidée 612 fois, morts 63) · 9 % létalité/tentative
+    salle 7 : 12.30 s  (vidée 509 fois, morts 103) · 17 % létalité/tentative
+    salle 8 : 13.50 s  (vidée 398 fois, morts 111) · 22 % létalité/tentative
+    salle 9 : 14.60 s  (vidée 269 fois, morts 129) · 32 % létalité/tentative
+    salle 10 : 46.40 s  (vidée 40 fois, morts 229) · 85 % létalité/tentative
+
+--- Chapitre 2 : validé par 40/40 graines · 0.49 h cumulées (+0.12 h) · 3.00 descentes · salle la plus meurtrière [10,93]
+    salle 10 la plus meurtrière : oui
+    (lecture par tentative : salle 10, 70 % de létalité)
+    salle 1 : 4.40 s  (vidée 161 fois, morts 0) · 0 % létalité/tentative
+    salle 2 : 4.20 s  (vidée 161 fois, morts 0) · 0 % létalité/tentative
+    salle 3 : 4.90 s  (vidée 159 fois, morts 2) · 1 % létalité/tentative
+    salle 4 : 9.50 s  (vidée 156 fois, morts 3) · 2 % létalité/tentative
+    salle 5 : 10.00 s  (vidée 153 fois, morts 3) · 2 % létalité/tentative
+    salle 6 : 10.50 s  (vidée 145 fois, morts 8) · 5 % létalité/tentative
+    salle 7 : 12.80 s  (vidée 140 fois, morts 5) · 3 % létalité/tentative
+    salle 8 : 13.80 s  (vidée 138 fois, morts 2) · 1 % létalité/tentative
+    salle 9 : 14.10 s  (vidée 133 fois, morts 5) · 4 % létalité/tentative
+    salle 10 : 50.20 s  (vidée 40 fois, morts 93) · 70 % létalité/tentative
+
+--- Chapitre 3 : validé par 40/40 graines · 0.64 h cumulées (+0.15 h) · 3.00 descentes · salle la plus meurtrière [10,90]
+    salle 10 la plus meurtrière : oui
+    (lecture par tentative : salle 10, 69 % de létalité)
+    salle 1 : 4.50 s  (vidée 175 fois, morts 0) · 0 % létalité/tentative
+    salle 2 : 3.90 s  (vidée 175 fois, morts 0) · 0 % létalité/tentative
+    salle 3 : 4.80 s  (vidée 169 fois, morts 6) · 3 % létalité/tentative
+    salle 4 : 8.50 s  (vidée 162 fois, morts 7) · 4 % létalité/tentative
+    salle 5 : 9.90 s  (vidée 161 fois, morts 1) · 1 % létalité/tentative
+    salle 6 : 10.10 s  (vidée 152 fois, morts 9) · 6 % létalité/tentative
+    salle 7 : 11.90 s  (vidée 145 fois, morts 7) · 5 % létalité/tentative
+    salle 8 : 13.30 s  (vidée 137 fois, morts 8) · 6 % létalité/tentative
+    salle 9 : 14.00 s  (vidée 130 fois, morts 7) · 5 % létalité/tentative
+    salle 10 : 49.40 s  (vidée 40 fois, morts 90) · 69 % létalité/tentative
+
+--- Chapitre 4 : validé par 40/40 graines · 0.85 h cumulées (+0.21 h) · 5.00 descentes · salle la plus meurtrière [10,141]
+    salle 10 la plus meurtrière : oui
+    (lecture par tentative : salle 10, 78 % de létalité)
+    salle 1 : 4.30 s  (vidée 319 fois, morts 0) · 0 % létalité/tentative
+    salle 2 : 3.10 s  (vidée 319 fois, morts 0) · 0 % létalité/tentative
+    salle 3 : 4.90 s  (vidée 308 fois, morts 11) · 3 % létalité/tentative
+    salle 4 : 8.40 s  (vidée 295 fois, morts 13) · 4 % létalité/tentative
+    salle 5 : 9.60 s  (vidée 274 fois, morts 21) · 7 % létalité/tentative
+    salle 6 : 9.10 s  (vidée 249 fois, morts 25) · 9 % létalité/tentative
+    salle 7 : 11.80 s  (vidée 209 fois, morts 40) · 16 % létalité/tentative
+    salle 8 : 13.40 s  (vidée 192 fois, morts 17) · 8 % létalité/tentative
+    salle 9 : 14.10 s  (vidée 181 fois, morts 11) · 6 % létalité/tentative
+    salle 10 : 52.10 s  (vidée 40 fois, morts 141) · 78 % létalité/tentative
+
+Garde-fou passivité      : jamais — doit rester très au-dessus de la référence
+
+=== Comparatif châssis — chapitre 1 (40 graines) ===
+Brasier Solaire    (equilibre ) : 17.00 runs · 0.37 h · salle la plus meurtrière [10,229]
+Typhon Primal      (attaque   ) : 39.00 runs · 0.63 h · salle la plus meurtrière [10,379]
+Carapace Abyssale  (defense   ) : 8.00 runs · 0.26 h · salle la plus meurtrière [10,97]
+Tigre Foudre       (endurance ) : 39.00 runs · 0.89 h · salle la plus meurtrière [9,662]
+Écart meilleur/pire (runs) : 39/8 = ×4.88 (cible : < ×2)
+
+=== Verrou du châssis — contre-pioche du triangle (40 graines) ===
+rebascule à chaque salle        : 39.00 runs · 0.63 h
+même choix, tenu jusqu'au boss  : 39.00 runs · 0.63 h
+Verrou actif : changer de châssis en cours de descente ne rapporte rien.
+```
+
+Relevé obtenu par exécution directe de `npm run calibrate` sur `src/content/balance.json`
+inchangé (aucune ligne éditée par cette tâche) — identique au chiffre près au point
+`rewardPerChapter = 1,15` du balayage (`ecart.x = 4,88`, `s10 = 46,40 s`, `ch1 = 0,37 h / 17
+descentes`, marges `+0,12 / +0,15 / +0,21`) et identique au rapport complet déjà relevé aux
+trois sections précédentes de ce journal (`damageK`, `spinPerChapter`/`attackPerChapter`,
+`rewardBase`), puisqu'aucune des cinq constantes de la passe n'a changé depuis la tâche 6 :
+contrôle croisé passé, à quatre reprises indépendantes.
+
+`npm run test` : 490 tests, 35 fichiers, tous verts.
+
+## Ce qui reste en dette après cette tâche
+
+- **Trois des sept candidats intérieurs (`1,05`, `1,08`, `1,10`) n'ont qu'une mesure canonique
+  unique**, jamais vérifiée sur jeux disjoints — `1,08` inverse même l'ordre ch.3/ch.4 sur ce
+  seul relevé (+0,16 contre +0,12), et `1,10` ne sépare pas ch.3 de ch.4 (écart de 0,01 h, dans
+  le plancher). Aucun des deux n'est écarté par une mesure directe : ils restent simplement
+  moins bien caractérisés que `1,15`, qui a hérité sa confirmation d'un recouvrement fortuit
+  avec la tâche 5. Une passe future qui rouvrirait ce bouton gagnerait à les tester sur jeux
+  disjoints avant de les départager pour de bon.
+- **`spinPerChapter × rewardPerChapter` n'a jamais été balayé en deux dimensions** : chaque
+  constante a été mesurée à l'autre fixée à sa valeur retenue, jamais les deux variées
+  ensemble. Le résultat « le mur tient à deux constantes » (ci-dessus) s'appuie sur deux points
+  du domaine, pas sur une carte — une carte 2D serait le prolongement naturel si une passe
+  future veut caractériser précisément où, entre `spin = 1,02` et `spin = 1,05`, le mur devient
+  robuste.
+- **Domaine `≤ 1,0`** : `0,90` et `1,00` restent, par construction du mandat, hors de portée de
+  toute reconsidération de `rewardPerChapter` tant que le farm hors-ligne reste verrouillé sur
+  le meilleur chapitre validé (pilier n° 5). Ce n'est pas une dette de mesure — c'est la
+  contrainte de signe, qui ne se rouvre pas sur la seule performance d'un point.
+- **Les cinq constantes du mandat de cette passe sont maintenant toutes reposées** :
+  `combat.damageK` (1,30 → 1,10, tâche 4), `bot.scaling.spinPerChapter` (1,02 → 1,05, tâche 5),
+  `bot.scaling.attackPerChapter` (confirmée 1,10, tâche 5), `econ.rewardBase` (confirmée 104,
+  tâche 6), `econ.rewardPerChapter` (confirmée 1,15, cette tâche). Deux valeurs ont bougé, trois
+  ont été confirmées inchangées — les cinq sous la même physique de collision, celle de
+  `fc827ee`, mesurée avec le même protocole (quarante graines, cinq garde-fous durs, départages
+  dans le même ordre) plutôt que supposée d'un bloc à l'autre.
