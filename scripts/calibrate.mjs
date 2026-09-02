@@ -18,7 +18,24 @@ import { fr } from '../src/i18n/fr.ts';
 
 const toupieLabel = (id) => fr[`toupie.${id}`];
 
-const SEEDS = [1, 7, 42, 1337, 90210, 2, 13, 271, 4242, 65535];
+// Quarante graines, et non dix. Mesuré le 2026-09-02 : à dix, le coût marginal
+// d'un chapitre varie de +0,04 à +0,20 h entre jeux de graines DISJOINTS, sans
+// qu'aucune constante d'équilibrage ait bougé — la colonne était du bruit, et
+// deux conclusions du dépôt reposaient dessus. À quarante l'étendue tombe à
+// 0,02 h ; à quatre-vingts elle ne bouge plus. Quarante est le palier, et le
+// plancher résiduel de ±0,02 h fixe la règle : un écart de marge sous ~0,04 h
+// n'est pas une mesure.
+//
+// Les dix premières sont l'ancien jeu, conservé tel quel pour que toute mesure
+// publiée avant cette date reste un sous-ensemble de celle-ci. Les trente
+// suivantes valent `(k + 1) * 7919 + 13` pour k de 0 à 29 — 7919 est premier,
+// ce qui écarte les graines les unes des autres sans motif dans les bits bas.
+const SEEDS = [
+  1, 7, 42, 1337, 90210, 2, 13, 271, 4242, 65535,
+  7932, 15851, 23770, 31689, 39608, 47527, 55446, 63365, 71284, 79203,
+  87122, 95041, 102960, 110879, 118798, 126717, 134636, 142555, 150474, 158393,
+  166312, 174231, 182150, 190069, 197988, 205907, 213826, 221745, 229664, 237583,
+];
 const MAX_TICKS = 60 * 60 * 20 / TICK_S; // garde-fou : 20 h de jeu simulé
 // Ordre fixe, jamais celui d'un `Object.keys` : la file de butin doit se vider
 // pareil à chaque exécution du même seed, même si ce script n'est pas couvert

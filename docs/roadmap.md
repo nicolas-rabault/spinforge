@@ -210,14 +210,25 @@ lot, `764f220`, et ce ne sont plus ceux du dépôt.** `main` a livré entre-temp
 positions d'arrivée — et une toupie rapide traversait sa cible. Le commit mesure lui-même ce
 qu'il récupère : **97 chocs encaissés contre 78**, près d'un quart des collisions qui étaient
 perdues. Un autopilote qui encaisse un quart de chocs en plus meurt davantage, et tout
-l'équilibrage se déplace avec lui. Nouvelle ligne de base :
+l'équilibrage se déplace avec lui.
+
+**Seconde mise à jour, même date : le harnais passe de dix à quarante graines, et la ligne de
+base ci-dessous bouge une seconde fois sans qu'aucune constante d'équilibrage n'ait changé
+cette fois.** Mesuré le 2026-09-02 (`scripts/calibrate.mjs`) : à dix graines, le coût marginal
+d'un chapitre variait de +0,04 à +0,20 h entre jeux de graines disjoints, `fc827ee` figé et
+rien d'autre changé — la colonne « coût marginal » était en bonne partie du bruit
+d'échantillonnage. À quarante graines l'étendue tombe à 0,02 h ; à quatre-vingts elle ne bouge
+plus. Les valeurs à dix graines n'étaient donc pas fausses : elles étaient **imprécises**, et
+l'ordre des trois marges entre elles (ch. 2, ch. 3, ch. 4) en faisait partie — +0,12 h / +0,15 h
+/ +0,08 h à dix graines contre +0,10 h / +0,08 h / +0,10 h à quarante, l'ordre change d'un jeu
+à l'autre. Nouvelle ligne de base, à quarante graines :
 
 | | validé | coût cumulé | coût marginal | descentes | plus meurtrière (absolu) | garde-fou 1 | par tentative |
 |---|---|---|---|---|---|---|---|
-| ch. 1 | 10/10 | 0,42 h | +0,42 h | 20 | salle 10, 72 morts | oui | salle 10, 88 % |
-| ch. 2 | 10/10 | 0,54 h | +0,12 h | 2 | salle 10, 30 morts | oui | salle 10, 75 % |
-| ch. 3 | 10/10 | 0,69 h | +0,15 h | 3 | salle 10, 16 morts | oui | salle 10, 62 % |
-| ch. 4 | 10/10 | 0,77 h | +0,08 h | 5 | salle 10, 33 morts | oui | salle 10, 77 % |
+| ch. 1 | 40/40 | 0,40 h | +0,40 h | 20 | salle 10, 300 morts | oui | salle 10, 88 % |
+| ch. 2 | 40/40 | 0,51 h | +0,10 h | 3 | salle 10, 104 morts | oui | salle 10, 72 % |
+| ch. 3 | 40/40 | 0,58 h | +0,08 h | 3 | salle 10, 62 morts | oui | salle 10, 61 % |
+| ch. 4 | 40/40 | 0,68 h | +0,10 h | 3 | salle 10, 91 morts | oui | salle 10, 69 % |
 
 Inchangés : premier coffre 0,00 h · passivité jamais validée · verrou du châssis actif · salle
 10 la plus meurtrière dans les quatre chapitres. Vecteur de morts par salle du chapitre 1 :
