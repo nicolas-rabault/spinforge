@@ -128,9 +128,11 @@ ce projet l'a payé deux fois (jalons 1.5 et 2b).
 | ch. 4 | 10/10 | 0,94 h | +0,36 h | 6 | salle 10, 18 morts | oui | salle 10, 64 % |
 
 Premier coffre 0,00 h · passivité jamais validée en 20 h simulées · verrou du châssis actif ·
-écart entre châssis ×3,80 (dette inchangée, portée par le chapitre 1). **Le chapitre 1 est bit
-à bit inchangé** par tout le lot — son exposant vaut 0 dans les deux facteurs — vérifié à
-chaque mesure des deux passes (heures, descentes, vecteur de morts par salle
+écart entre châssis ×3,80 — inchangé *par ce lot-ci*, ce qui était le constat de l'époque ;
+il est depuis passé à ×10,80 sous l'effet de `fc827ee`, voir « Née de l'intégration » dans la
+dette du jalon 2.5. **Le chapitre 1 est bit à bit inchangé** par tout le lot — son exposant
+vaut 0 dans les deux facteurs — vérifié à chaque mesure des deux passes (heures, descentes,
+vecteur de morts par salle
 `0,0,1,0,10,9,21,18,15,23`, écart châssis, série contre-pioche) : c'est ce qui a transformé les
 quatre garde-fous du projet d'une comparaison approximative en une comparaison exacte. Détail
 des deux balayages : `docs/superpowers/plans/2026-09-01-calibration-chapitres.md`.
@@ -747,6 +749,49 @@ bloquant.
   5) pour une cible de ×2. Il se corrige par les profils de châssis — mais la spec
   d'intégration ferme explicitement cette porte (§ 6, « aucune décision de design du 2b
   rouverte »). À rouvrir dans une passe qui en aura le mandat.
+
+  **Aggravation mesurée le 2026-09-02 : l'écart est passé de ×3,80 à ×10,80.** Relevé sur
+  l'arbre où `main` vient d'être fusionné dans `jalon-3-lot-b`, dix graines, chapitre 1 :
+
+  | châssis | type | descentes | temps | salle la plus meurtrière |
+  |---|---|---|---|---|
+  | Carapace Abyssale | défense | **10** | 0,25 h | salle 10, 27 morts |
+  | Brasier Solaire | équilibre | 20 | 0,42 h | salle 10, 72 morts |
+  | Typhon Primal | attaque | 81 | 1,25 h | salle 10, 180 morts |
+  | Tigre Foudre | endurance | **108** | 2,07 h | salle 9, 338 morts |
+
+  Détail à ne pas lire de travers : le garde-fou « la salle 10 reste la salle la plus
+  meurtrière » se juge sur le châssis de mesure, et il tient dans les quatre chapitres. Mais
+  Tigre Foudre, lui, meurt désormais surtout en salle 9 — il n'atteint plus la salle 10 assez
+  souvent pour y mourir davantage. Cette passe n'a pas mesuré si c'était déjà le cas avant
+  `fc827ee` ; c'est à vérifier par qui reprendra l'écart.
+
+  Ce que ça veut dire pour un joueur, et c'est la seule formulation qui compte : **choisir
+  Tigre Foudre plutôt que Carapace Abyssale fait jouer un jeu 10,8 fois plus long pour
+  exactement le même contenu** — 108 descentes contre 10 pour valider le chapitre 1, 2,07 h
+  contre 0,25 h. La cible affichée est « < ×2 ». Un choix de départ que le jeu présente comme
+  cosmétique décide en réalité d'un ordre de grandeur de temps de jeu. Dans le même
+  mouvement, la létalité de la salle 10 au chapitre 1 (châssis de mesure) monte de **70 % à
+  88 % par tentative**.
+
+  **La cause est `fc827ee`, pas le lot B.** Le commit « le contact se cherche sur le trajet du
+  tick, plus sur son arrivée » récupère près d'un quart des collisions que la détection
+  discrète ratait (97 chocs encaissés contre 78). Un quart de chocs en plus frappe d'abord
+  ceux qui les encaissent mal, donc l'écart entre profils de châssis s'ouvre plus vite que la
+  difficulté moyenne : le châssis de mesure s'allonge de +31 % (0,32 h → 0,42 h) quand Tigre
+  Foudre passe des 19 descentes médianes citées plus haut à 108, soit ×5,7. Que ce soit
+  `fc827ee` et rien d'autre est **mesuré, pas déduit** : le ×10,80 sort identique de `main`
+  seul et de l'arbre fusionné, alors que le lot B ne touche à aucune constante de combat.
+
+  **La dette du jalon 3, lot A, prévoyait exactement ce cas** — « si la physique de collision
+  […] change encore, les cinq [constantes calibrées] doivent être revérifiées ». `fc827ee` est
+  un changement de physique de collision. La clause est donc déclenchée, et c'est la première
+  fois : voir la mise à jour de cette obligation dans « Dette connue (jalon 3, lot A) ».
+
+  **Rien n'est corrigé ici, et c'est délibéré.** Refermer cet écart demande de toucher aux
+  profils de châssis ou aux cinq constantes calibrées — une décision d'équilibrage qui revient
+  à l'auteur du jeu, pas à la passe d'intégration qui a constaté le déplacement. Ce qui est
+  livré ici est la mesure et l'alerte ; le mandat reste à donner.
 - **Les identités d'arène des chapitres 2 à 8** : le jalon 2.5 a livré le système de terrain,
   pas les huit arènes qui l'utilisent. Les chapitres 1 à 4 sont devenus atteignables au
   jalon 3, lot A ; leurs identités de terrain (murs élastiques, piliers mobiles, geysers…)
@@ -806,6 +851,17 @@ de ces points n'est bloquant.
   `bot.scaling.attackPerChapter` et `econ.rewardPerChapter` la rejoignent : si la physique de
   collision, le contenu de la salle 10, `arena.breach.ejectSpeed`, `boss.mass` ou le jeu de
   graines du harnais changent encore, les cinq doivent être revérifiées.
+
+  **Mise à jour (2026-09-02) : la clause s'est déclenchée, pour la première fois.** `fc827ee`
+  change la physique de collision — le contact se cherche sur le trajet du tick au lieu des
+  seules positions d'arrivée — et déplace les quatre chapitres avec elle (chapitre 1 : 0,32 h
+  en 9 descentes → 0,42 h en 20). Les cinq constantes sont donc **dues à remesure**, et aucune
+  ne l'a été : leurs paliers démontrés (`econ.rewardBase` dans 102–110, `combat.damageK` dans
+  1,2–1,6, `econ.rewardPerChapter` dans `[1,13 ; 1,20]`, `bot.scaling.spinPerChapter` comme
+  seul point intérieur de `[1,00 ; 1,20]`) ont tous été établis sous l'ancienne détection de
+  contact, et un palier ne se transporte pas d'un modèle de combat à l'autre. C'est une passe
+  d'équilibrage à part entière, avec son mandat et ses deux temps — combat puis économie,
+  jamais dans le même commit — pas un correctif d'intégration.
 
 **Interface**
 - Rejouer son propre meilleur chapitre affiche encore « Le chapitre N+1 s'ouvre »
