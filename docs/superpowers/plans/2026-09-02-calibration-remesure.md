@@ -115,93 +115,154 @@ conclusion — c'est la robustesse du garde-fou 1 après `fc827ee` qui domine, p
 grille. **Le choix repose donc entièrement sur les départages**, exactement la structure prévue
 par la spec (§ 4) pour ce cas.
 
-## L'analyse en bandes de l'écart entre châssis (départage 6)
+## Correctifs à ce journal (relecture, cycle 1/5)
 
-Le départage 6 « arbitre en bandes, pas en valeurs ponctuelles » (ruling du contrôleur) : son
-étendue mesurée entre jeux de graines disjoints vaut 1,45 à dix graines, 2,80 à quarante,
-1,80 à quatre-vingts — elle ne décroît **pas** avec plus de graines, parce que c'est un rapport
-de médianes de comptes entiers de descentes. Deux points dont l'écart diffère de moins d'un
-facteur ~2 sont donc à égalité sur ce critère.
+Une relecture a mesuré directement ce que la version précédente de ce journal supposait, et a
+trouvé quatre erreurs factuelles en plus d'une méthode à remplacer. Les quatre, pour traçabilité
+(la méthode est traitée dans la section suivante) :
 
-Les quatorze points se regroupent en quatre bandes internes, chacune tenue par un facteur
-interne bien sous 2 :
+1. **« ×2,73 — deux fois le seuil de bruit »** contredisait le chiffre donné trois lignes plus
+   haut dans le même document : l'étendue mesurée à quarante graines vaut 2,80, pas ~2. ×2,73
+   est donc *sous* le seuil mesuré, pas le double — l'inverse de ce qui était écrit. Retiré,
+   remplacé par la mesure directe ci-dessous.
+2. Le maximum de l'ancienne « bande A » était donné comme « 1,10, ×4,88 », alors que le tableau
+   du balayage brut, trois sections plus haut dans ce même document, montre `1,00 → ×5,14` comme
+   le maximum réel de ce groupe de points. Contradiction interne. Retiré avec la section qui la
+   portait.
+3. « ×4,88 … le meilleur atteignable dans tout le domaine mesuré » était faux : ×3,83 à 0,80,
+   dans le même tableau, est plus bas. Corrigé au § 4 de « ce que le balayage a appris »
+   ci-dessous.
+4. Le plancher de bruit du départage 7 n'était jamais chiffré, et « aucun bruit détecté »
+   s'appuyait sur une monotonie visuelle, pas sur une mesure d'étendue. Le chiffre existait déjà
+   dans la spec (§ 3) et n'avait pas été cité : 1,4 s d'étendue entre jeux disjoints à quarante
+   graines pour cette colonne. Cité dans le départage 7 corrigé, ci-dessous.
 
-| bande | domaine `damageK` | écart châssis | facteur interne (max/min) |
-|---|---|---|---|
-| A | 0,80 – 1,10 | ×3,83 – ×5,14 | ×1,34 |
-| B | 1,15 – 1,30 | ×8,56 – ×10,44 | ×1,22 |
-| C | 1,40 – 1,50 | ×13,30 – ×17,73 | ×1,33 |
-| D | 1,60 – 1,70 | ×35,00 – ×48,42 | ×1,38 |
+Erreur de langue relevée également (accord de genre, « le déplacement … gratuite ») : disparue
+avec la phrase qui la portait, reformulée plus bas. Une cinquième erreur, dans le message du
+commit `cee2661` déjà poussé dans l'historique, ne peut pas être corrigée sans réécrire un
+commit existant — ce que ce projet interdit. Elle reste dans l'historique telle quelle, notée
+ici pour mémoire : « … les garde-fous ne discriminent rien sur ce bouton — c'est le choix repose
+entièrement sur les départages » aurait dû lire « … le choix repose entièrement sur les
+départages ».
 
-Entre les extrêmes des bandes, l'écart cesse d'être du bruit : bande A contre bande B au plus
-loin (×3,83 contre ×10,44) vaut un facteur ×2,73 — deux fois le seuil de bruit. Bande A contre
-la valeur commitée 1,30 (×3,83 contre ×9,30) vaut ×2,43, un écart réel, pas du bruit. **Bande A
-referme donc mesurablement plus l'écart que les bandes B, C et D**, et c'est elle que le
-départage 6 retient comme région candidate.
+## Correction méthodologique : le départage 6 devient une mesure directe
 
-À l'intérieur de la bande A, en revanche, les six points sont à égalité stricte : le rapport
-entre son minimum (0,80, ×3,83) et son maximum (1,10, ×4,88) vaut ×1,27, très sous le seuil de
-2. C'est très précisément l'exemple donné en consigne — **interdit de choisir entre ×3,83 et
-×4,88 sur leur différence** — et il tombe exactement sur les deux bornes de la bande A mesurée
-ici. Note pour la suite : la frontière entre bandes A et B n'est pas nette au niveau du point
-(1,10 à ×4,88 et 1,15 à ×9,00 seraient eux-mêmes à égalité au sens strict du facteur 2, un
-artefact de transitivité de la règle du facteur), mais les **extrêmes** des deux bandes sont,
-eux, séparés par une mesure réelle. Le départage 6 tranche donc entre bandes, pas entre voisins
-immédiats — conforme à la règle.
+Le départage 6 avait d'abord été appliqué avec la règle « facteur ~2 = à égalité », tirée d'une
+seule étendue mesurée (2,80 à quarante graines, § 3 de la spec, à `damageK` alors figé) et
+extrapolée à toutes les paires de points de la grille sans jamais être vérifiée directement là
+où elle servait à décider. Une relecture a demandé la mesure directe plutôt que l'extrapolation :
+quatre jeux **disjoints** de quarante graines à `damageK = 1,10` et `damageK = 1,30` (le jeu
+canonique, plus trois jeux `k = 100..139`, `200..239`, `300..339`).
 
-**Départage 6 : la bande A (`damageK` ∈ [0,80 ; 1,10], six points) est retenue comme région
-candidate ; les six points de la bande restent à égalité entre eux.** Passage au départage 7.
+| | jeu canonique | `k=100` | `k=200` | `k=300` | étendue |
+|---|---|---|---|---|---|
+| écart châssis à 1,10 | ×4,88 | ×6,63 | ×6,38 | ×5,33 | `[×4,88 ; ×6,63]` |
+| écart châssis à 1,30 | ×9,30 | ×8,90 | ×10,78 | ×10,78 | `[×8,90 ; ×10,78]` |
+| salle 10 ch. 1 à 1,10 | 46,4 s | 46,1 s | 47,6 s | 42,4 s | `[42,4 ; 47,6]` |
+| salle 10 ch. 1 à 1,30 | 36,8 s | 37,0 s | 39,2 s | 40,7 s | `[36,8 ; 40,7]` |
+| descentes ch. 1 à 1,10 | 17 | 16 | 16 | 16 | `[16 ; 17]` |
+| descentes ch. 1 à 1,30 | 20 | 19 | 18 | 20 | `[18 ; 20]` |
 
-## Le départage 7 : la durée de la salle 10 du chapitre 1
+**Les deux distributions de l'écart châssis ne se recouvrent à aucun point** :
+`[×4,88 ; ×6,63]` contre `[×8,90 ; ×10,78]`. C'est une mesure directe, pas une extension de
+l'heuristique — et elle **contredit** l'heuristique : la règle du facteur ~2 aurait déclaré
+×6,63 (le pire jeu à 1,10) et ×8,90 (le meilleur jeu à 1,30) à égalité (facteur 1,34, sous 2),
+alors que les distributions complètes ne se touchent jamais. **Une heuristique a été remplacée
+par une mesure, et la mesure l'a contredite.** C'est le résultat le plus important de ce
+correctif, plus important que la valeur retenue elle-même : la discipline « arbitrer en bandes,
+pas au centième » était la bonne discipline, mais son seuil numérique (« facteur ~2 ») avait été
+extrapolé d'une seule étendue mesurée à une seule valeur de `damageK`, jamais vérifié à
+l'endroit précis où il servait à trancher entre deux candidats.
 
-Cible de cahier des charges ~45 s, borne dure interne au départage à 60 s (un point qui la
-dépasse perd sur ce critère sans être rayé du palier), et ne pas rendre le boss « expédié ».
-Sur les six points de la bande A :
+### Départage 6, mesuré : quatre points bas à égalité entre eux, mesurablement sous 1,30
 
-| `damageK` | salle 10 ch. 1 | sous 60 s ? | écart à la cible ~45 s |
-|---|---|---|---|
-| 0,80 | 68,20 s | **non — perd** | — |
-| 0,90 | 62,50 s | **non — perd** | — |
-| 0,95 | 58,50 s | oui | 13,5 s |
-| 1,00 | 52,50 s | oui | 7,5 s |
-| 1,05 | 49,40 s | oui | 4,4 s |
-| **1,10** | **46,40 s** | **oui** | **1,4 s** |
+Sur le relevé canonique (une mesure par point), quatre valeurs ont un écart châssis bas et
+proche : 0,95 (×4,25), 1,00 (×5,14), 1,05 (×5,00), 1,10 (×4,88) — un facteur interne de ×1,21
+(5,14 / 4,25) entre elles, sous toute estimation de bruit disponible pour ce critère (1,45 à
+2,80 selon le jeu de graines). **Elles sont à égalité entre elles.**
 
-**0,80 et 0,90 perdent sur ce critère** : 68,2 s et 62,5 s dépassent la borne de 60 s — la
-salle 10 y redevient un combat long, à l'opposé du terrain conquis par `fc827ee`. Ils restent
-dans le palier (garde-fou dur non touché), mais ils perdent le départage.
+Seule la paire {1,10 ; 1,30} a été directement remesurée sur quatre jeux disjoints ; c'est elle
+qui établit le non-recouvrement ci-dessus. Les trois autres points bas (0,95 · 1,00 · 1,05)
+n'ont qu'une mesure canonique chacun — mais leurs valeurs (×4,25 à ×5,14) sont du même ordre que
+celle de 1,10 (×4,88) et loin sous le plancher mesuré de 1,30 (×8,90) : l'extension à ces trois
+points est prudente, pas un recouvrement fortuit avec la zone haute. 0,80 et 0,90 partagent
+cette zone basse sur le relevé canonique (×3,83 et ×3,86) mais n'ont pas été remesurés sur jeux
+disjoints — la question ne se pose pas pour eux, puisqu'ils sont éliminés au départage suivant
+sur un tout autre critère.
 
-Sur les quatre survivants, la série est **strictement monotone et continue sur les quatorze
-points de la grille** (68,20 · 62,50 · 58,50 · 52,50 · 49,40 · 46,40 · 43,40 · … · 28,30 s, sans
-une seule inversion) : ce n'est pas du bruit de graines, c'est l'effet mesuré, direct et régulier
-de `damageK` sur la vitesse à laquelle la salle 10 se termine. **1,10 est le point le plus
-proche de la cible de 45 s** (46,40 s, à 1,4 s), loin devant 1,05 (4,4 s d'écart) et *a
-fortiori* devant 1,00 et 0,95.
+**Départage 6 (mesuré) : `{0,95 ; 1,00 ; 1,05 ; 1,10}` sont à égalité entre eux, et
+mesurablement sous 1,30.**
 
-**Le conflit de départages anticipé par la spec (§ 6.1) se vérifie ici, à l'échelle de la bande
-A** : refermer l'écart entre châssis (départage 6) pousse vers le bas de la grille — mais le
-départage 6 est à égalité sur toute la bande A, donc il ne pousse nulle part *à l'intérieur*
-de la bande. Garder le boss près de 45 s (départage 7) pousse, lui, vers le **haut** de la
-bande A — et c'est un vrai signal, pas du bruit. Le conflit ne se résout donc pas par un
-compromis entre les deux poussées : il se résout parce qu'un des deux départages est neutre
-sur la région où l'autre discrimine.
+## Le départage 7, relu littéralement : une borne, pas une cible de proximité
 
-**Départage 7 décide : `damageK = 1,10`.**
+Le journal initial appliquait à ce critère une lecture « le plus proche de 45 s », que le texte
+de la spec (§ 4) **n'énonce pas**. Sa formulation exacte : « départage : à palier égal, préférer
+le point qui reste sous 60 s et ne descend pas au point de rendre le boss expédié ». C'est une
+borne des deux côtés, pas une fonction à minimiser autour de 45 s — le chiffre ~45 s (§ 2.1) sert
+à motiver *pourquoi* la borne existe, pas à fournir une cible de proximité pour le départage.
+**Défaut de la spec, pas seulement de sa lecture ici** : le § 2.1 présente précisément 37,6 s
+comme la cible ~45 s « tenue pour la première fois », et la valeur commitée avant cette tâche —
+1,30, mesurée à 36,8 s à quarante graines — est quasiment ce chiffre. Les deux candidats
+(1,10 à 46,4 s et 1,30 à 36,8 s) satisfont donc également « sous 60 s, sans rendre le boss
+expédié » : aucun des deux n'est plus conforme à la spec que l'autre, parce que la spec ne
+demande pas une proximité à 45 s, elle demande de rester dans une plage. **La durée du boss ne
+peut donc pas être la raison du déplacement : les deux valeurs la tiennent.**
 
-Le départage 8 (durée du chapitre 1, indicative) n'a pas eu besoin d'être invoqué.
+Sur les six points de la zone basse (relevé canonique) :
 
-## Valeur retenue
+| `damageK` | salle 10 ch. 1 | sous 60 s, non expédié ? |
+|---|---|---|
+| 0,80 | 68,20 s | **non — perd** |
+| 0,90 | 62,50 s | **non — perd** |
+| 0,95 | 58,50 s | oui |
+| 1,00 | 52,50 s | oui |
+| 1,05 | 49,40 s | oui |
+| 1,10 | 46,40 s | oui |
+
+0,80 et 0,90 dépassent la borne de 60 s et perdent le départage — un vrai effet, pas du bruit :
+l'étendue mesurée de la salle 10 du chapitre 1 entre jeux disjoints à quarante graines est de
+**1,4 s** (§ 3 de la spec), et 68,2 s / 62,5 s dépassent la borne de 8,2 s et 2,5 s
+respectivement, plusieurs largeurs de bruit. Au-delà de cette élimination, **le critère ne
+sépare rien** : {0,95 ; 1,00 ; 1,05 ; 1,10} passent tous la borne, et 1,30 (36,8 s) aussi. Le
+même repère de bruit joue aussi dans l'autre sens : 46,4 s (1,10) contre 36,8 s (1,30) fait 9,6 s
+d'écart, soit environ **sept largeurs de bruit** — un effet réel de `damageK` sur la durée du
+combat, mais qui ne dit rien sur lequel des deux respecte *mieux* une borne qu'ils respectent
+déjà tous les deux.
+
+**Départage 7 : élimine 0,80 et 0,90. Ne sépare pas les quatre survivants entre eux, ni de
+1,30.**
+
+## Départage 8 : la durée du chapitre 1
+
+| `damageK` | ch. 1 |
+|---|---|
+| 0,95 | 0,40 h |
+| 1,00 | 0,37 h |
+| 1,05 | 0,37 h |
+| 1,10 | 0,37 h |
+
+Étendue observée sur ces quatre points : 0,03 h. L'étendue mesurée entre jeux disjoints à
+quarante graines pour cette colonne (§ 3 de la spec) est de **0,06 h**. Les quatre valeurs
+tiennent largement dans ce plancher de bruit : **à égalité**.
+
+## Le départage terminal, et la valeur retenue
+
+Les trois départages numérotés laissent `{0,95 ; 1,00 ; 1,05 ; 1,10}` à égalité. La règle qui
+tranche ici n'est pas une préférence, c'est une règle : **à mesure égale entre plusieurs
+candidats, on retient celui le plus proche de la valeur commitée.** Une constante ne se déplace
+que de la distance que la mesure exige, jamais plus — la même discipline que la borne 1 du
+mandat (l'étalon du lot B n'est pas une cible), appliquée ici à l'intérieur d'un groupe à égalité
+plutôt qu'à un jalon externe.
+
+Parmi `{0,95 ; 1,00 ; 1,05 ; 1,10}`, le plus proche de 1,30 est **1,10**.
 
 **`combat.damageK` : 1,30 → 1,10.**
 
-Décidée par le départage 7 après que le départage 6 a laissé les six points de la bande A
-(`[0,80 ; 1,10]`) à égalité. La bande A referme mesurablement l'écart entre châssis par rapport
-à la valeur commitée (×4,88 contre ×9,30, un facteur ×1,91 — sous le seuil de bande, donc à
-retenir avec prudence comme argument à lui seul ; mais ×3,83, le minimum de la bande, contre
-×9,30 vaut ×2,43, un écart réel). Le déplacement n'est donc pas gratuite : il est porté par une
-mesure qui dépasse le plancher de bruit du critère 6, puis tranché à l'intérieur de la bande par
-une mesure de durée qui, elle, ne connaît aucun plancher de bruit comparable dans ce relevé
-(monotonie parfaite sur les quatorze points).
+Le mouvement est porté par le départage 6 seul, désormais mesuré plutôt que supposé : les jeux
+disjoints établissent que le groupe bas ne recouvre pas la distribution de 1,30. Les départages
+7 et 8 ne poussent dans aucune direction à l'intérieur du groupe — ils confirment seulement
+qu'aucun des quatre n'est disqualifié. Le choix entre les quatre revient donc entièrement à la
+règle terminale.
 
 ## Ce que le balayage a appris, et qui vaut plus que la valeur retenue
 
@@ -217,51 +278,63 @@ ne peuvent plus servir à choisir *aucune* des cinq constantes de cette passe si
 ressemblent à celui-ci — c'est aux départages qu'il faut regarder d'abord, pas en dernier
 recours.
 
-### 2. La règle des bandes du départage 6 n'est pas un détail de méthode — elle a empêché un choix arbitraire sur six points
+### 2. Une heuristique de bruit, faute d'être vérifiée à l'endroit où elle sert, peut trancher dans le mauvais sens
 
-Sans elle, un relevé qui verrait ×3,83 à 0,80 et ×4,88 à 1,10 choisirait spontanément 0,80
-« parce que c'est plus bas ». C'est exactement le raisonnement que la règle interdit : la
-différence entre les deux tient dans le bruit résiduel du rapport de médianes (mesuré à 1,45–
-2,80 entre jeux disjoints), pas dans un effet de `damageK`. La règle a forcé le passage au
-départage suivant, qui lui, avait un signal réel (monotonie parfaite, pas de bruit détecté) —
-et qui a tranché en faveur du point le plus **haut** de la bande, pas le plus bas. Sans la
-règle des bandes, le raisonnement naïf aurait produit la conclusion opposée.
+La règle « facteur ~2 = à égalité » venait d'une seule mesure d'étendue (2,80 à quarante
+graines), extrapolée à toutes les paires de points de la grille sans jamais être vérifiée
+directement là où elle servait à décider. Remesurée sur quatre jeux disjoints exactement au
+point où elle tranchait (1,10 contre 1,30), elle s'est révélée trop large : les distributions
+réelles ne se recouvrent pas du tout, alors que l'heuristique aurait déclaré à égalité certaines
+paires de jeux (×6,63 contre ×8,90 : facteur 1,34, sous le seuil de 2). Ce que ça apprend,
+au-delà de ce bouton : **un seuil de bruit mesuré une fois, à une seule valeur du paramètre
+balayé, n'est pas transportable sans vérification** à un autre point du domaine — même quand la
+grandeur est structurellement la même (un rapport de médianes de comptes entiers). « Vérifie ton
+harnais avant d'accuser le code » (section précédente) a un analogue pour les seuils de
+décision : vérifie ton seuil à l'endroit où il tranche, pas seulement là où tu l'as mesuré.
 
-### 3. Le conflit entre « refermer l'écart » et « garder le boss près de 45 s », annoncé par la spec, se résout par une asymétrie de précision entre les deux critères, pas par un compromis
+### 3. Le conflit de départages anticipé par la spec ne s'est pas produit — parce que le départage 7 était mal lu
 
-Le départage 6 a une résolution grossière (facteur ~2) sur ce relevé ; le départage 7 a une
-résolution fine (le relevé ne montre aucune inversion sur quatorze points, l'écart à la cible se
-lit à la seconde près). Le conflit annoncé par la spec — refermer l'écart tire vers le bas,
-garder le boss près de 45 s tire vers le haut — ne s'est donc pas soldé par un compromis entre
-deux poussées de force comparable : le critère grossier a désigné une région large où il ne
-pousse plus nulle part, et c'est le critère fin qui a fait tout le travail de sélection du point
-à l'intérieur. Une passe future qui chercherait à « pondérer » les deux départages l'un contre
-l'autre partirait d'une prémisse fausse : ils n'opèrent pas à la même échelle de précision, donc
-pas dans le même registre de décision.
+La spec (§ 6.1) annonçait un conflit : refermer l'écart tire `damageK` vers le bas, garder le
+boss près de 45 s le tire vers le haut. Une version antérieure de ce journal a cru observer ce
+conflit et l'a résolu par une lecture du départage 7 — « le plus proche de 45 s » — que la spec
+n'écrit nulle part. Relu littéralement (« sous 60 s, sans rendre le boss expédié »), le
+départage 7 est une borne, pas une cible : il élimine 0,80 et 0,90 (au-delà de 60 s), mais il ne
+sépare **pas** les quatre survivants entre eux, ni même de la valeur commitée 1,30 — les deux
+tiennent la borne, et le § 2.1 de la spec le confirme de front en présentant 37,6 s comme la
+cible ~45 s « tenue pour la première fois » à la valeur d'alors. **Le conflit annoncé n'a jamais
+eu lieu, parce que l'un des deux départages ne pousse nulle part : la durée du boss ne peut pas
+être la raison du déplacement, puisque les deux candidats la respectent.** C'est le départage 6
+seul, désormais mesuré, qui porte tout le mouvement — et un départage terminal, nouveau et
+explicite (le plus proche de la valeur commitée), qui choisit 1,10 dans le groupe à égalité
+plutôt que 0,95 ou 1,00.
 
-### 4. L'écart entre châssis reste très au-dessus de la cible affichée (< ×2) — à la valeur retenue comme à toute autre valeur du domaine testé
+### 4. L'écart entre châssis à la valeur retenue n'est ni le meilleur du domaine, ni un pic — c'est un membre représentatif d'un groupe à égalité
 
-À `damageK = 1,10`, l'écart vaut ×4,88 — le meilleur atteignable dans tout le domaine mesuré
-(le minimum brut de la grille, ×3,83 à 0,80, est à égalité de bande, pas une amélioration
-mesurée), et il reste plus de deux fois la cible. Aucune valeur de `damageK` testée ne
-rapproche l'écart de ×2 : au mieux ×3,83, au pire ×48,42. C'est cohérent avec la borne 2 du
-mandat (les profils de châssis ne sont pas un bouton de cette passe) et avec la conséquence 3
-du § 3 de la spec : `damageK` est le premier levier de l'écart, mais son plancher observé reste
-loin de la cible. La fermeture de cet écart, si elle doit se faire, passe par le bloc `chassis`
-de `balance.json` — hors mandat ici, arbitrage de l'auteur à venir.
+À `damageK = 1,10`, l'écart mesuré vaut ×4,88 sur le relevé canonique (`[×4,88 ; ×6,63]` sur les
+quatre jeux disjoints). **Ce n'est pas le minimum du domaine testé** : 0,80 mesure ×3,83 sur le
+même relevé canonique, plus bas. Une version antérieure de ce journal affirmait « ×4,88, le
+meilleur atteignable dans tout le domaine mesuré » — c'était faux, et de la même famille que la
+surenchère que cette passe a déjà dû rétracter une fois (§ 2.3 de la spec, sur `fc827ee` et le
+budget de `verrou.mjs`) : une affirmation mesurable, présentée comme mesurée, sans avoir été
+vérifiée contre les chiffres du tableau qui la précédait dans le même document. Ce qui est vrai :
+×4,88 appartient à un groupe de quatre valeurs basses et mesurablement égales entre elles
+(départage 6), toutes très au-dessus de la cible affichée < ×2 — aucune valeur de `damageK`
+testée n'en approche, pas même 0,80. La fermeture de cet écart, si elle doit se faire, reste hors
+du mandat de ce bouton (borne 2) : elle passe par le bloc `chassis` de `balance.json`.
 
-## Lecture des garde-fous à la valeur retenue (relevé de la grille, `damageK = 1,10`)
+## Lecture des garde-fous et départages à la valeur retenue (`damageK = 1,10`)
 
-| Garde-fou | État | Mesure |
+| Garde-fou / départage | État | Mesure |
 |---|---|---|
 | 1. Salle 10 la plus meurtrière — 4 chapitres | **TENU** | `oui×4` |
 | 2. Passivité « jamais » | **TENU** | jamais en 20 h simulées |
 | 3. Premier coffre immédiat | **TENU** | 0,00 h |
 | 4. Verrou du châssis actif | **TENU** | actif |
 | 5. 40/40 graines, 4 chapitres | **TENU** | `40/40/40/40` |
-| 6. Écart entre châssis (départage) | à égalité sur la bande A | ×4,88 — dans `[×3,83 ; ×5,14]` |
-| 7. Salle 10 ch. 1 sous 60 s, proche de ~45 s (départage) | **DÉCIDE** | 46,40 s, écart 1,4 s |
-| 8. Durée du chapitre 1 (indicatif) | non invoqué | 0,37 h / 17 descentes |
+| 6. Écart châssis, mesuré (départage) | à égalité, groupe `{0,95;1,00;1,05;1,10}` | ×4,88 canonique, `[×4,88;×6,63]` sur 4 jeux disjoints — sous 1,30 `[×8,90;×10,78]`, sans recouvrement |
+| 7. Salle 10 ch. 1, sous 60 s sans boss expédié (départage, borne) | ne sépare pas | 46,40 s ; 1,30 (36,8 s) tient la même borne |
+| 8. Durée du chapitre 1 (départage) | à égalité | 0,37 h, étendue observée 0,03 h sous le plancher de bruit 0,06 h |
+| terminal — le plus proche de la valeur commitée | **DÉCIDE** | 1,10 le plus proche de 1,30 parmi `{0,95;1,00;1,05;1,10}` |
 
 ## Rapport complet à la valeur retenue (`combat.damageK = 1,10`, quarante graines)
 
@@ -347,11 +420,17 @@ Relevé identique au point `damageK = 1,10` du balayage (`ecart.x = 4,88`, `s10 
 
 - **L'écart entre châssis reste très au-dessus de la cible < ×2 quelle que soit la valeur de
   `damageK`** — attendu, borne 2 du mandat : ce bouton n'est pas ouvert par cette passe.
-- **La règle des bandes révèle une frontière floue entre bandes adjacentes** (1,10 et 1,15
-  seraient eux-mêmes à égalité au sens strict du facteur, alors que leurs bandes respectives ne
-  le sont pas) — un artefact de transitivité de toute règle « à égalité si le rapport est sous
-  X ». Il n'a pas gêné cette décision (les extrêmes de bande suffisaient), mais une passe future
-  qui verrait deux bandes voisines aux rapports plus proches devrait le traiter explicitement.
+- **Le groupe à égalité `{0,95 ; 1,00 ; 1,05 ; 1,10}` n'est directement remesuré sur jeux
+  disjoints qu'à une seule de ses bornes** (1,10, contre 1,30). 0,95, 1,00 et 1,05 ne portent
+  qu'une mesure canonique chacun ; leur appartenance au groupe repose sur la proximité de leur
+  valeur canonique à celle de 1,10, pas sur une distribution mesurée pour chacun. Si une passe
+  future rouvre ce bouton, remesurer ces trois points sur jeux disjoints avant de leur faire
+  porter une conclusion serait la façon de le faire correctement.
+- **Le § 4 de la spec reste ambigu sur le départage 7** : sa formulation (« sous 60 s, sans
+  rendre le boss expédié ») ne fournit pas de fonction de proximité, mais le § 2.1 y accole une
+  cible chiffrée (~45 s) qui invite à lire un critère de minimisation qu'elle n'énonce pas. Le
+  défaut est dans le texte de la spec, pas seulement dans sa première lecture ici — à corriger
+  si la spec est reprise pour une passe suivante.
 - **`econ.rewardBase` et les deux `bot.scaling.*` restent à balayer** sous la physique actuelle,
   avec `damageK = 1,10` désormais gelé — tâches suivantes de cette passe, commits séparés,
   jamais combat et économie ensemble.
