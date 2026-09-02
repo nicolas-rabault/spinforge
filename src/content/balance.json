@@ -24,7 +24,7 @@
       { "fromSalle": 10, "zones": ["accelerateur", "pointes", "pointes", "pointes"] }
     ]
   },
-  "combat": { "damageK": 1.3, "chargeBonus": 0.3, "healBetweenSalles": 0.2 },
+  "combat": { "damageK": 1.1, "chargeBonus": 0.3, "healBetweenSalles": 0.2 },
   "types": { "dominantBonus": 0.25, "equilibreBonus": 0.1 },
   "chapter": {
     "sallesPerChapter": 10,
