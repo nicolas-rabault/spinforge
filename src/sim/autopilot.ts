@@ -10,8 +10,21 @@ import type { RunState, Vec } from './types';
  *
  * Rien n'y a été « amélioré » au passage, et c'est délibéré : changer cette
  * politique changerait d'un coup tous les chiffres de référence du projet. Sa
- * neutralité est prouvée par mesure — les huit garde-fous de `npm run calibrate`
- * doivent ressortir au chiffre près (§ 2.2 de la spec du lot).
+ * neutralité a été prouvée par mesure et non supposée : les huit garde-fous de
+ * `npm run calibrate` sont ressortis au chiffre près, contre l'étalon d'alors.
+ *
+ * **Cet étalon est daté, et ce n'est plus celui du dépôt.** Il valait pour la
+ * base `764f220`, sur laquelle l'extraction a été prouvée neutre ; `fc827ee`
+ * (« le contact se cherche sur le trajet du tick, plus sur son arrivée ») a
+ * depuis récupéré près d'un quart des collisions que la détection discrète
+ * ratait, et déplacé du même coup tout l'équilibrage du jeu — le chapitre 1
+ * passe de 0,32 h en 9 descentes à 0,42 h en 20. Ce qui reste vrai est la
+ * propriété, pas les nombres : l'extraction n'a déplacé aucun chiffre.
+ *
+ * Donc, pour qui remesure après avoir touché à `steerWithTerrain` : comparer à
+ * la **ligne de base courante** du § 2.2 de la spec du lot, jamais à l'étalon
+ * périmé. Lire 0,42 h là où le lot B lisait 0,32 h ne prouve rien sur cette
+ * fonction, et conclure qu'on a cassé le combat serait une erreur de lecture.
  */
 
 /** Brèche dont le centre est angulairement le plus proche de ce point. Retourne

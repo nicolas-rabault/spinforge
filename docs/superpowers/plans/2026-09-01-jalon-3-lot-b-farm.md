@@ -39,8 +39,9 @@ Ces contraintes s'appliquent à **toutes** les tâches, sans être répétées d
 - **Jamais le combat et l'économie dans la même passe ni le même commit.**
 - Tests colocalisés (`src/sim/*.test.ts`), imports explicites depuis `vitest`.
 
-**Étalon de calibration** relevé sur `origin/main` au démarrage du lot. Toute tâche qui touche
-la simulation ou l'autopilote doit le laisser **exactement** intact :
+**Étalon de calibration** relevé sur `origin/main` au démarrage du lot — c'est-à-dire sur
+`764f220`. Toute tâche qui touche la simulation ou l'autopilote doit le laisser **exactement**
+intact :
 
 ```
 ch.1 10/10 · 0,32 h (+0,32) · 9 descentes · salle 10, 23 morts · 70 %/tentative
@@ -50,6 +51,28 @@ ch.4 10/10 · 0,94 h (+0,36) · 6 descentes · salle 10, 18 morts · 64 %/tentat
 premier coffre 0,00 h · passivité jamais validée en 20 h · écart châssis ×3,80
 verrou du châssis actif · salle 10 la plus meurtrière dans CHAQUE chapitre
 ```
+
+> **Mise à jour (intégration de `main`, 2026-09-02) — cet étalon est daté, et il vaut pour
+> l'exécution du plan, pas pour l'état courant du dépôt.** Il a bien été tenu au chiffre près
+> pendant tout le lot ; c'est `main` qui l'a déplacé après coup, avec `fc827ee` (« le contact
+> se cherche sur le trajet du tick, plus sur son arrivée »), qui récupère près d'un quart des
+> collisions que la détection discrète ratait et rend le jeu nettement plus meurtrier. La
+> ligne de base est désormais :
+>
+> ```
+> ch.1 10/10 · 0,42 h (+0,42) · 20 descentes · salle 10, 72 morts · 88 %/tentative
+> ch.2 10/10 · 0,54 h (+0,12) ·  2 descentes · salle 10, 30 morts · 75 %/tentative
+> ch.3 10/10 · 0,69 h (+0,15) ·  3 descentes · salle 10, 16 morts · 62 %/tentative
+> ch.4 10/10 · 0,77 h (+0,08) ·  5 descentes · salle 10, 33 morts · 77 %/tentative
+> premier coffre 0,00 h · passivité jamais validée · écart châssis ×10,80
+> verrou du châssis actif · salle 10 la plus meurtrière dans CHAQUE chapitre
+> ```
+>
+> Elle est identique sur `main` seul et sur l'arbre fusionné : **le lot B n'y contribue en
+> rien**. Cette mise à jour vaut pour **toutes** les occurrences de l'étalon dans ce plan —
+> l'étape 5 de la tâche 1, les « étalon intact » des tâches 3, 6 et 10, et le commentaire
+> d'en-tête recopié dans la tâche 1, dont la version livrée dans `src/sim/autopilot.ts` porte
+> désormais cet avertissement. Le détail et la justification : § 2.2 de la spec du lot.
 
 **Serveur de développement.** Ce dépôt fait tourner plusieurs sessions Claude en parallèle et
 les ports 5173-5177 et 5190 ont été observés occupés par d'autres worktrees. Lancer avec
@@ -224,6 +247,11 @@ import { steerWithTerrain } from '../src/sim/autopilot.ts';
 ```
 
 - [ ] **Étape 5 : la preuve — les huit garde-fous, au chiffre près**
+
+> **Lu après coup (2026-09-02)** : « l'étalon des contraintes globales » désigne ici celui de
+> `764f220`, contre lequel cette étape a bien été passée. Rejouer cette étape aujourd'hui
+> demande de comparer à la ligne de base d'après `fc827ee` — voir la mise à jour des
+> contraintes globales.
 
 Run: `npm run calibrate`
 Expected: la sortie reproduit **exactement** l'étalon des contraintes globales. Comparer

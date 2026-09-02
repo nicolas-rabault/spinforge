@@ -73,7 +73,8 @@ littéralement ce que le harnais mesure. Le danger est que **changer la politiqu
 change tous les chiffres de référence du projet d'un coup**. D'où la règle : le déménagement
 est un déplacement de texte, et sa neutralité est *prouvée par mesure*, pas supposée.
 
-**Étalon relevé sur `origin/main` au démarrage de ce lot, à reproduire à l'identique :**
+**Étalon relevé sur `origin/main` au démarrage de ce lot — c'est-à-dire sur `764f220` — et
+reproduit à l'identique par l'extraction :**
 
 | | validé | cumulé | marginal | descentes | plus meurtrière |
 |---|---|---|---|---|---|
@@ -83,10 +84,49 @@ est un déplacement de texte, et sa neutralité est *prouvée par mesure*, pas s
 | ch. 4 | 10/10 | 0,94 h | +0,36 h | 6 | salle 10, 18 morts |
 
 Plus : premier coffre 0,00 h · passivité jamais validée en 20 h · écart entre châssis ×3,80 ·
-verrou du châssis actif · salle 10 la plus meurtrière dans **chaque** chapitre.
+verrou du châssis actif · salle 10 la plus meurtrière dans **chaque** chapitre. Vecteur de
+morts par salle du chapitre 1 : `0,0,1,0,10,9,21,18,15,23`.
 
 **Un seul de ces nombres qui bouge signifie que l'extraction n'était pas neutre** — et le
 correctif est alors de rendre l'extraction neutre, jamais d'accepter le nouveau chiffre.
+C'est cette règle-là qui a été appliquée pendant tout le lot, et elle a tenu : aucun des huit
+garde-fous n'a bougé d'un chiffre entre `764f220` et la fin du lot.
+
+> **Mise à jour (intégration de `main`, 2026-09-02) — l'étalon ci-dessus est DATÉ ; il n'est
+> plus reproductible, et ce n'est pas le lot B qui l'a déplacé.**
+>
+> `main` a livré `fc827ee`, « le contact se cherche sur le trajet du tick, plus sur son
+> arrivée » : la détection de contact était discrète — les positions étaient intégrées sur
+> 100 ms entières, puis le chevauchement n'était testé qu'à l'arrivée — et une toupie rapide
+> traversait donc sa cible. `contactTime` résout désormais le contact sur le **trajet** du
+> tick, et `takeShard` mesure la distance au segment parcouru plutôt qu'au point d'arrivée.
+> Le commit le mesure lui-même : **97 chocs encaissés contre 78**, soit près d'un quart des
+> collisions qui étaient perdues. Un autopilote qui encaisse un quart de chocs en plus meurt
+> davantage, et tout l'équilibrage se déplace avec lui.
+>
+> **Nouvelle ligne de base, relevée après la fusion :**
+>
+> | | validé | cumulé | marginal | descentes | plus meurtrière |
+> |---|---|---|---|---|---|
+> | ch. 1 | 10/10 | 0,42 h | +0,42 h | 20 | salle 10, 72 morts |
+> | ch. 2 | 10/10 | 0,54 h | +0,12 h | 2 | salle 10, 30 morts |
+> | ch. 3 | 10/10 | 0,69 h | +0,15 h | 3 | salle 10, 16 morts |
+> | ch. 4 | 10/10 | 0,77 h | +0,08 h | 5 | salle 10, 33 morts |
+>
+> Plus : premier coffre 0,00 h · passivité jamais validée · verrou du châssis actif · salle 10
+> la plus meurtrière dans **chaque** chapitre — ces quatre-là n'ont pas bougé. Vecteur de morts
+> par salle du chapitre 1 : `0,0,0,1,15,17,34,25,35,72`. **Écart entre châssis ×10,80**, contre
+> ×3,80 : c'est le seul garde-fou dont le déplacement est une alerte d'équilibrage et pas un
+> simple recalage — voir « Née de l'intégration » dans `docs/roadmap.md`.
+>
+> **Le déplacement est entièrement dû à `fc827ee`.** Prouvé et non supposé : cette ligne de
+> base est identique sur `main` seul et sur l'arbre fusionné. Le lot B n'y ajoute rien, ce qui
+> est exactement ce que l'étalon d'origine servait à établir — la démonstration de neutralité
+> reste valide, c'est seulement la référence à laquelle on la compare qui a changé.
+>
+> L'étalon de `764f220` est **conservé** ci-dessus plutôt qu'écrasé : c'est contre lui que la
+> neutralité de l'extraction a été prouvée, et effacer la mesure rendrait la preuve
+> invérifiable. Ce qu'il ne faut plus faire, c'est le traiter comme la cible d'une remesure.
 
 ### 2.3 Ce que l'extraction ne corrige pas
 
