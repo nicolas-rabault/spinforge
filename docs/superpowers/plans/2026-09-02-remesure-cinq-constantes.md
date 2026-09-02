@@ -359,10 +359,17 @@ par :
 ```js
 /** Budget de temps réel d'une descente. Ce n'est pas une cadence : c'est le mur
  *  contre lequel une descente bloquée doit venir échouer bruyamment et vite.
- *  Relevé de 90 s à 300 s le 2026-09-02 : `fc827ee` a porté la létalité de la
- *  salle 10 du chapitre 1 de 70 % à 88 % par tentative, et le pilote grossier
- *  qui vit dans la page ne bouclait plus une descente en 90 s — le harnais
- *  était rouge sur `main` sans qu'aucune suite de tests ne le signale. */
+ *
+ *  Relevé de 90 s à 300 s le 2026-09-02, parce qu'à 90 s ce harnais était
+ *  FLOTTANT et non faux. Une exécution a échoué (« bloquée en salle 10 après
+ *  91 s réelles, 205 s simulées », soit 2,25× le temps réel), puis sept
+ *  exécutions consécutives ont réussi au même budget — cache Vite chaud, cache
+ *  supprimé, et jusqu'à douze processus de calibration en parallèle. La cause
+ *  de l'échec unique n'a pas été isolée : elle n'est ni le cache ni la charge,
+ *  les deux ayant été testés et écartés. Ce que la mesure dit, et rien de plus :
+ *  la marge à 90 s est trop mince pour un harnais qui vit hors de `npm run test`
+ *  et qu'aucune suite ne surveille. 300 s la rétablit sans rien coûter — une
+ *  descente vraiment bloquée échoue de toute façon, seulement plus tard. */
 const BUDGET_MS = Number(process.env.BUDGET_MS ?? 300000);
 ```
 
@@ -397,20 +404,34 @@ cd /Users/nicolasrabault/Projects/B-Blades_versus-remesure
 git status --short
 git add scripts/verrou.mjs
 git status --short
-git commit -m "fix(verrou): le harnais était rouge sur main, faute de temps et non de code
+git commit -m "fix(verrou): le budget de 90 s était trop mince, et c'est tout ce qu'on peut dire
 
-\`npm run verrou\` échouait sur trois vérifications de sa passe 1 : la
-descente n'atteignait plus le boss dans son budget de 90 s de temps réel.
-Le jeu n'y est pour rien — \`fc827ee\` a porté la létalité de la salle 10 du
-chapitre 1 de 70 % à 88 % par tentative, et le pilote grossier qui vit dans
-la page ne boucle plus une descente aussi vite.
+\`npm run verrou\` a échoué une fois ce matin sur trois vérifications de sa
+passe 1 : « bloquée en salle 10 après 91 s réelles, 205 s simulées », soit
+2,25× le temps réel là où le commentaire du script documente ~11×.
 
-Mesuré dans les deux sens : à 300 s les dix vérifications passent, à 90 s
-les trois mêmes retombent. Le budget devient surchargeable par
-l'environnement, comme le port l'était déjà.
+J'avais attribué cet échec à \`fc827ee\`, qui porte la létalité de la salle 10
+du chapitre 1 de 70 % à 88 % par tentative. **C'est faux, ou en tout cas non
+démontré, et je le retire.** Sept exécutions consécutives passent depuis au
+même budget de 90 s. Trois hypothèses ont été testées et écartées une à une :
 
-Troisième harnais du projet trouvé mort en silence — il n'entre pas dans
-\`npm run test\`, comme \`npm run calibrate\` avant lui.
+  A · cache Vite sur disque présent, serveur frais  → vert
+  B · cache Vite supprimé, serveur frais            → vert
+  C · douze processus de calibration en parallèle   → vert
+  + les quatre exécutions d'un agent indépendant    → vertes
+
+La cause de l'échec unique n'est donc pas isolée. Ce que la mesure établit :
+ce harnais est FLOTTANT à 90 s, pas cassé. Pour un harnais qui vit hors de
+\`npm run test\` et que rien ne surveille, une marge qui flotte est une panne
+silencieuse en attente.
+
+300 s rétablit la marge sans rien coûter : une descente vraiment bloquée
+échoue de toute façon, seulement plus tard. Le budget devient au passage
+surchargeable par l'environnement, comme le port l'était déjà.
+
+Le mérite de la correction revient à l'agent d'implémentation, qui n'a pas
+réussi à reproduire le rouge et l'a signalé au lieu de recopier la
+justification qu'on lui avait donnée.
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 git status --short
