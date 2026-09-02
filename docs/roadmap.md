@@ -161,6 +161,92 @@ absentes » (jalon 2b, partiellement — 2 à 4 seulement) et « les identités 
 chapitres 2 à 8 sont inatteignables » (jalon 2.5, partiellement). Dette ouverte par ce lot :
 voir « Dette connue (jalon 3, lot A) » en bas de page.
 
+### Lot B — le farm ✦ spec : `docs/superpowers/specs/2026-09-01-jalon-3-lot-b-farm-design.md` · plan : `docs/superpowers/plans/2026-09-01-jalon-3-lot-b-farm.md`
+
+Le lot A a posé deux pièces pour ce lot-ci sans jamais s'en servir lui-même : la mémoire
+numérotée de ce qu'on a validé (`bestChapter`) et la porte unique du cycle de vie d'une
+descente (`startRun`). Ce qui manquait restait entier : le jeu ne tournait que quand un doigt
+le pilotait. Fermer l'onglet ne rapportait rien, et le laisser ouvert sans y toucher ne
+rapportait rien non plus — le pilier économique n° 3 de `docs/game-design.md` (« ~60 % des
+revenus viennent de l'idle ») n'avait, jusqu'ici, aucune implémentation.
+
+Livré : `src/sim/autopilot.ts` porte désormais `steerWithTerrain`, extraite bit à bit de
+`scripts/calibrate.mjs`, qui l'importe au lieu de la définir — mêmes constantes, même ordre de
+tests, même repli d'angle, pas un mot changé · `src/sim/farm.ts` porte `FarmSession` (une
+descente en cours plus un report de reste, `carry`), `farm(meta, session, secondes, graine)`
+et `offlineSeconds(absence)` — un seul mécanisme sert l'AUTO à l'écran et le hors-ligne au
+retour · **le farm s'arrête salle 9 et ne combat jamais le boss** : `applyRunReward` ne fait
+monter `bestChapter` que sur `reward.boss`, donc un farm sans boss ne peut structurellement
+pas déclencher ce `Math.max` — le critère du jalon cesse d'être une convention tenue pour
+devenir une propriété du code, et les gemmes, l'Arène garantie et le Mythique, tous du butin
+de boss, deviennent exclusivement actifs · `MetaState.lastSeenAt` et le schéma de sauvegarde
+5 → 6 · l'AUTO comme décor : quand personne ne pilote, une descente tourne en fond sur un méta
+jetable cloné, qui ne crédite rien — le crédit vient de `farm()` appelée par paquets sur la
+session vivante, si bien que fermer l'app ou la laisser ouverte rapporte exactement la même
+chose par minute · l'écran « Pendant ton absence », bilingue FR/EN, sans ×2 et sans publicité.
+
+**Neutralité de l'extraction, prouvée au chiffre près.** Les huit garde-fous mesurés par
+`npm run calibrate` ressortent inchangés d'un bout à l'autre du lot, malgré le déplacement de
+`steerWithTerrain` d'un script vers `src/sim/` : chapitre 1 validé en 0,32 h en 9 descentes,
+salle 10 la plus meurtrière avec 23 morts ; chapitre 2 +0,15 h en 3 descentes ; chapitre 3
++0,10 h en 2 descentes ; chapitre 4 +0,36 h en 6 descentes ; premier coffre à 0,00 h ;
+politique passive jamais validée en 20 h simulées ; écart entre châssis ×3,80 ; verrou du
+châssis actif ; salle 10 la plus meurtrière dans chaque chapitre. Un seul de ces huit
+garde-fous qui aurait bougé aurait signifié que l'extraction n'était pas neutre — c'est
+exactement la garantie que la spec exigeait avant d'accepter le déplacement de code (§ 2.2).
+
+**Le coût du fast-forward a fait écarter la formule fermée que prescrivait la spec de
+référence.** Mesuré sur la machine de développement, autopilote branché : 1 h de jeu simulée
+coûte 50 ms, 4 h (le plafond) 136 ms, 12 h (le plafond prévu au jalon 4) 389 ms. Et le plafond
+n'est jamais simulé en entier en pratique : au taux retenu, une absence de 4 h ne rejoue que
+48 min de jeu, soit ~28 ms. La formule fermée aurait acheté des millisecondes contre une
+approximation, un deuxième chemin de code et un deuxième jeu de tests — écartée, et
+`docs/game-design.md` est corrigé en conséquence.
+
+**La calibration du taux idle est la passe d'équilibrage de ce lot, et son résultat est que la
+valeur provisoire est validée par la mesure, pas modifiée.** Balayage sur cinq graines,
+chapitre 1 :
+
+| taux | temps simulé pour 4 h d'absence | crédits | coffres | niveaux d'amélioration financés |
+|---|---|---|---|---|
+| 5 % | 12 min | 7 856 | 61 | 25 |
+| 10 % | 24 min | 15 662 | 127 | 33 |
+| 15 % | 36 min | 24 370 | 196 | 39 |
+| **20 % (retenu)** | **48 min** | **32 492** | **261** | **42** |
+| 25 % | 60 min | 39 767 | 323 | 45 |
+| 30 % | 72 min | 47 030 | 387 | 47 |
+
+Référence : une heure de jeu actif produit 39 767 crédits, 323 coffres, 302 salles vidées et
+finance 45 niveaux d'amélioration — c'est la ligne à 25 % du tableau ci-dessus, et ce n'est
+pas une coïncidence. **25 % est une borne naturelle et lisible** : c'est le taux exact où une
+absence de 4 h produit *identiquement* ce qu'une heure de jeu actif produit, au chiffre près,
+sur les deux lignes. Le palier utile est donc `[15 % ; 25 %[`, et 20 % en est un point
+intérieur qui garde de la marge — y compris avec le bonus de retour ×1,5 au-delà de 12 h
+d'absence, qui porte le taux effectif à 30 % (72 min de jeu simulé pour 12 h d'absence) : plus
+qu'une heure d'actif en valeur brute, mais rapporté aux douze heures qui l'ont produit, toujours
+très défavorable à la minute — exactement le ressort de rétention que la décision 4 de la spec
+(§ 1) demandait : le bonus doit se remarquer sans jamais rendre l'absence préférable à la
+présence.
+
+Constat qui a surpris, et qui recadre le précédent : **le jeu actif déverse déjà 323 coffres
+par heure.** Le volume de butin d'un retour hors-ligne (261 coffres, au taux retenu) n'est donc
+pas une anomalie propre au farm — il reste inférieur à ce que produit une seule heure de jeu
+joué. Le robinet large est une propriété du jeu depuis le jalon 2.5, pas une conséquence de ce
+lot.
+
+`src/content/balance.json` **n'est pas modifié par cette passe** : la mesure valide la valeur
+`offline.rate: 0,20` déjà en place plutôt que de la changer — c'est un résultat de cette passe,
+pas une omission. Le bloc `offline` n'entre d'ailleurs dans aucun calcul du harnais de
+calibration, et les huit garde-fous ci-dessus le confirment en restant inchangés après le
+balayage. Règle du projet respectée une fois de plus : jamais le combat et l'économie dans la
+même passe ni le même commit — cette passe ne touche qu'à l'économie du farm, et n'a en fait
+rien eu à changer.
+
+Dette ouverte par ce lot : voir « Dette connue (jalon 3, lot B) » en bas de page. La dette de
+performance du jalon 1.5 n'est pas fermée par ce lot, mais elle a été remesurée avec le décor
+AUTO en fonctionnement, et deux suspects qu'elle nommait en sont ressortis innocentés — voir
+« Dette connue (jalon 1.5) » ci-dessous.
+
 ## Jalon 4 — Le long terme
 
 Refonte + arbre d'atouts (référence de farm conservée), Génération Rafale (12 toupies), chapitres 5-8 dont le Vortex (chapitre infini), premier événement, PWA installable.
@@ -677,10 +763,56 @@ de ces points n'est bloquant.
   Conséquence : ces mesures ne peuvent pas détecter un changement d'équilibrage des coffres
   ou de la fusion, et les décisions prises contre elles sur ce terrain — dont
   « `chests.bronze.price` effondré pour ne plus concurrencer les améliorations » — reposent
-  sur un joueur qui ne tire aucun bénéfice de ce qu'il achète. À rouvrir avec le lot B, qui
-  a besoin d'un autopilote plus fidèle de toute façon.
+  sur un joueur qui ne tire aucun bénéfice de ce qu'il achète. **Le lot B a extrait
+  `steerWithTerrain` du harnais sans toucher à ce défaut** — le corriger aurait déplacé tous
+  les chiffres au moment précis où ils servaient d'étalon pour prouver que l'extraction était
+  neutre. Toujours ouverte : voir « Dette connue (jalon 3, lot B) » en bas de page.
 - Deux pannes muettes du même harnais, découvertes à l'intégration et réparées : il appelait
   `grantChest` et `Toupie.label`, tous deux supprimés par la refonte des coffres et le
   multilangue. `npm run calibrate` était donc **mort sur `main`** depuis ces jalons sans que
   rien ne le signale — il n'entre pas dans `npm run test`. Un test de fumée qui se contente
   de lancer une graine sur un chapitre le dirait ; il n'existe pas.
+
+## Dette connue (jalon 3, lot B)
+
+Constatée pendant l'exécution du plan du jalon 3, lot B
+(`docs/superpowers/plans/2026-09-01-jalon-3-lot-b-farm.md`) et sa revue de branche. Aucun de
+ces points n'est bloquant.
+
+**Calibration**
+- **Le modèle du harnais de calibration reste faux, et ce lot l'a laissé sciemment.**
+  `scripts/calibrate.mjs` n'équipe toujours jamais une pièce tirée et n'appelle toujours
+  jamais la fusion (dette héritée du jalon 3, lot A, ci-dessus). Le corriger aurait déplacé
+  tous les chiffres au moment précis où ils servaient d'étalon pour prouver que l'extraction
+  de `steerWithTerrain` vers `src/sim/autopilot.ts` était neutre — un harnais qui change de
+  comportement pendant qu'on vérifie qu'il n'a pas changé ne prouve plus rien sur l'extraction
+  elle-même. À rouvrir dans son propre lot, comme le promettait déjà la dette du jalon 3, lot
+  A — la promesse n'a pas encore été tenue.
+
+**Jeu**
+- **Le décor AUTO ne correspond pas, salle pour salle, à ce que `farm()` crédite.** Le décor
+  affiché est une descente libre, pilotée par le même autopilote mais sur un méta jetable
+  cloné ; la session créditée par `farm()` en parallèle ne vide pas forcément les mêmes salles
+  au même rythme. Le crédit, lui, est exact — c'est ce qui compte pour le pilier « fermer
+  l'app ou la laisser ouverte rapporte pareil ». Choix assumé (spec § 5.1), pas un oubli : la
+  cadence des paquets n'a aucune conséquence sur les gains, seulement sur le confort visuel du
+  décor. À rouvrir si un test joueur montre que l'écart entre ce qui s'affiche et ce qui se
+  gagne se remarque.
+
+**Tests**
+- **Un test du pilier ne peut pas rougir sous une mutation.** « le farm ne fait jamais monter
+  `bestChapter` » est une tautologie — `Math.max(n, n) = n`, puisque le farm joue justement
+  `bestChapter` — et rien ne peut la faire échouer par construction. La mutation qui compte
+  vraiment, ouvrir le farm sur `maxPlayableChapter` (le chapitre suivant, non validé), est
+  tuée par deux autres tests, dont un ajouté pour cela pendant la vérification par mutation du
+  § 8.1 de la spec. Le test tautologique est conservé comme garde-fou de non-régression, pas
+  comme preuve du pilier — la distinction méritait d'être écrite plutôt que de rester
+  implicite dans le code.
+- `src/storage/localSave.ts` n'a toujours aucun test unitaire, `absenceSeconds` compris. Ce
+  n'est pas une régression de ce lot : ce répertoire n'avait déjà aucun test avant qu'il n'y
+  touche.
+
+**Interface**
+- `format.hour` est une clé i18n à usage unique, là où les clés voisines (`absence.duration`,
+  …) portent leur unité dans le gabarit de phrase plutôt que dans une clé séparée. À replier
+  dans son consommateur si aucun second usage n'apparaît.
