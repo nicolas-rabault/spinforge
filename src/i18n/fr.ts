@@ -52,6 +52,9 @@ export const fr = {
   // deux langues gardent la main dessus.
   'combat.chapterChip': '{n} — {name}',
   'combat.newRun': 'Nouvelle descente',
+  // Invite permanente du décor : la descente visible à l'écran ne t'appartient
+  // pas, et rien d'autre ne le dit — le doigt n'y répond simplement à rien.
+  'combat.decor.body': 'Le farm rejoue ton meilleur chapitre tout seul. À toi de lancer ta descente.',
 
   // Voile plein écran au chargement, quand le farm hors-ligne a tourné pendant
   // l'absence — même gabarit que le voile de fin de descente ci-dessus.

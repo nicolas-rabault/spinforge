@@ -39,13 +39,14 @@ export function App() {
   ));
   const runRef = useRef(initialRun);
 
-  // Deux états, une seule bascule : lancer une descente (bouton « Nouvelle
-  // descente » de CombatScreen) entre en partie pilotée ; quitter l'onglet
-  // Combat une fois la descente close en sort (voir l'effet plus bas — le
-  // voile de fin de descente doit rester atteignable tant qu'on y reste).
+  // Deux états, une seule bascule : lancer une descente (le `RunPicker` de
+  // CombatScreen — celui du voile de fin de descente ou celui de l'invite du
+  // décor, c'est le même) entre en partie pilotée ; quitter l'onglet Combat
+  // une fois la descente close en sort (voir l'effet plus bas — le voile de
+  // fin de descente doit rester atteignable tant qu'on y reste).
   // Hors partie, la descente affichée tourne en DÉCOR : `handleRunTick`
   // plus bas l'empêche d'atteindre la salle du boss, et elle ne crédite
-  // rien (voir `combatMeta` plus bas) — la vraie monnaie vient de `farm`,
+  // rien (voir `rewardMetaRef` plus bas) — la vraie monnaie vient de `farm`,
   // plus bas encore. Au tout premier lancement, aucun chapitre n'est
   // validé : le jeu démarre directement en partie pilotée, le décor n'ayant
   // rien à farmer.
@@ -54,23 +55,27 @@ export function App() {
   // Méta jetable du décor, cloné une fois au montage — `useState(() => …)`
   // et non `useRef(structuredClone(…))`, pour la même raison qu'`initialRun`
   // ci-dessus : l'argument d'un `useRef` est réévalué à chaque rendu, et
-  // `structuredClone` n'est pas gratuit. `useGameLoop` y applique les
-  // récompenses du décor à travers `combatMeta` ci-dessous ; elles sont
-  // jetées avec lui. Écart purement cosmétique : le décor ne verra pas les
-  // améliorations achetées pendant qu'il tourne.
+  // `structuredClone` n'est pas gratuit.
+  //
+  // Il ne sert qu'à UNE chose : recevoir les récompenses de la boucle de jeu
+  // pendant que le décor tourne, pour qu'on les jette (le décor ne crédite
+  // rien, la vraie monnaie vient de `farm`). Le décor tourne pour tout le
+  // reste sur le VRAI méta — `startRun` plus bas le lui donne, et
+  // `ForgeScreen` y appelle `syncRunStats` : la toupie du décor est celle du
+  // joueur, pièces achetées à l'instant comprises. C'est voulu ; un décor qui
+  // montrerait une toupie périmée serait un mensonge à l'écran.
   const [decorMetaInit] = useState(() => structuredClone(loaded.meta));
   const decorMetaRef = useRef(decorMetaInit);
 
-  // Méta donné à `CombatScreen` à la place de `metaRef` : le vrai méta en
-  // partie pilotée, ou tant qu'aucun chapitre n'est validé (le décor n'existe
-  // pas encore, R1 ci-dessus) ; celui du décor sinon. Une simple sélection
-  // entre deux objets déjà stables (`metaRef`, `decorMetaRef` ne changent
-  // jamais d'identité) : son résultat ne change donc, lui aussi, qu'à la
-  // bascule elle-même — pas besoin de mémoïsation. `CombatScreen` se re-rend
-  // à chaque tick, ce choix couvre donc tous ses usages (art équipé, liste
-  // de chapitres du voile, « Nouvelle descente ») sans qu'il ait à savoir
-  // qu'un décor existe.
-  const combatMeta = playing || metaRef.current.bestChapter < 1 ? metaRef : decorMetaRef;
+  // Le méta qui ENCAISSE les récompenses du run affiché : le vrai en partie
+  // pilotée, ou tant qu'aucun chapitre n'est validé (le décor n'existe pas
+  // encore, R1 ci-dessus) ; le clone jetable sinon. `CombatScreen` reçoit
+  // celui-ci EN PLUS de `metaRef`, jamais à sa place : tout ce qu'il affiche
+  // et tout ce qu'il lance part du vrai méta. Une simple sélection entre deux
+  // objets déjà stables (`metaRef`, `decorMetaRef` ne changent jamais
+  // d'identité) : son résultat ne change donc qu'à la bascule elle-même —
+  // pas besoin de mémoïsation.
+  const rewardMetaRef = playing || metaRef.current.bestChapter < 1 ? metaRef : decorMetaRef;
 
   // Le chapitre explicitement choisi par le joueur pour sa prochaine descente.
   // Remis à null à chaque descente lancée : la suggestion reprend alors la main
@@ -308,7 +313,7 @@ export function App() {
           PixiJS à chaque changement d'onglet coûterait un rechargement complet
           des textures. On le masque, la boucle se met en pause. */}
       <div style={{ position: 'absolute', inset: 0, display: combat ? 'block' : 'none' }}>
-        <CombatScreen runRef={runRef} metaRef={combatMeta} running={combat} piloted={playing} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={handleRunTick} onMetaChanged={metaChanged} />
+        <CombatScreen runRef={runRef} metaRef={metaRef} rewardMetaRef={rewardMetaRef} running={combat} piloted={playing} chapterToPlay={chapterToPlay} onPickChapter={setPickedChapter} onTick={handleRunTick} onMetaChanged={metaChanged} />
       </div>
       {tab === 'forge' ? (
         <ForgeScreen

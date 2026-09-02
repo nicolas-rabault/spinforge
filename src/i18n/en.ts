@@ -43,6 +43,7 @@ export const en: Record<MessageKey, string> = {
   'combat.pickRun': 'Choose your run',
   'combat.chapterChip': '{n} — {name}',
   'combat.newRun': 'New run',
+  'combat.decor.body': 'Farming replays your best chapter on its own. Starting a run is up to you.',
 
   // Full-screen veil on load, when offline farming ran during the absence —
   // same layout as the end-of-run veil above.

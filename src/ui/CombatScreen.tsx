@@ -26,11 +26,69 @@ function chapterChipStyle(selected: boolean) {
   };
 }
 
+/**
+ * Le choix de la prochaine descente : les pastilles de chapitre et le bouton qui
+ * part. Un seul exemplaire dans le projet, monté à DEUX endroits — le voile de
+ * fin de descente et l'invite du décor — parce que deux panneaux divergeraient.
+ *
+ * `meta` est toujours le VRAI méta, jamais celui du décor : partir avec un méta
+ * figé au montage lancerait la descente sans les pièces qu'on vient d'acheter,
+ * ni le châssis qu'on vient d'équiper.
+ */
+function RunPicker({
+  meta, runRef, chapterToPlay, onPickChapter, onTick,
+}: {
+  meta: MetaState;
+  runRef: { current: RunState };
+  chapterToPlay: number;
+  onPickChapter: (chapter: number | null) => void;
+  onTick: () => void;
+}) {
+  const maxChapter = maxPlayableChapter(meta);
+  return (
+    <>
+      <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>{t('combat.pickRun')}</p>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', alignSelf: 'stretch' }}>
+        {Array.from({ length: maxChapter }, (_, i) => i + 1).map((n) => (
+          <button key={n} onClick={() => onPickChapter(n)} style={chapterChipStyle(n === chapterToPlay)}>
+            {t('combat.chapterChip', { n, name: chapterName(n) })}
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={() => {
+          // La graine continue le flux de la descente précédente — celle du décor
+          // comme celle qu'on vient de perdre : deux runs consécutifs ne rejouent
+          // pas les mêmes gabarits d'arène, et aucune horloge n'entre dans la
+          // simulation. `onTick` signale à App qu'un run tout neuf est posé, ce
+          // qui le fait repasser en partie pilotée.
+          runRef.current = startRun(meta, chapterToPlay, runRef.current.rngState);
+          onPickChapter(null);
+          onTick();
+        }}
+        style={{
+          minHeight: 50, padding: '0 34px', borderRadius: 11, cursor: 'pointer',
+          border: '1px solid var(--ember)', background: 'var(--ember)', color: 'var(--ink)',
+          font: '600 16px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.04em',
+        }}
+      >
+        {t('combat.newRun')}
+      </button>
+    </>
+  );
+}
+
 export function CombatScreen({
-  runRef, metaRef, running, piloted, chapterToPlay, onPickChapter, onTick, onMetaChanged,
+  runRef, metaRef, rewardMetaRef, running, piloted, chapterToPlay, onPickChapter, onTick, onMetaChanged,
 }: {
   runRef: { current: RunState };
+  /** Le VRAI méta, toujours : tout ce que cet écran affiche et tout ce qu'il
+   *  lance en part — art équipé, pastilles de chapitre, `startRun`. */
   metaRef: { current: MetaState };
+  /** Le méta qui ENCAISSE les récompenses de la boucle de jeu. Identique au
+   *  précédent en partie pilotée ; en décor, un clone jetable, puisque le décor
+   *  ne crédite rien (la vraie monnaie vient de `farm`, côté App). */
+  rewardMetaRef: { current: MetaState };
   running: boolean;
   /** Vrai en partie pilotée (le doigt commande le run affiché), faux en décor
    *  (l'autopilote le commande) — bascule unique de la source de pilotage
@@ -86,9 +144,12 @@ export function CombatScreen({
     },
   }), [piloted, runRef]);
 
+  // `rewardMetaRef` et non `metaRef` : c'est cette boucle, et elle seule, qui
+  // applique les récompenses du run affiché — celles du décor doivent tomber
+  // dans le clone jetable.
   useGameLoop(
     runRef,
-    metaRef,
+    rewardMetaRef,
     steerSourceRef,
     {
       beforeTick: (run) => arenaRef.current?.beforeTick(run),
@@ -224,8 +285,10 @@ export function CombatScreen({
 
       {/* Explication du premier lancement. Posée bas, au-dessus de la barre
           d'onglets : en surimpression au centre elle masquait les deux toupies
-          qu'elle désigne. */}
-      {hint ? (
+          qu'elle désigne. `piloted` : en décor le doigt ne commande rien, une
+          consigne de pilotage y serait fausse — et l'invite ci-dessous occupe
+          déjà ce coin de l'écran. */}
+      {hint && piloted ? (
         <div
           style={{
             position: 'absolute', left: 12, right: 12, bottom: 74,
@@ -273,34 +336,36 @@ export function CombatScreen({
                         : t('combat.won.last')))
                 : t('combat.dead.body')}
             </p>
-            <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>{t('combat.pickRun')}</p>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', alignSelf: 'stretch' }}>
-              {Array.from({ length: maxChapter }, (_, i) => i + 1).map((n) => (
-                <button key={n} onClick={() => onPickChapter(n)} style={chapterChipStyle(n === chapterToPlay)}>
-                  {t('combat.chapterChip', { n, name: chapterName(n) })}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => {
-                // La graine continue le flux de la descente précédente : deux runs
-                // consécutifs ne rejouent pas les mêmes gabarits d'arène, et aucune
-                // horloge n'entre dans la simulation.
-                runRef.current = startRun(metaRef.current, chapterToPlay, s.rngState);
-                onPickChapter(null);
-                onTick();
-              }}
-              style={{
-                minHeight: 50, padding: '0 34px', borderRadius: 11, cursor: 'pointer',
-                border: '1px solid var(--ember)', background: 'var(--ember)', color: 'var(--ink)',
-                font: '600 16px Oswald, ui-sans-serif, sans-serif', letterSpacing: '.04em',
-              }}
-            >
-              {t('combat.newRun')}
-            </button>
+            <RunPicker
+              meta={metaRef.current} runRef={runRef} chapterToPlay={chapterToPlay}
+              onPickChapter={onPickChapter} onTick={onTick}
+            />
           </div>
         );
-      })() : null}
+      })() : !piloted ? (
+        /* L'invite du décor. Sans elle, un joueur qui revient n'a AUCUN moyen de
+           lancer une descente : le décor referme la sienne dans le même bloc
+           synchrone que le tick, donc le voile ci-dessus ne s'affiche jamais, et
+           le doigt est inerte tant que personne ne pilote. Elle est permanente
+           tant que le décor tourne — pas un voile plein écran : le décor doit
+           rester visible derrière, c'est tout son objet. */
+        <div
+          style={{
+            position: 'absolute', left: 12, right: 12, bottom: 80,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+            border: '1px solid var(--line)', borderRadius: 12, padding: '12px 12px 14px',
+            background: 'rgba(6,8,12,.9)',
+          }}
+        >
+          <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.4, textAlign: 'center', color: 'var(--muted)' }}>
+            {t('combat.decor.body')}
+          </p>
+          <RunPicker
+            meta={metaRef.current} runRef={runRef} chapterToPlay={chapterToPlay}
+            onPickChapter={onPickChapter} onTick={onTick}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
