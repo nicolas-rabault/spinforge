@@ -52,12 +52,72 @@ function damage(att: Top, def: Top, impact: number, share: number): number {
   );
 }
 
+/**
+ * Instant du tick — dans [0, 1] — où les deux toupies entrent en contact, `null`
+ * si leurs trajets ne se touchent à aucun moment.
+ *
+ * Comparer les seules positions d'arrivée ne suffit pas, et se trompe de deux
+ * façons. Le pas de simulation dure 100 ms, pendant lesquelles deux toupies
+ * lancées se rapprochent de bien plus que les ~24 px qui les mettent au contact.
+ * Ou bien la fenêtre de chevauchement tombe entre deux échantillons et le choc
+ * n'a jamais lieu ; ou bien elles se sont déjà dépassées à l'arrivée et le
+ * chevauchement qu'on y lit donne une normale à l'envers — la séparation les
+ * pousse alors dans le sens de leur marche et la vitesse relative paraît
+ * positive, donc ni impulsion ni dégâts. Dans les deux cas, elles se croisent
+ * sans se toucher.
+ *
+ * On résout donc |p(t)| = minDist sur la position relative, qui varie
+ * linéairement de `p0` (début du tick) à l'arrivée — une simple équation du
+ * second degré dont on garde la plus petite racine, l'entrée dans le contact.
+ */
+function contactTime(a: Top, b: Top): number | null {
+  const minDist = a.radius + b.radius;
+  const p0x = b.from.x - a.from.x;
+  const p0y = b.from.y - a.from.y;
+  const c = p0x * p0x + p0y * p0y - minDist * minDist;
+  if (c <= 0) {
+    // Contact déjà en cours au début du tick : il n'y a pas d'entrée à chercher.
+    // On résout sur les positions d'arrivée — et seulement s'il y dure encore,
+    // sinon le choc a été encaissé au tick précédent et elles ne font que se
+    // séparer, ce que rejouer ferait payer deux fois.
+    const ex = b.pos.x - a.pos.x;
+    const ey = b.pos.y - a.pos.y;
+    return ex * ex + ey * ey < minDist * minDist ? 0 : null;
+  }
+  const dx = b.pos.x - a.pos.x - p0x;
+  const dy = b.pos.y - a.pos.y - p0y;
+  const qa = dx * dx + dy * dy;
+  if (qa === 0) return null;
+  const qb = 2 * (p0x * dx + p0y * dy);
+  const disc = qb * qb - 4 * qa * c;
+  if (disc < 0) return null;
+  const t = (-qb - Math.sqrt(disc)) / (2 * qa);
+  return t >= 0 && t <= 1 ? t : null;
+}
+
+/** Ramène la toupie où elle était à l'instant `t` de son trajet. Le reste du
+ *  déplacement est perdu — c'est ce que fait un choc. */
+function rewind(top: Top, t: number): void {
+  top.pos.x = top.from.x + (top.pos.x - top.from.x) * t;
+  top.pos.y = top.from.y + (top.pos.y - top.from.y) * t;
+}
+
 export function resolveCollision(a: Top, b: Top): void {
+  const t = contactTime(a, b);
+  if (t === null) return;
+  // Rembobiner à l'instant du choc, mais JAMAIS quand le contact durait déjà au
+  // début du tick (t = 0) : deux toupies qui frottent l'une contre l'autre
+  // perdraient chaque tick le déplacement qu'elles viennent de faire, et se
+  // retrouveraient figées sur place.
+  if (t > 0) {
+    rewind(a, t);
+    rewind(b, t);
+  }
   const dx = b.pos.x - a.pos.x;
   const dy = b.pos.y - a.pos.y;
   const dist = Math.hypot(dx, dy);
   const minDist = a.radius + b.radius;
-  if (dist === 0 || dist >= minDist) return;
+  if (dist === 0) return;
   const nx = dx / dist;
   const ny = dy / dist;
   const overlap = (minDist - dist) / 2;

@@ -206,6 +206,26 @@ export function updateShard(layout: ArenaLayout, rngState: number): number {
 }
 
 /**
+ * Distance la plus courte entre un point et le trajet parcouru par la toupie
+ * pendant le tick (`from` → `pos`).
+ *
+ * Mesurer depuis la seule position d'arrivée laissait passer au travers : à
+ * 100 ms de pas, une toupie lancée parcourt plus que les ~26 px de portée d'un
+ * éclat, et le survolait sans le voir. Même défaut que celui des collisions
+ * entre toupies, sur un disque immobile.
+ */
+function distToTravel(top: Top, px: number, py: number): number {
+  const dx = top.pos.x - top.from.x;
+  const dy = top.pos.y - top.from.y;
+  const len2 = dx * dx + dy * dy;
+  // Projection du point sur le trajet, bornée à ses deux extrémités.
+  const t = len2 === 0
+    ? 0
+    : Math.max(0, Math.min(1, ((px - top.from.x) * dx + (py - top.from.y) * dy) / len2));
+  return Math.hypot(top.from.x + t * dx - px, top.from.y + t * dy - py);
+}
+
+/**
  * Le premier arrivé prend l'éclat. Retourne l'id du preneur, ou `null`.
  * L'ordre du tableau tranche les litiges — le joueur en tête : le cas exact
  * (deux toupies au contact le même tick) est trop rare pour mériter mieux.
@@ -218,7 +238,7 @@ export function takeShard(layout: ArenaLayout, tops: Top[]): string | null {
     // des morts et la branche de mort du joueur, donc sans cette garde un joueur
     // éjecté au même tick esquiverait sa propre mort en effleurant l'éclat.
     if (top.spin <= 0) continue;
-    if (Math.hypot(top.pos.x - shard.x, top.pos.y - shard.y) > SHARD.radius + top.radius) continue;
+    if (distToTravel(top, shard.x, shard.y) > SHARD.radius + top.radius) continue;
     top.spin = Math.min(top.spinMax, top.spin + SHARD.spinGain * top.spinMax);
     layout.shard = null;
     layout.shardTimer = SHARD.everyTicks;

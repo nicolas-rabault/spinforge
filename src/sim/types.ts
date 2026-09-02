@@ -12,6 +12,13 @@ export interface Top {
   id: string;
   isPlayer: boolean;
   pos: Vec;
+  /** Position au début du tick, avant `moveAndBounce`. Le contact se cherche sur
+   *  le segment `from` → `pos` et non sur les seules positions d'arrivée : à
+   *  100 ms de pas, deux toupies rapides se rapprochent de plus que la somme de
+   *  leurs rayons en un tick, et n'échantillonner que les arrivées les laisse se
+   *  traverser. Réécrite par `moveAndBounce` avant chaque déplacement, elle ne
+   *  peut donc pas dater d'un tick — ni d'une salle — précédent. */
+  from: Vec;
   vel: Vec;
   aim: Vec | null; // direction IA (bots) — null pour le joueur
   radius: number;

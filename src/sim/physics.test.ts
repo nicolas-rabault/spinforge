@@ -10,15 +10,17 @@ function layout(breaches: ArenaLayout['breaches'] = []): ArenaLayout {
 }
 
 function top(over: Partial<Top> = {}): Top {
-  return {
+  const built: Top = {
     id: 't', isPlayer: false, aim: null,
-    pos: { x: 0, y: 0 }, vel: { x: 0, y: 0 },
+    pos: { x: 0, y: 0 }, from: { x: 0, y: 0 }, vel: { x: 0, y: 0 },
     radius: 12, spin: 1000, spinMax: 1000, spinDecay: 10,
     attack: 10, defense: 10, maxSpeed: 240, accel: 900,
     talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
     type: 'attaque', mass: 1,
     ...over,
   };
+  if (!over.from) built.from = { ...built.pos };
+  return built;
 }
 
 describe("applySteering", () => {
@@ -204,15 +206,17 @@ describe("clampToArena", () => {
 });
 
 function movingTop(overrides: Partial<Top> = {}): Top {
-  return {
+  const built: Top = {
     id: 't', isPlayer: false, aim: null,
-    pos: { x: 0, y: 0 }, vel: { x: 100, y: 0 },
+    pos: { x: 0, y: 0 }, from: { x: 0, y: 0 }, vel: { x: 100, y: 0 },
     radius: 12, spin: 1000, spinMax: 1000, spinDecay: 10,
     attack: 30, defense: 10, maxSpeed: 200, accel: 500,
     talents: NEUTRAL_TALENTS, decayPauseTicks: 0,
     type: 'attaque', mass: 1,
     ...overrides,
   };
+  if (!overrides.from) built.from = { ...built.pos };
+  return built;
 }
 
 describe('talent Glisse', () => {

@@ -32,6 +32,7 @@ export function makeBot(chapter: number, salle: number, index: number, angle: nu
     isPlayer: false,
     aim: null,
     pos: { x: Math.cos(angle) * dist, y: Math.sin(angle) * dist },
+    from: { x: Math.cos(angle) * dist, y: Math.sin(angle) * dist },
     vel: { x: 0, y: 0 },
     radius: boss ? BOSS.radius : BOT_BASE.radius,
     mass: boss ? BOSS.mass : 1,
