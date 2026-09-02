@@ -776,8 +776,10 @@ Les sept premières valeurs (`90` à `116`) tiennent les cinq garde-fous durs sa
 verrou actif, premier coffre à 0,00 h.
 
 **Le palier casse à `120`, sur deux garde-fous à la fois et au même chapitre.** Au chapitre 4,
-la salle la plus meurtrière n'est plus la 10 mais la 4 (1 117 morts recensées sur la salle 4,
-contre 229 sur la salle 10 à la valeur retenue — garde-fou 1 cassé) et la validation tombe à
+la salle la plus meurtrière n'est plus la 10 mais la 4 : 1 117 morts recensées sur la salle 4
+du chapitre 4 à `rewardBase = 120`, contre 141 sur la salle 10 du même chapitre 4 à la valeur
+retenue `104` (transcrit dans le « Rapport complet » ci-dessous) — garde-fou 1 cassé, chapitre
+tenu constant des deux côtés de la comparaison. La validation tombe au même point à
 38/40 graines (garde-fou 5). Les deux se dégradent ensemble à
 mesure que `rewardBase` monte : 37/40 à `126`, 32/40 à `132`, 27/40 à `140` — la salle la plus
 meurtrière reste la 4 ou la 3 selon le point, jamais la 10, sur toute cette zone. À `150`, la
@@ -909,11 +911,11 @@ ci-dessous.
 ### 1. Un palier peut casser sur deux garde-fous à la fois, au même chapitre, sans que l'un explique l'autre par hasard
 
 À `120`, le garde-fou 1 (salle 10 la plus meurtrière) et le garde-fou 5 (40/40 graines) cassent
-ensemble, au chapitre 4, et se dégradent ensemble jusqu'à `150` — jamais l'un sans l'autre sur
-toute cette zone. Ce n'est pas une coïncidence isolée à un seul point : le mécanisme est le même
-qu'au lot A (enrichir le joueur déplace le point de rupture d'un chapitre), sauf qu'ici les deux
-garde-fous qui le détectent bougent du même geste, parce qu'ils mesurent la même chose sous deux
-angles — quelle salle tue, et qui survit à quelle salle.
+ensemble, au chapitre 4 d'abord, puis aussi au chapitre 3 à partir de `150` — jamais l'un sans
+l'autre, à aucun chapitre, sur toute cette zone. Ce n'est pas une coïncidence isolée à un seul
+point : le mécanisme est le même qu'au lot A (enrichir le joueur déplace le point de rupture
+d'un chapitre), sauf qu'ici les deux garde-fous qui le détectent bougent du même geste, parce
+qu'ils mesurent la même chose sous deux angles — quelle salle tue, et qui survit à quelle salle.
 
 ### 2. Première fois dans cette passe que les trois départages numérotés, à l'unanimité, ne séparent rien
 
@@ -929,13 +931,29 @@ issue, `104` étant lui-même membre du groupe à égalité.
 
 ### 3. Les cinq garde-fous durs ne cassent pas ensemble : le palier de forme (garde-fous 1 et 5) et le palier de passivité (garde-fou 2) ont des frontières différentes, séparées d'un facteur supérieur à 1
 
-Le premier garde-fou à casser en montant `rewardBase` est le garde-fou 1/5 (`120`), pas la
-passivité, qui tient encore vingt points de grille plus loin (`132`, `140` casse). Une intuition
+Le premier garde-fou à casser en montant `rewardBase` est le garde-fou 1/5, à `120` ; la
+passivité, elle, tient encore à `132` et ne casse qu'à `140`, vingt de plus que `120` en valeur
+de `rewardBase`. Une intuition
 naïve — « plus l'économie est généreuse, plus tout casse au même endroit » — ne tient pas : ce
 sont deux mécanismes distincts (la forme de la difficulté par salle pour l'un, le rapport entre
 le temps actif et le temps passif pour l'autre), et rien ne garantit qu'ils cassent au même
 point. Vérifier les deux séparément, plutôt que de supposer que le premier garde-fou cassé
 disqualifie toute la zone pour tous les garde-fous, est ce qui a permis de voir le second.
+
+### 4. Un chiffre juste peut devenir faux par le seul fait d'être posé à côté du mauvais autre chiffre
+
+Une relecture (fix round 1/5) a trouvé, dans « Le palier, et où il casse » ci-dessus, une phrase
+qui contrastait les morts de la salle 4 au chapitre 4 à `rewardBase = 120` avec les morts de la
+salle 10 au chapitre **1** à `rewardBase = 104` — deux mesures individuellement exactes, mais
+prises à deux chapitres différents, présentées comme si elles se répondaient. Ce n'est pas un
+excès de portée (le sens de la phrase n'était pas gonflé, la conclusion qu'elle illustrait ne
+changeait pas) : c'est un chiffre juste posé à côté du mauvais autre chiffre, la moitié gauche et
+la moitié droite d'une même phrase venant silencieusement de deux mesures différentes. La
+correction (chapitre 4 des deux côtés : 1 117 contre 141, un écart plus grand que celui écrit
+par erreur, pas plus petit) ne change aucune conclusion de cette section — mais c'est la même
+famille de défaut que les trois excès de portée déjà retirés de ce journal, sous une forme
+différente : pas une affirmation qui dépasse la mesure, une phrase dont les deux moitiés ne
+mesurent pas la même chose.
 
 ## Lecture des garde-fous et départages à la valeur retenue (`rewardBase = 104`)
 
