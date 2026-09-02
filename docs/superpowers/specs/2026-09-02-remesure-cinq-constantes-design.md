@@ -89,14 +89,29 @@ chapitre 1 à ~0,37 h, donc les chapitres 2 à 4 réunis (~0,30 h) restent moins
 premier, sur les quatre jeux disjoints. C'est un rapport de 3 à 1, très au-dessus du plancher
 de ±0,02 h. **Le jeu n'a plus de mur après le chapitre 1, et ça, c'est mesuré.**
 
-**2.3 · `npm run verrou` est rouge sur `main`, et ce n'est pas une régression du jeu.** Trois
-vérifications en échec sur la passe 1 ; la descente n'atteint pas le boss dans son budget de
-90 s de temps réel. **Mesuré, pas supposé** : à `BUDGET_MS=300000`, les dix vérifications
-passent. Le budget avait été réglé quand le boss mourait plus vite ; `fc827ee` a rendu la
-salle 10 nettement plus meurtrière (70 % → 88 % de létalité par tentative), et le pilote
-grossier qui vit dans la page n'y arrive plus dans le temps imparti. C'est le troisième
-harnais du projet mort en silence, après les deux pannes de `calibrate` trouvées à
-l'intégration.
+**2.3 · `npm run verrou` a échoué une fois, et le budget de 90 s est trop mince.** Trois
+vérifications en échec sur la passe 1 : « bloquée en salle 10 après 91 s réelles, 205 s
+simulées », soit 2,25× le temps réel là où le commentaire du script documente ~11×.
+
+> **Correction du 2026-09-02, après coup.** Ce paragraphe affirmait d'abord que la cause était
+> `fc827ee`, qui porte la létalité de la salle 10 du chapitre 1 de 70 % à 88 % par tentative,
+> et il le présentait comme « mesuré, pas supposé ». **C'était faux.** L'échec ne s'est pas
+> reproduit : sept exécutions consécutives passent au même budget de 90 s, et trois hypothèses
+> ont été testées puis écartées une à une — cache Vite présent, cache Vite supprimé, douze
+> processus de calibration en parallèle. La cause de l'échec unique n'est **pas isolée**.
+>
+> Ce que la mesure établit, et rien de plus : **ce harnais est flottant à 90 s, pas cassé.**
+> Pour un harnais qui vit hors de `npm run test` et que rien ne surveille, une marge qui
+> flotte est une panne silencieuse en attente — le relever à 300 s la rétablit sans rien
+> coûter. C'est ce que fait le temps 0.
+>
+> Cette correction mérite d'être lue à côté du § 3, dont elle est une illustration involontaire
+> et coûteuse : **une observation unique n'est pas une mesure**, et ce document l'a écrit
+> comme une mesure avant de l'avoir contrôlée. Le § 3 dit la même chose des coûts marginaux ;
+> il a été écrit par la même main qui venait de commettre l'erreur ici.
+
+C'est malgré tout le troisième harnais du projet trouvé en défaut sans qu'aucune suite de
+tests ne le signale, après les deux pannes de `calibrate` découvertes à l'intégration.
 
 ## 3 · La découverte qui change le protocole : ces colonnes-là sont du bruit
 

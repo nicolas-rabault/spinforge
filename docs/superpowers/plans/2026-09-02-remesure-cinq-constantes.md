@@ -304,11 +304,18 @@ git status --short
 
 ## Task 2 : le budget de `npm run verrou`
 
-`npm run verrou` est **rouge sur `main`** aujourd'hui, et ce n'est pas une régression du jeu :
-la descente n'atteint pas le boss dans son budget de 90 s de temps réel. Mesuré le
-2026-09-02 : à `BUDGET_MS=300000` les dix vérifications passent. `fc827ee` a porté la létalité
-de la salle 10 du chapitre 1 de 70 % à 88 % par tentative, et le pilote grossier qui vit dans
-la page n'y arrive plus dans le temps imparti.
+`npm run verrou` a **échoué une fois** le 2026-09-02 sur trois vérifications de sa passe 1 :
+« bloquée en salle 10 après 91 s réelles, 205 s simulées », soit 2,25× le temps réel là où le
+commentaire du script documente ~11×.
+
+**Ce défaut ne se reproduit pas à la demande, et c'est le point.** Sept exécutions consécutives
+passent au même budget de 90 s ; trois hypothèses ont été testées et écartées — cache Vite
+présent, cache Vite supprimé, douze processus de calibration en parallèle. La cause de l'échec
+unique n'est pas isolée, et l'attribuer à `fc827ee` serait une supposition, pas une mesure.
+
+Ce que la mesure établit : **le harnais est flottant à 90 s, pas cassé.** Pour un harnais qui
+vit hors de `npm run test` et que rien ne surveille, une marge qui flotte est une panne
+silencieuse en attente. 300 s la rétablit sans rien coûter.
 
 **Files:**
 - Modify: `scripts/verrou.mjs:60`
@@ -367,16 +374,21 @@ cd /Users/nicolasrabault/Projects/B-Blades_versus-remesure && PORT=5947 npm run 
 
 Attendu : les dix `✓` et `Verrou vérifié de bout en bout.`
 
-- [ ] **Step 4: Vérifier que l'ancien budget reproduit bien le rouge**
-
-C'est la vérification par mutation de cette tâche : elle prouve que le correctif porte sur ce
-qu'on croit, et pas sur autre chose qui aurait changé entre-temps.
+- [ ] **Step 4: Sonder l'ancien budget — et ne PAS exiger qu'il rougisse**
 
 ```bash
 cd /Users/nicolasrabault/Projects/B-Blades_versus-remesure && PORT=5947 BUDGET_MS=90000 npm run verrou
 ```
 
-Attendu : `3 vérification(s) en échec.` — le même rouge qu'au Step 1.
+**Il n'y a pas d'attendu ici, et c'est délibéré.** Ce pas demandait d'abord de reproduire le
+rouge, comme vérification par mutation. La mutation a échoué : à 90 s le harnais passe, sept
+fois d'affilée, cache chaud, cache supprimé et machine chargée. Un défaut qui ne se reproduit
+pas ne se prouve pas par mutation — exiger le rouge ici pousserait l'exécutant à truquer la
+condition jusqu'à l'obtenir.
+
+Ce qu'il faut faire à la place : **noter ce qu'on observe**, et le consigner. Si le harnais
+passe à 90 s, c'est la confirmation qu'il est flottant et non cassé — ce qui justifie le
+relèvement tout autant, pour un harnais que rien ne surveille.
 
 - [ ] **Step 5: Commit**
 
