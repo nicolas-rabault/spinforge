@@ -944,6 +944,22 @@ paragraphe « Décision annulée en cours de route »).
   servent d'étalon pour prouver qu'une autre modification — l'extraction de l'autopilote de ce
   lot, par exemple — n'a rien changé au combat. À reprendre dans son propre lot, avec sa propre
   passe de mesure, en corrigeant le harnais dans le même commit plutôt qu'après coup.
+
+  **Mise à jour (2026-09-02) — les chiffres cités ci-dessus sont ceux de `764f220`, la base du
+  lot B, et ne sont plus ceux du dépôt.** `main` a livré `fc827ee` (« le contact se cherche
+  sur le trajet du tick, plus sur son arrivée »), qui récupère près d'un quart des collisions
+  que la détection discrète ratait et déplace tout l'équilibrage : chapitre 1 à **0,42 h en
+  20 descentes** au lieu de 0,32 h en 9, écart entre châssis à **×10,80** au lieu de ×3,80.
+  Quatre des huit garde-fous n'ont pas bougé (premier coffre 0,00 h, passivité jamais validée,
+  verrou du châssis actif, salle 10 la plus meurtrière dans les quatre chapitres). La ligne de
+  base courante et la raison du déplacement : section « Lot B » de `docs/roadmap.md`.
+
+  **L'argument de fond, lui, est renforcé plutôt qu'affaibli.** Cette remarque disait que le
+  harnais est un instrument de mesure et qu'on ne change pas l'instrument pendant qu'on
+  s'en sert d'étalon ; ce qui vient d'arriver en est la démonstration grandeur nature, sur un
+  changement pourtant légitime et bien testé venu d'ailleurs. La suite ne change pas : reprendre
+  le verrouillage dans son propre lot, avec sa propre passe de mesure, et corriger le harnais
+  dans le même commit.
 - 📋 **Des récompenses de progression par niveau.** Demandé par l'auteur : que progresser dans
   les niveaux, pas seulement dans les chapitres, débloque des récompenses en plus du gain de
   jeu normal. Voisin des quêtes déjà prévues au lot C du même jalon (`docs/roadmap.md`) — même
