@@ -736,3 +736,320 @@ passé.
   de combat désormais gelées (`damageK = 1,10`, `spinPerChapter = 1,05`,
   `attackPerChapter = 1,10`) — tâches suivantes de cette passe, commits séparés, jamais combat
   et économie ensemble.
+
+---
+
+# L'économie — `econ.rewardBase`
+
+> Tâche 6 de `docs/superpowers/plans/2026-09-02-remesure-cinq-constantes.md` — temps 2
+> (économie). Les trois constantes de combat retenues aux tâches 4 et 5 sont gelées sur tout ce
+> balayage : `combat.damageK` 1,10, `bot.scaling.spinPerChapter` 1,05,
+> `bot.scaling.attackPerChapter` 1,10. `econ.rewardPerChapter` reste à 1,15 (valeur en place,
+> hors mandat de cette tâche — c'est le bouton de la tâche 7). Seul `econ.rewardBase` varie.
+
+## Le balayage brut — douze points, quarante graines
+
+Grille : `90 · 96 · 100 · 104 · 108 · 112 · 116 · 120 · 126 · 132 · 140 · 150`.
+
+| `rewardBase` | ch. 1 (h/desc.) | s10 ch. 1 | écart châssis | GF1 (ch1→4) | graines (ch1→4) | marges ch. 2/3/4 | passivité |
+|---|---|---|---|---|---|---|---|
+| 90 | 0,40 h/17 | 50,80 s | ×5,25 | oui·oui·oui·oui | 40·40·40·40 | +0,11/+0,11/+0,14 | jamais |
+| 96 | 0,35 h/16 | 48,20 s | ×5,86 | oui·oui·oui·oui | 40·40·40·40 | +0,14/+0,08/+0,20 | jamais |
+| 100 | 0,34 h/15 | 48,30 s | ×5,38 | oui·oui·oui·oui | 40·40·40·40 | +0,09/+0,14/+0,16 | jamais |
+| **104 (commitée)** | **0,37 h/17** | **46,40 s** | **×4,88** | **oui·oui·oui·oui** | **40·40·40·40** | **+0,12/+0,15/+0,21** | **jamais** |
+| 108 | 0,40 h/18 | 46,10 s | ×5,86 | oui·oui·oui·oui | 40·40·40·40 | +0,08/+0,19/+0,16 | jamais |
+| 112 | 0,37 h/17 | 50,00 s | ×5,71 | oui·oui·oui·oui | 40·40·40·40 | +0,14/+0,09/+0,26 | jamais |
+| 116 | 0,34 h/16 | 47,40 s | ×4,89 | oui·oui·oui·oui | 40·40·40·40 | +0,10/+0,11/+0,32 | jamais |
+| 120 | 0,38 h/17 | 47,90 s | ×4,67 | oui·oui·oui·**NON** | 40·40·40·**38** | +0,10/+0,12/+0,32 | jamais |
+| 126 | 0,37 h/16 | 47,90 s | ×4,63 | oui·oui·oui·**NON** | 40·40·40·**37** | +0,08/+0,15/+0,28 | jamais |
+| 132 | 0,35 h/17 | 47,90 s | ×3,56 | oui·oui·oui·**NON** | 40·40·40·**32** | +0,11/+0,11/+0,23 | jamais |
+| 140 | 0,36 h/17 | 45,80 s | ×4,00 | oui·oui·oui·**NON** | 40·40·40·**27** | +0,10/+0,13/+0,25 | **14,54 h** |
+| 150 | 0,38 h/18 | 47,60 s | ×3,67 | oui·oui·**NON**·**NON** | 40·40·**37**·**22** | +0,06/+0,16/+0,92 | **15,66 h** |
+
+Toutes les lignes tiennent le verrou du châssis (« actif ») et le premier coffre (0,00 h) — ni
+l'un ni l'autre ne bouge sur toute la grille, ils ne figurent donc pas au tableau.
+
+## Le palier, et où il casse
+
+Les sept premières valeurs (`90` à `116`) tiennent les cinq garde-fous durs sans exception :
+`GF1` à `oui` aux quatre chapitres, `40/40` graines aux quatre chapitres, passivité « jamais »,
+verrou actif, premier coffre à 0,00 h.
+
+**Le palier casse à `120`, sur deux garde-fous à la fois et au même chapitre.** Au chapitre 4,
+la salle la plus meurtrière n'est plus la 10 mais la 4 (1 117 morts recensées sur la salle 4,
+contre 229 sur la salle 10 à la valeur retenue — garde-fou 1 cassé) et la validation tombe à
+38/40 graines (garde-fou 5). Les deux se dégradent ensemble à
+mesure que `rewardBase` monte : 37/40 à `126`, 32/40 à `132`, 27/40 à `140` — la salle la plus
+meurtrière reste la 4 ou la 3 selon le point, jamais la 10, sur toute cette zone. À `150`, la
+même paire de garde-fous casse aussi au chapitre 3 (37/40, salle 4) en plus du chapitre 4
+(22/40, salle 3).
+
+La passivité, elle, tient « jamais » jusqu'à `132` inclus — bien au-delà du point où le palier a
+déjà cassé pour une tout autre raison (garde-fous 1 et 5). Elle casse seulement à `140`
+(14,54 h) et se dégrade encore à `150` (15,66 h). C'est un garde-fou distinct, qui casse plus
+tard et pour une cause différente — développé dans sa propre section ci-dessous, parce qu'il
+enseigne plus que la valeur retenue elle-même.
+
+## Départage : ne retenir que les points intérieurs du palier
+
+Même règle qu'aux tâches précédentes (spec § 4) : un point n'est un candidat que si ses deux
+voisins **directs de la grille testée** tiennent eux aussi les cinq garde-fous durs — c'est le
+piège laissé par `econ.rewardBase = 86` avant cette passe, dont les deux valeurs voisines
+cassaient le garde-fou 1 (cité à la section précédente de ce même journal).
+
+Appliqué ici : `90` n'a pas de voisin inférieur testé dans cette grille — son statut d'intérieur
+n'est ni démontré ni réfuté, il reste simplement hors de portée de cette règle. `116` a un
+voisin supérieur, `120`, qui casse ; il est donc exclu, au même titre que `112` l'était pour
+`spinPerChapter` à la tâche 5. Les cinq valeurs restantes ont leurs deux voisins directs à
+l'intérieur du palier démontré.
+
+**Candidats intérieurs : `{96 ; 100 ; 104 ; 108 ; 112}`.**
+
+## Les trois départages, mesurés sur les cinq candidats — aucun ne sépare
+
+### Départage 6 — écart entre châssis
+
+| `rewardBase` | 96 | 100 | 104 | 108 | 112 |
+|---|---|---|---|---|---|
+| écart châssis | ×5,86 | ×5,38 | ×4,88 | ×5,86 | ×5,71 |
+
+Étendue observée : 0,98 (×4,88 à ×5,86). Le plancher de bruit de ce critère, déjà mesuré plus
+haut dans ce journal (section damageK, « Correction méthodologique » : quatre jeux disjoints à
+`damageK = 1,10`, `rewardBase` alors déjà gelé à 104) : `[×4,88 ; ×6,63]`, une amplitude de
+1,75 (±0,875, arrondi ±0,9). L'étendue des cinq candidats (0,98) tient largement dans ce
+plancher. **À égalité.**
+
+### Départage 7 — durée de la salle 10 du chapitre 1
+
+| `rewardBase` | 96 | 100 | 104 | 108 | 112 |
+|---|---|---|---|---|---|
+| s10 ch. 1 | 48,20 s | 48,30 s | 46,40 s | 46,10 s | 50,00 s |
+
+Rappel de la lecture littérale établie à la section damageK (fix round 1/5) : ce départage est
+une **borne** — rester sous 60 s sans expédier le boss — pas une fonction de proximité à
+minimiser autour de 45 s. Sous cette lecture, les cinq points la tiennent tous très
+confortablement (46,10 à 50,00 s, loin des 60 s) : **départage 7 ne sépare aucun des cinq.**
+
+Une différence réelle existe malgré tout sur cette colonne, et la passer sous silence serait
+inexact : l'étendue mesurée (46,10 à 50,00 s → 3,90 s) dépasse le plancher de bruit de cette
+même colonne (1,4 s, section damageK, départage 7). Ce n'est donc pas du bruit — mais ce n'est
+pas non plus un critère de décision sous la lecture littérale du départage 7, qui ne pose qu'un
+seuil, pas un minimum à atteindre. Note à titre indicatif, sans valeur de décision : `104`
+(46,40 s) et `108` (46,10 s) sont les deux valeurs numériquement les plus proches de la cible
+illustrative ~45 s, à 0,30 s l'une de l'autre — un écart, lui, sous le plancher de bruit.
+
+### Départage 8 — durée du chapitre 1
+
+| `rewardBase` | 96 | 100 | 104 | 108 | 112 |
+|---|---|---|---|---|---|
+| ch. 1 | 0,35 h | 0,34 h | 0,37 h | 0,40 h | 0,37 h |
+
+Étendue observée : 0,06 h (0,34 à 0,40 h) — exactement égale, non inférieure, au plancher de
+bruit mesuré pour cette colonne (0,06 h, section damageK, départage 8). À la limite : aucun
+signal au-dessus du bruit, mais aucune marge de confort non plus. **À égalité.**
+
+## Le départage terminal : la règle de repli s'applique
+
+Les trois départages numérotés ne séparent aucun des cinq candidats. Le mandat de cette passe
+(en tête de ce journal) couvre exactement ce cas : « si le palier entier reste indécis, la
+valeur commitée est conservée ». `104` fait partie des cinq candidats à égalité — la même règle
+terminale qui a choisi `1,10` puis `1,05` aux deux sections précédentes (« à mesure égale,
+retenir le point le plus proche de la valeur commitée ») produit ici, trivialement, `104`
+lui-même : c'est déjà la valeur en place, à distance zéro. Le repli et la règle terminale ne
+sont donc pas deux règles différentes qui convergent par chance vers la même issue — c'est la
+même règle, appliquée à un groupe qui contient déjà la valeur commitée.
+
+**`econ.rewardBase` : confirmée à 104. Aucun changement à `src/content/balance.json`.**
+
+C'est un résultat de cette passe, pas une absence de résultat — précédent déjà posé dans ce
+dépôt par la calibration du taux idle du lot B (`docs/roadmap.md`, commit `0fb306b`) : « la
+mesure valide la valeur `offline.rate: 0,20` déjà en place plutôt que de la changer — c'est un
+résultat de cette passe, pas une omission. » La même phrase s'applique ici, changement de
+constante mis à part.
+
+## La passivité a un prix : le garde-fou 2 casse hors du palier retenu, par la seule économie
+
+Ce résultat ne change rien à la valeur retenue ci-dessus — il apparaît à `140` et `150`, tous
+deux hors des cinq candidats intérieurs, et même hors des sept valeurs qui tenaient encore les
+cinq garde-fous durs (`90` à `116`). Il mérite sa propre section parce qu'il n'avait jamais été
+mesuré dans ce projet avant cette tâche.
+
+Jusqu'à `132` inclus, la politique passive reste « jamais » validée en 20 h simulées — le
+garde-fou 2 tient sur toute la zone où le garde-fou 1 tenait encore, et longtemps après qu'il a
+cassé (`120` à `132` cassent déjà les garde-fous 1 et 5 ; la passivité y reste pourtant
+« jamais »). **À `140`, pour la première fois dans ce projet, la politique passive valide le
+chapitre 1** — en 14,54 h simulées. À `150`, en 15,66 h.
+
+Mis en regard du temps actif nécessaire pour valider le même chapitre au même point (`140` :
+0,36 h ; `150` : 0,38 h), le rapport est d'environ **×40**. Ce n'est pas un renversement : rester
+immobile reste, au mieux, quarante fois plus lent que piloter. Le pilier n° 1 de
+`docs/game-design.md` (« la progression des chapitres est 100 % active — on n'avance qu'en
+pilotant ») n'est donc pas « cassé » à `140`, au sens où l'immobilité deviendrait compétitive
+avec le pilotage — elle ne l'est pas.
+
+Ce qui est établi, précisément et sans plus : **le garde-fou 2, tel que ce projet le définit
+(« la passivité reste jamais »), cesse de tenir.** Passivité et pilotage cessent d'être deux
+catégories disjointes — l'une qui ne valide jamais, l'autre qui valide toujours — pour devenir
+deux vitesses différentes d'une même route. Et ce basculement s'obtient **par l'économie seule** :
+les trois constantes de combat sont gelées sur tout ce balayage, seul `rewardBase` bouge. Aucune
+mesure antérieure de ce dépôt n'avait établi qu'enrichir suffisamment le joueur pouvait, à lui
+seul, faire ce que le combat ne fait jamais nulle part dans le domaine mesuré aux deux sections
+précédentes (`damageK` de 0,80 à 1,70 sur quatorze points, `spinPerChapter`/`attackPerChapter`
+sur vingt et un points) : rendre la passivité viable.
+
+Cette zone reste hors mandat de cette tâche — elle est hors du palier retenu, et le mandat
+interdit de toute façon de sortir d'un palier démontré pour départager — mais elle borne, pour
+une passe future qui rouvrirait ce bouton, la distance de sécurité avant que le garde-fou 2 ne
+devienne le facteur limitant : `132` le tient encore, `140` ne le tient plus. La localisation
+exacte du seuil (entre `132` et `140`, un intervalle de 8, jamais affiné) reste en dette,
+ci-dessous.
+
+## Ce que ce balayage a appris
+
+### 1. Un palier peut casser sur deux garde-fous à la fois, au même chapitre, sans que l'un explique l'autre par hasard
+
+À `120`, le garde-fou 1 (salle 10 la plus meurtrière) et le garde-fou 5 (40/40 graines) cassent
+ensemble, au chapitre 4, et se dégradent ensemble jusqu'à `150` — jamais l'un sans l'autre sur
+toute cette zone. Ce n'est pas une coïncidence isolée à un seul point : le mécanisme est le même
+qu'au lot A (enrichir le joueur déplace le point de rupture d'un chapitre), sauf qu'ici les deux
+garde-fous qui le détectent bougent du même geste, parce qu'ils mesurent la même chose sous deux
+angles — quelle salle tue, et qui survit à quelle salle.
+
+### 2. Première fois dans cette passe que les trois départages numérotés, à l'unanimité, ne séparent rien
+
+Aux deux sections précédentes, au moins un départage tranchait (le départage 6 mesuré pour
+`damageK`, le contrôle de forme sur jeux disjoints pour `spinPerChapter`). Ici, les trois
+départages 6, 7 et 8 arrivent chacun à la même conclusion sur les cinq candidats intérieurs :
+aucun signal au-dessus du bruit mesuré pour ce critère précis. Ce n'est pas un échec de méthode
+— c'est la raison d'être de la règle de repli écrite dans le mandat de cette passe avant que ce
+balayage ne tourne : « si le palier entier reste indécis, la valeur commitée est conservée ».
+Cette tâche est la première de la passe où cette règle, plutôt que la règle terminale de
+proximité, est celle qui décide réellement — même si les deux convergent ici vers la même
+issue, `104` étant lui-même membre du groupe à égalité.
+
+### 3. Les cinq garde-fous durs ne cassent pas ensemble : le palier de forme (garde-fous 1 et 5) et le palier de passivité (garde-fou 2) ont des frontières différentes, séparées d'un facteur supérieur à 1
+
+Le premier garde-fou à casser en montant `rewardBase` est le garde-fou 1/5 (`120`), pas la
+passivité, qui tient encore vingt points de grille plus loin (`132`, `140` casse). Une intuition
+naïve — « plus l'économie est généreuse, plus tout casse au même endroit » — ne tient pas : ce
+sont deux mécanismes distincts (la forme de la difficulté par salle pour l'un, le rapport entre
+le temps actif et le temps passif pour l'autre), et rien ne garantit qu'ils cassent au même
+point. Vérifier les deux séparément, plutôt que de supposer que le premier garde-fou cassé
+disqualifie toute la zone pour tous les garde-fous, est ce qui a permis de voir le second.
+
+## Lecture des garde-fous et départages à la valeur retenue (`rewardBase = 104`)
+
+| Garde-fou / départage | État | Mesure |
+|---|---|---|
+| 1. Salle 10 la plus meurtrière — 4 chapitres | **TENU** | `oui×4` |
+| 2. Passivité « jamais » | **TENU** | jamais en 20 h simulées |
+| 3. Premier coffre immédiat | **TENU** | 0,00 h |
+| 4. Verrou du châssis actif | **TENU** | actif |
+| 5. 40/40 graines, 4 chapitres | **TENU** | `40/40/40/40` |
+| interne — points intérieurs seulement | **DÉCIDE** (n'élimine que 90 et 116) | intérieurs retenus `{96;100;104;108;112}` |
+| 6. Écart châssis (départage) | à égalité | ×4,88 ; étendue du groupe 0,98, sous le plancher `[×4,88;×6,63]` |
+| 7. Salle 10 ch. 1, borne < 60 s (départage) | ne sépare pas | 46,40 s ; les cinq candidats tiennent la borne (46,10 à 50,00 s) |
+| 8. Durée du chapitre 1 (départage) | à égalité, à la limite | 0,37 h ; étendue du groupe 0,06 h = plancher de bruit |
+| repli — palier indécis → valeur commitée conservée | **DÉCIDE** | 104 déjà membre du groupe à égalité, distance zéro |
+
+## Rapport complet à la valeur retenue (`econ.rewardBase = 104`, quarante graines)
+
+```
+=== Calibration — 40 graines ===
+Premier coffre ouvert    : médiane 0.00 h
+
+--- Chapitre 1 : validé par 40/40 graines · 0.37 h cumulées (+0.37 h) · 17.00 descentes · salle la plus meurtrière [10,229]
+    salle 10 la plus meurtrière : oui
+    (lecture par tentative : salle 10, 85 % de létalité)
+    salle 1 : 4.50 s  (vidée 730 fois, morts 0) · 0 % létalité/tentative
+    salle 2 : 4.30 s  (vidée 730 fois, morts 0) · 0 % létalité/tentative
+    salle 3 : 5.20 s  (vidée 727 fois, morts 3) · 0 % létalité/tentative
+    salle 4 : 9.80 s  (vidée 722 fois, morts 5) · 1 % létalité/tentative
+    salle 5 : 10.50 s  (vidée 675 fois, morts 47) · 7 % létalité/tentative
+    salle 6 : 11.10 s  (vidée 612 fois, morts 63) · 9 % létalité/tentative
+    salle 7 : 12.30 s  (vidée 509 fois, morts 103) · 17 % létalité/tentative
+    salle 8 : 13.50 s  (vidée 398 fois, morts 111) · 22 % létalité/tentative
+    salle 9 : 14.60 s  (vidée 269 fois, morts 129) · 32 % létalité/tentative
+    salle 10 : 46.40 s  (vidée 40 fois, morts 229) · 85 % létalité/tentative
+
+--- Chapitre 2 : validé par 40/40 graines · 0.49 h cumulées (+0.12 h) · 3.00 descentes · salle la plus meurtrière [10,93]
+    salle 10 la plus meurtrière : oui
+    (lecture par tentative : salle 10, 70 % de létalité)
+    salle 1 : 4.40 s  (vidée 161 fois, morts 0) · 0 % létalité/tentative
+    salle 2 : 4.20 s  (vidée 161 fois, morts 0) · 0 % létalité/tentative
+    salle 3 : 4.90 s  (vidée 159 fois, morts 2) · 1 % létalité/tentative
+    salle 4 : 9.50 s  (vidée 156 fois, morts 3) · 2 % létalité/tentative
+    salle 5 : 10.00 s  (vidée 153 fois, morts 3) · 2 % létalité/tentative
+    salle 6 : 10.50 s  (vidée 145 fois, morts 8) · 5 % létalité/tentative
+    salle 7 : 12.80 s  (vidée 140 fois, morts 5) · 3 % létalité/tentative
+    salle 8 : 13.80 s  (vidée 138 fois, morts 2) · 1 % létalité/tentative
+    salle 9 : 14.10 s  (vidée 133 fois, morts 5) · 4 % létalité/tentative
+    salle 10 : 50.20 s  (vidée 40 fois, morts 93) · 70 % létalité/tentative
+
+--- Chapitre 3 : validé par 40/40 graines · 0.64 h cumulées (+0.15 h) · 3.00 descentes · salle la plus meurtrière [10,90]
+    salle 10 la plus meurtrière : oui
+    (lecture par tentative : salle 10, 69 % de létalité)
+    salle 1 : 4.50 s  (vidée 175 fois, morts 0) · 0 % létalité/tentative
+    salle 2 : 3.90 s  (vidée 175 fois, morts 0) · 0 % létalité/tentative
+    salle 3 : 4.80 s  (vidée 169 fois, morts 6) · 3 % létalité/tentative
+    salle 4 : 8.50 s  (vidée 162 fois, morts 7) · 4 % létalité/tentative
+    salle 5 : 9.90 s  (vidée 161 fois, morts 1) · 1 % létalité/tentative
+    salle 6 : 10.10 s  (vidée 152 fois, morts 9) · 6 % létalité/tentative
+    salle 7 : 11.90 s  (vidée 145 fois, morts 7) · 5 % létalité/tentative
+    salle 8 : 13.30 s  (vidée 137 fois, morts 8) · 6 % létalité/tentative
+    salle 9 : 14.00 s  (vidée 130 fois, morts 7) · 5 % létalité/tentative
+    salle 10 : 49.40 s  (vidée 40 fois, morts 90) · 69 % létalité/tentative
+
+--- Chapitre 4 : validé par 40/40 graines · 0.85 h cumulées (+0.21 h) · 5.00 descentes · salle la plus meurtrière [10,141]
+    salle 10 la plus meurtrière : oui
+    (lecture par tentative : salle 10, 78 % de létalité)
+    salle 1 : 4.30 s  (vidée 319 fois, morts 0) · 0 % létalité/tentative
+    salle 2 : 3.10 s  (vidée 319 fois, morts 0) · 0 % létalité/tentative
+    salle 3 : 4.90 s  (vidée 308 fois, morts 11) · 3 % létalité/tentative
+    salle 4 : 8.40 s  (vidée 295 fois, morts 13) · 4 % létalité/tentative
+    salle 5 : 9.60 s  (vidée 274 fois, morts 21) · 7 % létalité/tentative
+    salle 6 : 9.10 s  (vidée 249 fois, morts 25) · 9 % létalité/tentative
+    salle 7 : 11.80 s  (vidée 209 fois, morts 40) · 16 % létalité/tentative
+    salle 8 : 13.40 s  (vidée 192 fois, morts 17) · 8 % létalité/tentative
+    salle 9 : 14.10 s  (vidée 181 fois, morts 11) · 6 % létalité/tentative
+    salle 10 : 52.10 s  (vidée 40 fois, morts 141) · 78 % létalité/tentative
+
+Garde-fou passivité      : jamais — doit rester très au-dessus de la référence
+
+=== Comparatif châssis — chapitre 1 (40 graines) ===
+Brasier Solaire    (equilibre ) : 17.00 runs · 0.37 h · salle la plus meurtrière [10,229]
+Typhon Primal      (attaque   ) : 39.00 runs · 0.63 h · salle la plus meurtrière [10,379]
+Carapace Abyssale  (defense   ) : 8.00 runs · 0.26 h · salle la plus meurtrière [10,97]
+Tigre Foudre       (endurance ) : 39.00 runs · 0.89 h · salle la plus meurtrière [9,662]
+Écart meilleur/pire (runs) : 39/8 = ×4.88 (cible : < ×2)
+
+=== Verrou du châssis — contre-pioche du triangle (40 graines) ===
+rebascule à chaque salle        : 39.00 runs · 0.63 h
+même choix, tenu jusqu'au boss  : 39.00 runs · 0.63 h
+Verrou actif : changer de châssis en cours de descente ne rapporte rien.
+```
+
+Relevé obtenu par exécution directe de `npm run calibrate` sur `src/content/balance.json`
+inchangé (aucune ligne éditée par cette tâche), pas seulement rejoué depuis le balayage —
+identique au chiffre près au point `rewardBase = 104` du balayage (`ecart.x = 4,88`,
+`s10 = 46,40 s`, `ch1 = 0,37 h / 17 descentes`, marges `+0,12 / +0,15 / +0,21`) et identique au
+rapport complet déjà relevé aux deux sections précédentes de ce journal (`damageK` et
+`spinPerChapter`/`attackPerChapter`), puisqu'aucune des quatre constantes gelées ni
+`rewardBase` n'a changé depuis : contrôle croisé passé, à trois reprises indépendantes.
+
+`npm run test` : 490 tests, 35 fichiers, tous verts.
+
+## Ce qui reste en dette après cette tâche
+
+- **Le seuil exact où le garde-fou 2 (passivité) casse n'est pas localisé plus finement que
+  l'intervalle `]132 ; 140]`** — huit points d'écart sur la grille, jamais affinés. Si une passe
+  future avait besoin de cette borne avec précision (pour documenter une marge de sécurité
+  plutôt qu'un simple encadrement), l'affiner d'abord serait la façon correcte de procéder.
+- **`90` n'a pas de voisin inférieur testé** : son statut d'intérieur du palier n'est ni
+  démontré ni réfuté par cette grille. Sans conséquence sur la décision (il n'était de toute
+  façon pas nécessaire au départage), mais à garder en tête si une passe future élargit la
+  grille vers le bas.
+- **`econ.rewardPerChapter` reste à balayer**, sous les quatre constantes désormais gelées
+  (`damageK = 1,10`, `spinPerChapter = 1,05`, `attackPerChapter = 1,10`,
+  `rewardBase = 104`) — tâche 7 de cette passe, commit séparé, toujours pas de combat dans le
+  même commit que l'économie.
