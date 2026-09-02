@@ -324,7 +324,7 @@ silencieuse en attente. 300 s la rétablit sans rien coûter.
 - Consumes : rien.
 - Produces : `BUDGET_MS` surchargeable par l'environnement, défaut relevé à 300 000.
 
-- [ ] **Step 1: Reproduire le rouge**
+- [ ] **Step 1: Établir l'état de départ du harnais**
 
 Lancer le serveur de dev sur un port inhabituel, **et vérifier ce qu'il sert** :
 
@@ -343,8 +343,12 @@ autre session.
 PORT=5947 npm run verrou
 ```
 
-Attendu : `3 vérification(s) en échec.`, dont
-`✗ le boss vaincu a fermé la descente (bloquée en salle 10 …)`.
+Ce passage est un relevé, pas une vérification : le défaut est intermittent, donc **il n'y a
+pas d'issue attendue ici**. Consigner ce qui sort, rouge ou vert, sans y voir un signe que la
+condition de départ est mal posée. Historique connu au budget de 90 s : un échec sur huit
+exécutions (« bloquée en salle 10 après 91 s réelles, 205 s simulées », 2,25× le temps réel
+contre ~11× documentés), sept passages verts consécutifs ensuite. Voir le Step 4 pour ce que
+ce relevé implique.
 
 - [ ] **Step 2: Rendre le budget surchargeable et relever le défaut**
 
