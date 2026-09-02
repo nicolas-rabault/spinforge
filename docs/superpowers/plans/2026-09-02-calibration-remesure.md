@@ -1523,8 +1523,9 @@ Le mandat visait la frontière combat/économie. Mais la même forme de défaut 
 l'intérieur du temps combat**, entre deux de ses propres tâches : `combat.damageK` a été choisi à
 la tâche 4 par un balayage qui tournait avec `bot.scaling.spinPerChapter` encore gelé à 1,02 (sa
 valeur d'avant cette passe) — puis la tâche 5, immédiatement après, a déplacé `spinPerChapter` à
-1,05. La justification de `damageK = 1,10` (départages 6, 7 et 8, tous trois section `damageK`
-ci-dessus) a donc été formée sous une valeur de `spinPerChapter` que la tâche suivante a changée
+1,05. La justification de `damageK = 1,10` (départages 6, 7 et 8, puis la règle terminale de
+proximité à la valeur commitée, section `damageK` ci-dessus) a donc été formée sous une valeur
+de `spinPerChapter` que la tâche suivante a changée
 — la forme exacte du trou du lot A, un niveau plus bas : pas entre deux temps de la passe, mais
 entre deux tâches du même temps.
 
@@ -1579,21 +1580,33 @@ journal — c'est **structurel**, et ça se déduit sans mesurer, comme le contr
 tâches 5 et 7 l'a déjà établi pour `spinPerChapter` et `rewardPerChapter` : les deux facteurs
 portent l'exposant `chapitre − 1`, qui vaut 0 au chapitre 1, donc `spinPerChapter` ne peut
 *structurellement* rien changer à ce que le chapitre 1 mesure — ni à `1,02` (tâche 4) ni à
-`1,05` (cette tâche). Or les trois critères qui ont justifié `damageK = 1,10` (départages 6, 7 et
-8, section `damageK`) sont **tous les trois des grandeurs du chapitre 1** : l'écart entre
-châssis, la durée de la salle 10 du chapitre 1, la durée du chapitre 1 lui-même. Aucun des trois
-ne pouvait donc être affecté par le déplacement de `spinPerChapter` — pas seulement « la
-revérification n'a rien trouvé », mais **le trou qu'elle cherchait ne pouvait pas exister**, par
-construction du bouton. C'est plus fort qu'un résultat négatif : c'est une démonstration, pas
-seulement une mesure qui échoue à trouver un problème.
+`1,05` (cette tâche). Or `damageK = 1,10` n'a pas été choisi par trois départages mais par
+**quatre étapes** (section `damageK` ci-dessus, « Le départage terminal, et la valeur retenue ») :
+les départages 6 (écart entre châssis), 7 (durée de la salle 10 du chapitre 1) et 8 (durée du
+chapitre 1) sont chacun une grandeur du chapitre 1 — 6 a resserré le groupe bas et exclu 1,30 sur
+jeux disjoints, 7 a éliminé 0,80 et 0,90 sans séparer les survivants, 8 les a laissés à égalité —
+puis la **règle terminale** (« à mesure égale, retenir le point le plus proche de la valeur
+commitée ») a tranché entre les quatre survivants. Les trois premières étapes ne peuvent pas voir
+`spinPerChapter` parce que ce sont des grandeurs du chapitre 1 ; la quatrième ne le peut pas non
+plus, pour une raison différente et plus forte — ce n'est **pas une mesure du jeu du tout**, mais
+une distance dans l'espace des valeurs de `damageK` lui-même (`|1,10 − 1,30|` contre `|0,95 −
+1,30|`, etc.), qui ne peut dépendre ni de `spinPerChapter`, ni du jeu de graines, ni de rien
+d'autre que la grille testée. Les quatre étapes sont donc indépendantes du déplacement de
+`spinPerChapter` — pas seulement « la revérification n'a rien trouvé », mais **le trou qu'elle
+cherchait ne pouvait pas exister**, par construction du bouton et de la règle qui l'a choisi.
+C'est plus fort qu'un résultat négatif : c'est une démonstration, pas seulement une mesure qui
+échoue à trouver un problème.
 
 ## Conclusion : les valeurs retenues tiennent, telles quelles
 
 `combat.damageK = 1,10` reste au centre d'un plateau à cinq points où les cinq garde-fous durs
 tiennent sans exception, et sa justification — formée sous `spinPerChapter = 1,02` à la tâche 4
-— ne pouvait pas être compromise par le passage à `1,05` (tâche 5), puisqu'aucun des critères qui
-l'ont établie ne peut voir ce facteur. Aucune des cinq constantes de cette passe ne change à
-cette tâche. `src/content/balance.json` reste inchangé — vérifié par `git diff` en fin de tâche.
+— ne pouvait pas être compromise par le passage à `1,05` (tâche 5) : les trois départages qui y
+ont contribué (6, 7, 8) sont des grandeurs du chapitre 1, que `spinPerChapter` ne peut
+structurellement pas toucher, et la règle terminale qui a choisi 1,10 parmi les survivants à
+égalité n'est même pas une mesure du jeu — c'est une distance entre valeurs de `damageK`. Aucune
+des cinq constantes de cette passe ne change à cette tâche. `src/content/balance.json` reste
+inchangé — vérifié par `git diff` en fin de tâche.
 
 ## Ce que cette tâche apprend
 
@@ -1619,6 +1632,27 @@ pointait pas.
 Le contrôle d'instrument des tâches 5 et 7 (l'exposant `chapitre − 1` vaut 0 au chapitre 1) avait
 été introduit comme garde-fou de non-régression. Réutilisé ici sur un autre facteur du même
 type, il ne se contente pas de confirmer l'absence de problème : il établit que le problème
-cherché ne pouvait structurellement pas exister, puisque les trois départages qui ont justifié
-`damageK` ne portent que sur le chapitre 1. La même discipline — vérifier une propriété
-structurelle avant de conclure d'une mesure — qui avait servi à départager sert ici à clore.
+cherché ne pouvait structurellement pas exister — à condition de couvrir toute la façon dont
+`damageK` a été choisi, pas seulement sa part la plus facile à mesurer. Trois des quatre étapes
+qui l'ont retenu (départages 6, 7 et 8) ne portent que sur le chapitre 1 ; la quatrième, la règle
+terminale de proximité à la valeur commitée, n'est une mesure de rien — c'est une distance entre
+valeurs de `damageK` — et elle est donc indépendante de `spinPerChapter` par un tout autre
+argument. La même discipline — vérifier une propriété structurelle avant de conclure d'une
+mesure — qui avait servi à départager sert ici à clore, mais seulement une fois qu'elle couvre
+chaque étape de la décision, pas les trois qui se mesurent le plus facilement.
+
+### 4. Fix round 1/5 : l'argument d'impossibilité oubliait l'étape qui avait vraiment choisi
+
+La première version de cette section attribuait le choix de `damageK = 1,10` aux seuls
+départages 6, 7 et 8 — trois étapes sur quatre. La section `damageK` de ce même journal
+(« Le départage terminal, et la valeur retenue ») dit pourtant explicitement que les départages
+7 et 8 « ne poussent dans aucune direction à l'intérieur du groupe » et que « le choix entre les
+quatre revient donc entièrement à la règle terminale ». L'argument d'impossibilité, tel qu'écrit
+d'abord, ne portait donc que sur les trois étapes qui ne décidaient pas, et laissait de côté celle
+qui décidait réellement. La conclusion ne change pas — la règle terminale est, elle aussi,
+indépendante de `spinPerChapter`, pour une raison encore plus directe qu'une grandeur du
+chapitre 1 : ce n'est pas une mesure du tout — mais l'argument tel qu'il était écrit ne le
+montrait pas. Repéré uniquement en relisant cette section contre la section `damageK`
+elle-même, plutôt qu'en la relisant seule : la même classe de défaut que ce journal a déjà
+comptée plusieurs fois — une portée énoncée plus large que ce que le texte cité couvre
+réellement.
