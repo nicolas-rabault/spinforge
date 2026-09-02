@@ -339,7 +339,7 @@ export function App() {
         />
       ) : null}
       {tab === 'coffres' ? <ChestScreen metaRef={metaRef} onChanged={metaChanged} /> : null}
-      {tab === 'toupies' ? <ToupiesScreen metaRef={metaRef} runRef={runRef} chapterToPlay={chapterToPlay} onChanged={metaChanged} /> : null}
+      {tab === 'toupies' ? <ToupiesScreen metaRef={metaRef} runRef={runRef} piloted={playing} chapterToPlay={chapterToPlay} onChanged={metaChanged} /> : null}
 
       <TabBar tab={tab} onChange={setTab} att={att} floating={combat} />
 

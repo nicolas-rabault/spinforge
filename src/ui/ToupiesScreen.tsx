@@ -73,10 +73,13 @@ function ChapterComposition({ chapter }: { chapter: number }) {
 }
 
 export function ToupiesScreen({
-  metaRef, runRef, chapterToPlay, onChanged,
+  metaRef, runRef, piloted, chapterToPlay, onChanged,
 }: {
   metaRef: { current: MetaState };
   runRef: { current: RunState };
+  /** Vrai quand la descente en cours est celle du joueur. Faux en décor, où
+   *  `runRef` porte une descente que personne ne pilote — voir `between`. */
+  piloted: boolean;
   /** Le chapitre que la prochaine descente utilisera, calculé par `App` — et non
    *  `runRef.current.chapter`, qui reste sur le chapitre qu'on vient de quitter
    *  tant que la descente suivante n'est pas lancée. C'est justement la fenêtre
@@ -86,16 +89,20 @@ export function ToupiesScreen({
 }) {
   const meta = metaRef.current;
   const pending = activeToupie(meta);
-  const piloted = toupieById(runRef.current.toupie);
+  const inRing = toupieById(runRef.current.toupie);
   // Le châssis est figé pour la descente : tant que le choix diffère de la
   // toupie pilotée, il attend la mort ou le boss. Sans ce texte, « Équiper » ne
   // changerait rien à l'écran et se lirait comme un bug.
-  const waiting = pending.id !== piloted.id;
+  const waiting = pending.id !== inRing.id;
   // `phase !== 'fighting'` et non `=== 'dead'` : depuis que le boss ferme la
   // descente, une victoire laisse elle aussi le châssis en attente du prochain
   // départ. La clé porte le même nom que cette variable — `waiting.between` —
   // pour que le catalogue dise dans quel cas sa phrase s'affiche.
-  const between = runRef.current.phase !== 'fighting';
+  //
+  // `!piloted` compte pour la même chose : en décor, la descente à l'écran
+  // n'est celle de personne, et « Tu pilotes X jusqu'au bout de la descente »
+  // y désignerait une toupie que le joueur ne commande pas.
+  const between = !piloted || runRef.current.phase !== 'fighting';
   const giftAvailable = canClaimFounderGift(meta);
 
   // Une seule porte de mutation. Plus de `syncRunStats` ici : le run ne relit
@@ -110,7 +117,7 @@ export function ToupiesScreen({
           chapitre dans les mêmes teintes. Quatre lignes de paragraphe et trois
           lignes de tableau tenaient ici. */}
       <section style={{ ...cardStyle('var(--line)'), alignItems: 'center', gap: 10 }}>
-        <TypeTriangle size={196} highlight={piloted.type as TopType} />
+        <TypeTriangle size={196} highlight={inRing.type as TopType} />
         {/* Nommer le chapitre n'était pas nécessaire tant qu'il n'y en avait
             qu'un ; avec quatre descentes possibles, une bande de pastilles sans
             titre ne dit plus de quelle composition elle parle. */}
@@ -127,7 +134,7 @@ export function ToupiesScreen({
                 pending: <span style={{ color: 'var(--text)' }}>{toupieLabel(pending.id)}</span>,
               })
             : tx('toupies.waiting.alive', {
-                piloted: <span style={{ color: 'var(--ember)' }}>{toupieLabel(piloted.id)}</span>,
+                piloted: <span style={{ color: 'var(--ember)' }}>{toupieLabel(inRing.id)}</span>,
                 pending: <span style={{ color: 'var(--text)' }}>{toupieLabel(pending.id)}</span>,
               })}
         </p>
@@ -146,7 +153,7 @@ export function ToupiesScreen({
 
       {TOUPIES.map((toupie) => {
         const owned = meta.toupies.unlocked.includes(toupie.id);
-        const isPiloted = toupie.id === piloted.id;
+        const isPiloted = toupie.id === inRing.id;
         const isPending = toupie.id === pending.id;
         const affordable = meta.gems >= TOUPIE_SHOP.priceGems;
 
