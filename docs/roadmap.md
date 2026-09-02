@@ -201,6 +201,35 @@ châssis actif ; salle 10 la plus meurtrière dans chaque chapitre. Un seul de c
 garde-fous qui aurait bougé aurait signifié que l'extraction n'était pas neutre — c'est
 exactement la garantie que la spec exigeait avant d'accepter le déplacement de code (§ 2.2).
 
+**Mise à jour (intégration de `main`, 2026-09-02) — ces huit chiffres sont ceux de la base du
+lot, `764f220`, et ce ne sont plus ceux du dépôt.** `main` a livré entre-temps `fc827ee`,
+« le contact se cherche sur le trajet du tick, plus sur son arrivée » : la détection de contact
+était discrète — positions intégrées sur 100 ms entières, chevauchement testé aux seules
+positions d'arrivée — et une toupie rapide traversait sa cible. Le commit mesure lui-même ce
+qu'il récupère : **97 chocs encaissés contre 78**, près d'un quart des collisions qui étaient
+perdues. Un autopilote qui encaisse un quart de chocs en plus meurt davantage, et tout
+l'équilibrage se déplace avec lui. Nouvelle ligne de base :
+
+| | validé | coût cumulé | coût marginal | descentes | plus meurtrière (absolu) | garde-fou 1 | par tentative |
+|---|---|---|---|---|---|---|---|
+| ch. 1 | 10/10 | 0,42 h | +0,42 h | 20 | salle 10, 72 morts | oui | salle 10, 88 % |
+| ch. 2 | 10/10 | 0,54 h | +0,12 h | 2 | salle 10, 30 morts | oui | salle 10, 75 % |
+| ch. 3 | 10/10 | 0,69 h | +0,15 h | 3 | salle 10, 16 morts | oui | salle 10, 62 % |
+| ch. 4 | 10/10 | 0,77 h | +0,08 h | 5 | salle 10, 33 morts | oui | salle 10, 77 % |
+
+Inchangés : premier coffre 0,00 h · passivité jamais validée · verrou du châssis actif · salle
+10 la plus meurtrière dans les quatre chapitres. Vecteur de morts par salle du chapitre 1 :
+`0,0,0,1,15,17,34,25,35,72`, contre `0,0,1,0,10,9,21,18,15,23`. Le huitième garde-fou, lui,
+n'est pas un recalage mais une **alerte** : l'écart entre châssis passe de ×3,80 à ×10,80 pour
+une cible de ×2 — voir « Née de l'intégration » dans la dette du jalon 2.5, où elle est
+consignée.
+
+**Ce lot n'a contribué à aucun de ces déplacements, et c'est mesuré, pas plaidé** : la ligne de
+base ci-dessus est identique sur `main` seul et sur l'arbre fusionné. La démonstration de
+neutralité du paragraphe précédent reste donc entièrement valide — elle disait « l'extraction
+ne déplace aucun chiffre », pas « ces chiffres sont éternels ». Ce qui change est la référence
+à laquelle une remesure doit se comparer, et rien d'autre.
+
 **Le coût du fast-forward a fait écarter la formule fermée que prescrivait la spec de
 référence.** Mesuré sur la machine de développement, autopilote branché : 1 h de jeu simulée
 coûte 50 ms, 4 h (le plafond) 136 ms, 12 h (le plafond prévu au jalon 4) 389 ms. Et le plafond
@@ -215,34 +244,49 @@ chapitre 1 :
 
 | taux | temps simulé pour 4 h d'absence | crédits | coffres | niveaux d'amélioration financés |
 |---|---|---|---|---|
-| 5 % | 12 min | 7 856 | 61 | 25 |
-| 10 % | 24 min | 15 662 | 127 | 33 |
-| 15 % | 36 min | 24 370 | 196 | 39 |
-| **20 % (retenu)** | **48 min** | **32 492** | **261** | **42** |
-| 25 % | 60 min | 39 767 | 323 | 45 |
-| 30 % | 72 min | 47 030 | 387 | 47 |
+| 5 % | 12 min | 13 057 | 109 | 31 |
+| 10 % | 24 min | 25 888 | 216 | 39 |
+| 15 % | 36 min | 38 928 | 326 | 45 |
+| **20 % (retenu)** | **48 min** | **51 428** | **430** | **48** |
+| 25 % | 60 min | 64 455 | 537 | 51 |
+| 30 % | 72 min | 77 253 | 644 | 53 |
 
-Référence : une heure de jeu actif produit 39 767 crédits, 323 coffres, 302 salles vidées et
-finance 45 niveaux d'amélioration — c'est la ligne à 25 % du tableau ci-dessus, et ce n'est
+> **Chiffres remesurés après l'intégration de `fc827ee` (2026-09-02).** La première mesure de
+> ce balayage tournait sur `764f220` et donnait des valeurs environ 60 % plus basses (7 856 à
+> 47 030 crédits, 61 à 387 coffres) ; le contact cherché sur le trajet du tick a déplacé toute
+> l'économie du farm avec le reste. **La décision, elle, n'a pas bougé d'un pouce**, et c'est
+> le point important : le raisonnement ci-dessous est confirmé, seules les valeurs absolues
+> sont à relire. Voir plus bas pourquoi il ne pouvait pas en être autrement.
+
+Référence : une heure de jeu actif produit 64 455 crédits, 537 coffres, 512 salles vidées et
+finance 51 niveaux d'amélioration — c'est la ligne à 25 % du tableau ci-dessus, et ce n'est
 pas une coïncidence. **25 % est une borne naturelle et lisible** : c'est le taux exact où une
 absence de 4 h produit *identiquement* ce qu'une heure de jeu actif produit, au chiffre près,
-sur les deux lignes. Le palier utile est donc `[15 % ; 25 %[`, et 20 % en est un point
-intérieur qui garde de la marge — y compris avec le bonus de retour ×1,5 au-delà de 12 h
-d'absence, qui porte le taux effectif à 30 % (72 min de jeu simulé pour 12 h d'absence) : plus
-qu'une heure d'actif en valeur brute, mais rapporté aux douze heures qui l'ont produit, toujours
-très défavorable à la minute — exactement le ressort de rétention que la décision 4 de la spec
-(§ 1) demandait : le bonus doit se remarquer sans jamais rendre l'absence préférable à la
-présence.
+sur les deux lignes. Et cette égalité est de l'**arithmétique de taux** — 4 h × 25 % = 1 h de
+jeu simulé — donc indépendante du modèle de combat : elle valait à 39 767 crédits sur
+`764f220`, elle vaut à 64 455 après `fc827ee`, elle vaudrait encore si le combat était
+entièrement réécrit demain. C'est exactement ce que la décision 3 de la spec achetait en
+appliquant le taux **au temps** plutôt qu'aux gains. Le palier utile est donc `[15 % ; 25 %[`,
+et 20 % en est un point intérieur qui garde de la marge — y compris avec le bonus de retour
+×1,5 au-delà de 12 h d'absence, qui porte le taux effectif à 30 % (72 min de jeu simulé pour
+12 h d'absence) : plus qu'une heure d'actif en valeur brute, mais rapporté aux douze heures
+qui l'ont produit, toujours très défavorable à la minute — exactement le ressort de rétention
+que la décision 4 de la spec (§ 1) demandait : le bonus doit se remarquer sans jamais rendre
+l'absence préférable à la présence.
 
-Constat qui a surpris, et qui recadre le précédent : **le jeu actif déverse déjà 323 coffres
-par heure.** Le volume de butin d'un retour hors-ligne (261 coffres, au taux retenu) n'est donc
+Constat qui a surpris, et qui recadre le précédent : **le jeu actif déverse déjà 537 coffres
+par heure.** Le volume de butin d'un retour hors-ligne (430 coffres, au taux retenu) n'est donc
 pas une anomalie propre au farm — il reste inférieur à ce que produit une seule heure de jeu
 joué. Le robinet large est une propriété du jeu depuis le jalon 2.5, pas une conséquence de ce
-lot.
+lot ; `fc827ee` l'a encore élargi de moitié, ce qui ne fait que renforcer le constat.
 
 `src/content/balance.json` **n'est pas modifié par cette passe** : la mesure valide la valeur
 `offline.rate: 0,20` déjà en place plutôt que de la changer — c'est un résultat de cette passe,
-pas une omission. Le bloc `offline` n'entre d'ailleurs dans aucun calcul du harnais de
+pas une omission. **La remesure d'après `fc827ee` le confirme une seconde fois, et `rate` reste
+à 0,20** : le palier `[15 % ; 25 %[` est borné par une égalité de taux, pas par un seuil de
+crédits, donc rien de ce qui déplace le modèle de combat ne peut le déplacer. Un taux idle est
+un rapport entre deux façons de jouer le même jeu ; il survit à un changement qui affecte les
+deux également. Le bloc `offline` n'entre d'ailleurs dans aucun calcul du harnais de
 calibration, et les huit garde-fous ci-dessus le confirment en restant inchangés après le
 balayage. Règle du projet respectée une fois de plus : jamais le combat et l'économie dans la
 même passe ni le même commit — cette passe ne touche qu'à l'économie du farm, et n'a en fait
