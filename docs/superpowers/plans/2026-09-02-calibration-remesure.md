@@ -145,6 +145,14 @@ ici pour mémoire : « … les garde-fous ne discriminent rien sur ce bouton —
 entièrement sur les départages » aurait dû lire « … le choix repose entièrement sur les
 départages ».
 
+**Cycle 2/5.** La correction ci-dessus a elle-même introduit une surenchère du même type : la
+section « Le départage terminal » affirmait que « les jeux disjoints établissent que le groupe
+bas ne recouvre pas la distribution de 1,30 », généralisant à `{0,95 ; 1,00 ; 1,05 ; 1,10}` un
+non-recouvrement mesuré seulement pour la paire {1,10 ; 1,30}. Corrigé (la phrase ne porte plus
+que sur 1,10) ; le commentaire sur pourquoi ce genre de phrase se généralise tout seul est
+maintenant à sa suite, dans le corps du journal plutôt qu'ici, pour rester proche de la phrase
+qu'il concerne.
+
 ## Correction méthodologique : le départage 6 devient une mesure directe
 
 Le départage 6 avait d'abord été appliqué avec la règle « facteur ~2 = à égalité », tirée d'une
@@ -258,11 +266,20 @@ Parmi `{0,95 ; 1,00 ; 1,05 ; 1,10}`, le plus proche de 1,30 est **1,10**.
 
 **`combat.damageK` : 1,30 → 1,10.**
 
-Le mouvement est porté par le départage 6 seul, désormais mesuré plutôt que supposé : les jeux
-disjoints établissent que le groupe bas ne recouvre pas la distribution de 1,30. Les départages
-7 et 8 ne poussent dans aucune direction à l'intérieur du groupe — ils confirment seulement
-qu'aucun des quatre n'est disqualifié. Le choix entre les quatre revient donc entièrement à la
-règle terminale.
+Le mouvement est porté par le départage 6 seul, désormais mesuré plutôt que supposé : les
+jeux disjoints établissent que **1,10** ne recouvre pas la distribution de **1,30**. Les trois
+autres membres du groupe bas (0,95 · 1,00 · 1,05) restent, eux, sur leur mesure canonique unique
+— leur égalité avec 1,10 est l'extension prudente décrite au départage 6, pas un non-recouvrement
+démontré point par point. Les départages 7 et 8 ne poussent dans aucune direction à l'intérieur
+du groupe — ils confirment seulement qu'aucun des quatre n'est disqualifié. Le choix entre les
+quatre revient donc entièrement à la règle terminale.
+
+Une phrase de ce journal a, un instant, généralisé à « le groupe bas » un non-recouvrement établi
+seulement pour la paire {1,10 ; 1,30} — corrigé ci-dessus. Ce n'est pas un manque de soin isolé :
+c'est ce que produit par défaut une phrase qui doit couvrir dans la même respiration un résultat
+mesuré et un résultat qui ne l'est pas — elle prête au second la certitude du premier si rien ne
+les sépare explicitement. Troisième surenchère de cette passe, et la première apparue *à
+l'intérieur* de la correction d'une précédente.
 
 ## Ce que le balayage a appris, et qui vaut plus que la valeur retenue
 
