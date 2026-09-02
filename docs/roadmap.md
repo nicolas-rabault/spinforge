@@ -128,9 +128,11 @@ ce projet l'a payé deux fois (jalons 1.5 et 2b).
 | ch. 4 | 10/10 | 0,94 h | +0,36 h | 6 | salle 10, 18 morts | oui | salle 10, 64 % |
 
 Premier coffre 0,00 h · passivité jamais validée en 20 h simulées · verrou du châssis actif ·
-écart entre châssis ×3,80 — inchangé *par ce lot-ci*, ce qui était le constat de l'époque ;
-il est depuis passé à ×10,80 sous l'effet de `fc827ee`, voir « Née de l'intégration » dans la
-dette du jalon 2.5. **Le chapitre 1 est bit à bit inchangé** par tout le lot — son exposant
+écart entre châssis ×3,80 — inchangé *par ce lot-ci*, ce qui était le constat de l'époque ; il
+est passé à ×10,80 sous l'effet de `fc827ee` (mesuré alors à dix graines), puis retombé à
+×4,88 par la remesure des cinq constantes du 2026-09-02 — voir « Née de l'intégration » dans la
+dette du jalon 2.5, où l'historique complet, chiffres à jour compris, est tenu. **Le chapitre 1
+est bit à bit inchangé** par tout le lot — son exposant
 vaut 0 dans les deux facteurs — vérifié à chaque mesure des deux passes (heures, descentes,
 vecteur de morts par salle
 `0,0,1,0,10,9,21,18,15,23`, écart châssis, série contre-pioche) : c'est ce qui a transformé les
@@ -223,12 +225,17 @@ l'ordre des trois marges entre elles (ch. 2, ch. 3, ch. 4) en faisait partie —
 / +0,08 h à dix graines contre +0,10 h / +0,08 h / +0,10 h à quarante, l'ordre change d'un jeu
 à l'autre.
 
-**Ce lot n'a contribué à aucun de ces deux premiers déplacements, et c'est mesuré, pas
-plaidé** : la ligne de base à quarante graines, constantes encore inchangées, est identique sur
-`main` seul et sur l'arbre fusionné. La démonstration de neutralité du paragraphe
-« Neutralité de l'extraction » ci-dessus reste donc entièrement valide — elle disait
-« l'extraction ne déplace aucun chiffre », pas « ces chiffres sont éternels ». Ce qui change
-est la référence à laquelle une remesure doit se comparer, et rien d'autre.
+**Ce lot n'a contribué au premier de ces déplacements, et c'est mesuré, pas plaidé** : la
+ligne de base à dix graines, juste après `fc827ee` et avant l'élargissement du jeu de graines,
+est identique sur `main` seul et sur l'arbre fusionné (`docs/superpowers/plans/2026-09-01-jalon-3-lot-b-farm.md`,
+§ mise à jour de l'étalon). C'est la seule comparaison `main`-seul documentée ; elle n'a pas été
+refaite à quarante graines, donc rien n'établit ici que le second déplacement (l'élargissement
+du jeu de graines lui-même) est également sans lien avec ce lot — même s'il n'y a aucune raison
+de le soupçonner, puisque ce lot ne touche à aucun harnais de mesure ni à aucune constante
+d'équilibrage. La démonstration de neutralité du paragraphe « Neutralité de l'extraction »
+ci-dessus reste entièrement valide — elle disait « l'extraction ne déplace aucun chiffre », pas
+« ces chiffres sont éternels ». Ce qui change est la référence à laquelle une remesure doit se
+comparer, et rien d'autre.
 
 **Troisième mise à jour, même date encore : la ligne de base à quarante graines ci-dessus était
 elle-même mesurée à `combat.damageK` et `bot.scaling.spinPerChapter` encore inchangés, et la
@@ -250,10 +257,12 @@ Inchangés : premier coffre 0,00 h · passivité jamais validée · verrou du ch
 10 la plus meurtrière dans les quatre chapitres. Vecteur de morts par salle du chapitre 1, à la
 valeur retenue : `0,0,3,5,47,63,103,111,129,229`, contre le relevé dix graines d'origine du lot
 A, `0,0,1,0,10,9,21,18,15,23`. Le huitième garde-fou, lui, n'était pas un recalage mais une
-**alerte** : l'écart entre châssis, passé de ×3,80 à ×10,80 sous l'effet de `fc827ee`, est
-depuis retombé à **×4,88** — refermé par `combat.damageK` seul, aucun profil de châssis touché,
-et toujours loin de la cible < ×2. Détail complet : « Née de l'intégration » dans la dette du
-jalon 2.5, ci-dessous.
+**alerte** : l'écart entre châssis, mesuré à ×3,80 avant `fc827ee` puis à ×10,80 juste après
+(dix graines), est retombé à **×4,88** après cette passe — refermé par `combat.damageK` seul
+(1,30 → 1,10), aucun profil de châssis touché. À mesure égale, quarante graines des deux
+côtés, le point de départ de cette passe valait ×9,30, pas ×10,80 : l'amélioration réelle est
+d'environ ×1,9, et ×4,88 reste toujours loin de la cible < ×2. Détail complet : « Née de
+l'intégration » dans la dette du jalon 2.5, ci-dessous.
 
 **Le coût du fast-forward a fait écarter la formule fermée que prescrivait la spec de
 référence.** Mesuré sur la machine de développement, autopilote branché : 1 h de jeu simulée
@@ -723,9 +732,12 @@ bloquant.
   `econ.rewardBase` **confirmée à 104**, dans un palier démontré `[90 ; 116]` — sept points
   consécutifs qui tiennent les cinq garde-fous durs ; `combat.damageK` **déplacée de 1,30 à
   1,10**, dans un palier qui couvre cette fois la grille balayée tout entière, `[0,80 ; 1,70]`
-  — aucun des quatorze points testés ne casse un seul des cinq garde-fous durs, c'est
-  entièrement aux départages (écart entre châssis, durée du boss) qu'est revenu le choix à
-  l'intérieur du palier, pas aux garde-fous eux-mêmes.
+  — aucun des quatorze points testés ne casse un seul des cinq garde-fous durs, c'est aux
+  départages puis à la règle terminale, pas aux garde-fous, qu'est revenu le choix à
+  l'intérieur du palier : le départage sur l'écart entre châssis exclut `1,30` ; celui sur la
+  durée du boss élimine seulement les deux valeurs les plus rapides (`0,80` et `0,90`) sans
+  séparer les survivants entre eux ; c'est la règle terminale — le point le plus proche de la
+  valeur commitée — qui tranche parmi le groupe resté à égalité.
 - Tout l'équilibrage de ce jalon a été mesuré au harnais avec la politique `steerWithTerrain`
   (`scripts/calibrate.mjs`), dont la manœuvre distinctive — dépenser son budget de pilotage à
   se placer derrière la cible, du côté opposé à la brèche la plus proche, pour l'y pousser —
@@ -745,10 +757,14 @@ bloquant.
   l'arbitrage d'origine, et `docs/superpowers/plans/2026-08-28-calibration-integration.md`
   pour le balayage complet.
 
-  **Mise à jour (2026-09-02) : la cible est tenue.** La passe de remesure des cinq constantes a
-  déplacé `combat.damageK` de 1,30 à 1,10 (ci-dessus). À quarante graines, la salle 10 du
-  chapitre 1 dure désormais **46,40 s** — à 1,4 s de la cible ~45 s, tenue pour la première
-  fois depuis les 87 s du jalon 2.5 et les 64,8 s de l'intégration. Détail :
+  **Mise à jour (2026-09-02) : la cible est tenue — mais pas par une chute continue depuis
+  64,8 s.** Entre-temps, `fc827ee` seul, sans qu'aucune constante de combat n'ait bougé, avait
+  déjà fait chuter le boss **sous** la cible : ~36,8 à 37,6 s à quarante graines,
+  `combat.damageK` encore à 1,30 — un boss expédié, pas un boss dans la cible. La passe de
+  remesure des cinq constantes a ensuite déplacé `combat.damageK` de 1,30 à 1,10 (ci-dessus),
+  ce qui **rallonge** le combat à **46,40 s** — à 1,4 s de la cible ~45 s. C'est donc un
+  dépassement corrigé, pas la cible atteinte pour la première fois par une descente continue
+  depuis les 87 s du jalon 2.5 et les 64,8 s de l'intégration. Détail :
   `docs/superpowers/plans/2026-09-02-calibration-remesure.md`.
 - **L'éjection du boss est devenue atteignable pour une toupie lourde, et ne l'était pas
   avant l'intégration.** Mesuré au jalon 2.5, quand la masse du joueur valait encore 1 : il
@@ -839,18 +855,26 @@ bloquant.
   `chassis` — l'écart n'y entre que comme critère de départage à l'intérieur d'un palier déjà
   démontré (borne 2 du mandat de cette passe). Mesuré à quarante graines, aux cinq valeurs
   retenues : **×4,88** (Tigre Foudre : 39 descentes médianes ; Carapace Abyssale : 8), contre
-  ×10,80 avant cette passe — refermé par `combat.damageK` seul (1,30 → 1,10). Ce qui reste :
-  ×4,88 est encore très au-dessus de la cible affichée < ×2, et aucune valeur de `damageK`
-  balayée sur la grille `[0,80 ; 1,70]` n'en approche, pas même la plus basse testée (0,80,
-  ×3,83) — refermer davantage demande le bloc `chassis`, et ce mandat-là n'a toujours pas été
-  donné.
+  **×9,30** au réglage d'avant cette passe (`damageK` 1,30), mesuré au même protocole de
+  quarante graines — pas les ×10,80 cités plus haut, qui viennent d'une mesure à dix graines
+  sur un tout autre jeu de graines et ne se comparent pas terme à terme à ×4,88. Sur quatre
+  jeux disjoints, les deux distributions ne se recouvrent pas — `[×4,88 ; ×6,63]` contre
+  `[×8,90 ; ×10,78]` — mais l'amélioration à mesure égale vaut environ ×1,9, pas ×2,2. Refermé
+  par `combat.damageK` seul (1,30 → 1,10). Ce qui reste : ×4,88 est encore très au-dessus de la
+  cible affichée < ×2, et aucune valeur de `damageK` balayée sur la grille `[0,80 ; 1,70]` n'en
+  approche, pas même la plus basse testée (0,80, ×3,83) — refermer davantage demande le bloc
+  `chassis`, et ce mandat-là n'a toujours pas été donné.
 
   **Réponse à la question laissée ouverte ci-dessus.** Aux valeurs retenues par cette passe,
   Tigre Foudre meurt toujours surtout en salle 9, pas en salle 10 (662 morts en salle 9 sur le
-  relevé châssis du rapport final, à chacun des quatre balayages du journal). Si c'était déjà
-  le cas *avant* `fc827ee` reste **non mesuré par cette passe non plus** : aucun de ses
-  balayages ne porte sur l'ancienne physique de collision, et rien ici ne permet de trancher
-  dans un sens ou dans l'autre — la question reste ouverte pour qui refermera l'écart.
+  relevé châssis du rapport final). Ce relevé se retrouve identique dans les quatre rapports
+  complets du journal — pas comme quatre confirmations indépendantes, mais parce que le
+  chapitre 1 et le comparatif châssis ne dépendent que de `damageK` et `rewardBase`, tous deux
+  gelés aux mêmes valeurs sur les quatre balayages ; c'est la même mesure imprimée quatre fois,
+  pas quatre mesures distinctes. Si c'était déjà le cas *avant* `fc827ee` reste **non mesuré
+  par cette passe non plus** : aucun de ses balayages ne porte sur l'ancienne physique de
+  collision, et rien ici ne permet de trancher dans un sens ou dans l'autre — la question reste
+  ouverte pour qui refermera l'écart.
 - **Les identités d'arène des chapitres 2 à 8** : le jalon 2.5 a livré le système de terrain,
   pas les huit arènes qui l'utilisent. Les chapitres 1 à 4 sont devenus atteignables au
   jalon 3, lot A ; leurs identités de terrain (murs élastiques, piliers mobiles, geysers…)
@@ -909,17 +933,25 @@ de ces points n'est bloquant.
   valeurs désormais retenues, **le chapitre 4 est bien le marginal le plus cher** — relevé
   canonique +0,21 h, contre +0,12 h (ch. 2) et +0,15 h (ch. 3) — et **de façon robuste sur trois
   jeux de graines disjoints** : son étendue, `[+0,19 ; +0,24]`, ne recouvre à aucun point celle
-  du chapitre 3, `[+0,11 ; +0,15]`, ni celle du chapitre 2, `[+0,09 ; +0,12]`. Nouveau, et
+  du chapitre 3, `[+0,11 ; +0,15]`, ni celle du chapitre 2, `[+0,09 ; +0,12]`. **Ces deux
+  dernières étendues, elles, se recouvrent** : la forme mesurée est « chapitre 2 ≈ chapitre 3 <
+  chapitre 4 », pas une croissance stricte — +0,12 et +0,15 ne s'ordonnent pas de façon fiable
+  entre eux, seul l'écart avec le chapitre 4 l'est. Nouveau, et
   mesuré directement par cette passe : **le mur tient à deux
   constantes, aucune des deux ne suffit seule.** À `rewardPerChapter = 1,00` (point de
   diagnostic isolant la difficulté seule, `spinPerChapter` gelé à sa valeur retenue 1,05), la
   courbe de coût marginal est plate — +0,13 / +0,13 / +0,12 h, sans mur. À
   `spinPerChapter = 1,02` (l'ancienne valeur, `rewardPerChapter` gelé à 1,15), le mur n'est pas
   robuste — le chapitre 4 devient le marginal le moins cher sur un jeu de graines disjoint sur
-  trois. Seules les deux valeurs retenues ensemble (`spinPerChapter = 1,05` et
-  `rewardPerChapter = 1,15`) produisent un mur mesurablement robuste. Ce ne sont que deux points
-  du domaine `spinPerChapter × rewardPerChapter`, jamais balayé en deux dimensions — pas une
-  carte, à ne pas lire au-delà. Détail : `docs/superpowers/plans/2026-09-02-calibration-remesure.md`.
+  trois. Les deux constantes retenues, ensemble (`spinPerChapter = 1,05` et
+  `rewardPerChapter = 1,15`), produisent un mur mesurablement robuste — mais aucune des deux ne
+  suffit seule (`rewardPerChapter = 1,00` seul : courbe plate ; `spinPerChapter = 1,02` seul :
+  mur non robuste). Ce n'est pas la seule combinaison qui tienne : le journal mesure aussi
+  `spinPerChapter = 1,08` comme robuste à `rewardPerChapter = 1,15`, mais ce point a perdu le
+  départage terminal (le plus proche de la valeur commitée) face à 1,05 — la robustesse du mur
+  n'a pas départagé entre les deux. Ce ne sont que deux points du domaine
+  `spinPerChapter × rewardPerChapter`, jamais balayé en deux dimensions — pas une carte, à ne
+  pas lire au-delà. Détail : `docs/superpowers/plans/2026-09-02-calibration-remesure.md`.
 - **La « salle la plus meurtrière » du harnais reste un décompte absolu.** Pour un chapitre
   que certaines graines ne valident jamais, elle mesure la longueur de l'entonnoir plutôt que
   la difficulté des salles. Les deux lectures sont désormais imprimées côte à côte
@@ -1071,9 +1103,10 @@ points n'est bloquant.
   1,30) ; 0,95, 1,00 et 1,05 ne portent qu'une mesure canonique chacun. Une passe future qui
   rouvrirait ce bouton gagnerait à les remesurer sur jeux disjoints avant de leur faire porter
   une conclusion.
-- **Pour `econ.rewardPerChapter`, trois des sept candidats intérieurs (`1,05`, `1,08`, `1,10`)
-  restent, de même, sur une seule mesure canonique** — `1,15` (retenue) est le seul confirmé
-  sur jeux disjoints, par un recouvrement fortuit avec le balayage de `spinPerChapter`.
+- **Pour `econ.rewardPerChapter`, six des sept candidats intérieurs
+  (`1,02`, `1,05`, `1,08`, `1,10`, `1,13`, `1,18`) restent, de même, sur une seule mesure
+  canonique** — `1,15` (retenue) est le seul des sept confirmé sur jeux disjoints, par un
+  recouvrement fortuit avec le balayage de `spinPerChapter`.
 - **Le départage 7 (durée de la salle 10 du chapitre 1) reste ambigu dans la spec de cette
   passe** : sa formulation pose une borne (« sous 60 s, sans rendre le boss expédié »), mais le
   § 2.1 y accole une cible chiffrée (~45 s) qui invite à lire un critère de proximité qu'elle

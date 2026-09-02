@@ -19,10 +19,13 @@ Piliers non négociables :
 - Dégâts d'un choc : proportionnels à la vitesse relative d'impact, modulés par `attaque de l'attaquant / (attaque + défense du défenseur)`. Les deux perdent du spin, le défenseur davantage si son ratio est défavorable.
 - **Partage de charge** : la vitesse relative d'impact est la somme exacte des deux vitesses de fermeture, et les dégâts se répartissent selon la part que chacun a lui-même provoquée. Un assaut pur inflige ×1,3 et encaisse ×0,7 (`CHARGE_BONUS`) ; un choc frontal, où les deux avancent autant, reste rigoureusement symétrique. **Sans cette règle le pilotage ne sert à rien** : mesuré à l'autopilote, un joueur qui ne touchait jamais l'écran validait le chapitre 1 aussi vite qu'un joueur qui charge. Voir `docs/ameliorations.md`.
 - **Durée cible du combat de boss (salle 10, chapitre 1) : ~45 s**, repère de cahier des
-  charges (jalon 1.5). Tenue pour la première fois le 2026-09-02, à l'issue de la remesure des
-  cinq constantes d'équilibrage (`combat.damageK` 1,30 → 1,10) : **46,40 s** à quarante graines,
-  contre 183 s au lancement du jeu, 87 s au jalon 2.5 et 64,8 s après l'intégration du jalon 2b.
-  Historique complet : « Dette connue (jalon 2.5) », `docs/roadmap.md`.
+  charges (jalon 1.5). Pas atteinte par une chute continue depuis 183 s au lancement (87 s au
+  jalon 2.5, 64,8 s après l'intégration du jalon 2b) : `fc827ee` seul, sans qu'aucune constante
+  de combat n'ait bougé, avait déjà fait chuter le boss **sous** la cible, à ~36,8-37,6 s à
+  quarante graines — un boss expédié. La remesure des cinq constantes du 2026-09-02 a ensuite
+  déplacé `combat.damageK` de 1,30 à 1,10, ce qui **rallonge** le combat à **46,40 s**, à 1,4 s
+  de la cible : un dépassement corrigé, tenue pour la première fois. Historique complet :
+  « Dette connue (jalon 2.5) », `docs/roadmap.md`.
 - **Types** : Attaque > Endurance > Défense > Attaque. Le type dominant inflige **+25 %**.
   La règle est **symétrique** — un bot dont le type domine celui du joueur frappe plus fort
   lui aussi, et c'est ce qui fait de la contre-pioche une décision. **Équilibre est hors du
@@ -97,9 +100,12 @@ Chaque pièce progresse sur deux axes infinis : **niveau** (crédits/fragments) 
   graines disjoint sur trois — alors que 1,05 la tient sans exception sur les trois. **Le mur
   est de retour, confirmé à quarante graines** : aux valeurs désormais retenues, le chapitre 4
   est de nouveau le marginal le plus cher — +0,21 h contre +0,12 h (ch. 2) et +0,15 h (ch. 3),
-  robuste sur trois jeux de graines disjoints. La marche « ch. 3 moins cher que ch. 2 » décrite
-  ci-dessus appartient à un jeu de graines et une valeur de `spinPerChapter` qui n'existent plus
-  dans le dépôt. Nouveau, mesuré par cette même passe : **le mur tient à deux constantes, aucune
+  robuste sur trois jeux de graines disjoints ; les étendues des chapitres 2 et 3, elles, se
+  recouvrent — la forme mesurée est « chapitre 2 ≈ chapitre 3 < chapitre 4 », pas une croissance
+  stricte, et +0,12 contre +0,15 ne s'ordonnent pas de façon fiable entre eux. La marche
+  « ch. 3 moins cher que ch. 2 » décrite ci-dessus appartient à un jeu de graines et une valeur
+  de `spinPerChapter` qui n'existent plus dans le dépôt. Nouveau, mesuré par cette même passe :
+  **le mur tient à deux constantes, aucune
   des deux ne suffit seule** — à `rewardPerChapter = 1,00` (point de diagnostic isolant la
   difficulté seule), la courbe de coût marginal est plate ; à `spinPerChapter = 1,02` (l'ancienne
   valeur), le mur n'est pas robuste. Deux points mesurés, pas une carte du domaine

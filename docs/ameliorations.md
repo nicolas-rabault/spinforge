@@ -22,23 +22,26 @@ complet des quatre balayages (quarante graines) :
 
 **Ce que ça change pour qui joue, dans l'ordre où ça se ressent :**
 
-- ✅ **Le chapitre 1 raccourcit.** 0,37 h pour le valider, contre 0,42 h juste après
-  l'intégration de `fc827ee` (première mesure, dix graines) — une dizaine de minutes de moins
-  sur la toute première session.
+- ✅ **Le chapitre 1 raccourcit, un peu.** 0,37 h pour le valider, contre 0,42 h juste après
+  l'intégration de `fc827ee` (première mesure, dix graines) — 3 minutes de moins, pas dix : un
+  effet modeste comparé au reste de cette passe.
 - ✅ **Le combat de boss s'allonge, et se rapproche enfin de sa cible.** `fc827ee`, à lui seul
   et sans le vouloir, avait raccourci le combat de boss à environ 37-38 s — bien en dessous de
   la cible de cahier des charges (~45 s), un boss expédié. Cette passe le rallonge à
   **46,40 s**, à 1,4 s de la cible — tenue pour la première fois depuis le jalon 2.5 (87 s) et
   l'intégration (64,8 s).
 - 🔧 **Choisir Tigre Foudre plutôt que Carapace Abyssale coûte toujours beaucoup plus cher, mais
-  beaucoup moins qu'avant cette passe.** Juste après `fc827ee`, valider le chapitre 1 prenait
-  108 descentes avec Tigre Foudre contre 10 avec Carapace Abyssale (×10,80) — un choix de
-  châssis présenté comme cosmétique qui décidait en réalité d'un ordre de grandeur de temps de
-  jeu. Après cette passe : **39 descentes contre 8 (×4,88)**. Le déplacement est entièrement
-  porté par `combat.damageK` (1,30 → 1,10) ; aucun profil de châssis n'a été touché — ce n'est
-  pas le mandat de cette passe. **Ce n'est pas résolu** : ×4,88 reste très au-dessus de la
-  cible affichée < ×2, et refermer davantage demande une décision d'équilibrage sur les
-  châssis eux-mêmes — un mandat qui n'a toujours pas été donné.
+  nettement moins qu'avant cette passe.** Juste après `fc827ee` (première mesure, dix graines),
+  valider le chapitre 1 prenait 108 descentes avec Tigre Foudre contre 10 avec Carapace
+  Abyssale (×10,80) — un choix de châssis présenté comme cosmétique qui décidait en réalité
+  d'un ordre de grandeur de temps de jeu. À quarante graines, sur ce même réglage d'avant cette
+  passe (`damageK` 1,30), l'écart valait ×9,30 — la comparaison à mesure égale avec le résultat
+  ci-dessous. Après cette passe (`damageK` 1,10) : **39 descentes contre 8 (×4,88)** — une
+  réduction d'environ ×1,9, pas ×2,2. Le déplacement est entièrement porté par
+  `combat.damageK` ; aucun profil de châssis n'a été touché — ce n'est pas le mandat de cette
+  passe. **Ce n'est pas résolu** : ×4,88 reste très au-dessus de la cible affichée < ×2, et
+  refermer davantage demande une décision d'équilibrage sur les châssis eux-mêmes — un mandat
+  qui n'a toujours pas été donné.
 
 **Remarque de méthode, pour le projet lui-même.** Deux affirmations publiées dans ce dépôt —
 « le chapitre 3 redevient plus cher que le chapitre 2 (+0,15 contre +0,12) » et « le chapitre 4
