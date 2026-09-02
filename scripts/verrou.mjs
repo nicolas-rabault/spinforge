@@ -54,10 +54,20 @@ const TENUE_MS = 2000;
 const PAS_DEG = 360 / 14;
 /** Rayon du balayage autour du point d'appui, en pixels d'écran. */
 const RAYON_PX = 70;
-/** Budget de temps réel d'une descente. Une descente complète en demande une
- *  vingtaine : ce plafond n'est pas une cadence, c'est le garde-fou qui fait
- *  échouer bruyamment — et vite — une descente qui n'avance plus. */
-const BUDGET_MS = 90000;
+/** Budget de temps réel d'une descente. Ce n'est pas une cadence : c'est le mur
+ *  contre lequel une descente bloquée doit venir échouer bruyamment et vite.
+ *
+ *  Relevé de 90 s à 300 s le 2026-09-02, parce qu'à 90 s ce harnais était
+ *  FLOTTANT et non faux. Une exécution a échoué (« bloquée en salle 10 après
+ *  91 s réelles, 205 s simulées », soit 2,25× le temps réel), puis sept
+ *  exécutions consécutives ont réussi au même budget — cache Vite chaud, cache
+ *  supprimé, et jusqu'à douze processus de calibration en parallèle. La cause
+ *  de l'échec unique n'a pas été isolée : elle n'est ni le cache ni la charge,
+ *  les deux ayant été testés et écartés. Ce que la mesure dit, et rien de plus :
+ *  la marge à 90 s est trop mince pour un harnais qui vit hors de `npm run test`
+ *  et qu'aucune suite ne surveille. 300 s la rétablit sans rien coûter — une
+ *  descente vraiment bloquée échoue de toute façon, seulement plus tard. */
+const BUDGET_MS = Number(process.env.BUDGET_MS ?? 300000);
 /** Cadence d'observation. Chaque relevé coûte un aller-retour cher et vole du temps
  *  au fil principal : on observe peu, la simulation n'en dépend pas. */
 const RELEVE_MS = 700;
