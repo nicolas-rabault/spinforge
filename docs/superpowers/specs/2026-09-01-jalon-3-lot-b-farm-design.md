@@ -117,7 +117,6 @@ export interface FarmReport {
   gems: number;         // toujours 0 — voir § 3.2
   chests: Record<ChestKind, number>;
   salles: number;       // salles vidées
-  runs: number;         // descentes ouvertes
   chapter: number;      // le chapitre farmé, pour l'écran de retour
 }
 
@@ -126,6 +125,10 @@ export function farm(
   meta: MetaState, session: FarmSession, seconds: number, seed: number,
 ): FarmReport;
 ```
+
+> **Corrigé après la relecture de branche.** Le rapport portait aussi un
+> `runs: number` — « descentes ouvertes ». Écrit à deux endroits, lu nulle part : ni écran,
+> ni test, ni harnais. Retiré (§ 11).
 
 `farm` fait avancer `session` de `seconds` de jeu, applique au méta ce qu'elle produit et
 retourne le compte rendu — l'écran de retour n'a rien à recalculer. Elle est **pure au sens
@@ -230,6 +233,30 @@ d'absence, pas sur le temps simulé.
 En dessous de `offline.minSeconds`, `farm` n'est pas appelée et aucun écran ne s'ouvre — sans
 quoi un simple rechargement de page afficherait un bilan.
 
+**Le paquet en ligne obéit au même plafond**, et c'est une correction de la relecture de
+branche (§ 11) : la formule ci-dessus vivait dans `offlineSeconds`, mais le paquet du décor
+faisait son calcul à la main dans `App.tsx`, sans borne. Les deux ont maintenant chacun leur
+fonction pure dans `src/sim/farm.ts` :
+
+```
+offlineSeconds(absence) = min(absence, offline.capHours) × offline.rate × bonus
+onlineSeconds(écoulé)   = min(écoulé,  offline.capHours) × offline.rate
+```
+
+Trois différences, toutes délibérées. `onlineSeconds` n'accorde **pas** le bonus de retour —
+il récompense une absence, pas une veille. Elle n'applique **pas** `minSeconds` — ce seuil
+n'existe que pour ne pas ouvrir un écran de bilan sur un rechargement de page, et un paquet
+en ligne n'ouvre aucun écran ; ce qui ne fait pas un tick entier est de toute façon reporté
+par le `carry` de la session (§ 3.1.1). Elle rend 0 sur une durée nulle ou négative, comme sa
+sœur.
+
+**Pourquoi le plafond doit valoir sur les deux chemins.** Les minuteries d'un onglet suspendu
+ne tournent pas. Un portable refermé 24 h faisait tirer 86 400 s au premier paquet du réveil :
+288 min de jeu créditées au lieu des 72 que le plafond autorise (×3,9), et 197 ms de gel du
+fil principal — ×11,8 et 570 ms à 72 h. Cela contredisait frontalement la promesse du § 5.1
+et ruinait la calibration du taux idle, qui est bâtie sur ce plafond. **Un plafond qui ne vaut
+que sur un chemin n'est pas un plafond.**
+
 ### 4.2 Pourquoi de vrais ticks, contre la lettre de la spec
 
 `docs/game-design.md` prescrit « fast-forward de ticks (formule fermée au-delà d'1 h) ». La
@@ -282,10 +309,29 @@ Quand **aucune partie n'est en cours** et que `meta.bestChapter ≥ 1`, une desc
 fond, visible derrière les écrans, sur tous les onglets. Elle n'est **pas jouable** : le doigt
 ne la pilote pas, et elle ne crédite rien.
 
+**Le décor porte donc une invite permanente** — ajoutée par la relecture de branche (§ 11),
+sans laquelle le jeu était injouable. Sur l'onglet Combat, tant que le décor tourne, un
+panneau posé bas offre le choix du chapitre et le bouton qui part. Ce n'est pas un voile
+plein écran comme celui de fin de descente : le décor doit rester visible derrière, c'est
+tout son objet. Le panneau lui-même est le **même composant** que celui du voile
+(`RunPicker`), monté à deux endroits — deux panneaux de choix de chapitre divergeraient.
+
+**Deux métas, et pas un.** Le décor lit le **vrai** méta pour tout ce qu'il montre et tout ce
+qu'il lance : art équipé, pastilles de chapitre, et le `startRun` de l'invite. Un clone
+jetable n'existe que pour **encaisser les récompenses** de la boucle de rendu, qu'on jette
+avec lui — c'est ainsi que « le décor ne crédite rien » est tenu. Faire tourner le décor
+tout entier sur un clone pris au montage aurait fait partir le joueur sans les pièces qu'il
+venait d'acheter, sans son châssis actif, et sur un `bestChapter` antérieur au rattrapage
+hors-ligne.
+
 Le crédit vient de `farm()`, appelée par paquets réguliers sur une **session vivante**
-(§ 3.1.1) pendant que le décor tourne, avec le même taux que le hors-ligne. Fermer l'app ou
-la laisser ouverte rapporte donc **exactement la même chose par minute** — il n'y a aucune
-stratégie à optimiser contre le jeu.
+(§ 3.1.1) pendant que le décor tourne, avec le même taux **et le même plafond** que le
+hors-ligne (§ 4.1). Fermer l'app ou la laisser ouverte rapporte donc **exactement la même
+chose par minute** — il n'y a aucune stratégie à optimiser contre le jeu.
+
+**Le farm tourne dès que la descente pilotée n'avance pas**, et pas seulement quand aucune
+partie n'est en cours : quitter l'onglet Combat gèle la boucle de jeu, et vingt minutes
+passées à la Forge doivent payer ce que fermer l'app aurait payé.
 
 **La cadence des paquets est un détail sans conséquence sur les gains** : la session étant
 continue, appeler `farm` une fois par seconde ou une fois par minute produit la même suite de
@@ -303,8 +349,11 @@ Aujourd'hui l'app démarre toujours sur un run en cours (`useState(() => startRu
 - **décor AUTO** — personne ne joue, l'autopilote pilote, la salle 10 n'est jamais jouée, les
   gains viennent de `farm()`.
 
-Le passage de l'un à l'autre : lancer une descente depuis l'écran de combat entre en partie
-pilotée ; la fin de descente (`'dead'` ou `'won'`) en sort. C'est la seule bascule.
+Le passage de l'un à l'autre : lancer une descente depuis l'écran de combat — voile de fin de
+descente ou invite du décor, c'est le même `RunPicker` — entre en partie pilotée. On en sort
+en **quittant l'onglet Combat une fois la descente close**, et non à la fin de la descente
+elle-même : le voile doit rester atteignable tant qu'on reste sur l'onglet, sans quoi le
+choix du chapitre suivant disparaîtrait avant d'avoir été lu.
 
 ### 5.3 Déblocage
 
@@ -424,3 +473,55 @@ un suspect nommé sans l'avoir vu coupable.
 - Le décor AUTO montre une descente qui ne correspond pas, salle pour salle, à ce que `farm()`
   a crédité. C'est un choix assumé (§ 5.1), pas un oubli : le décor est libre, le crédit est
   exact. À rouvrir si un test joueur montre que l'écart se remarque.
+
+---
+
+## 11 · Ce que la relecture de branche entière a corrigé
+
+Écrit **après** la livraison, contre le code réel. Ce document décrivait une conception ; les
+sections ci-dessus ont été corrigées en place pour qu'il décrive aussi ce qui tourne. Cette
+section-ci dit ce qui a bougé, et pourquoi le noter compte : aucun de ces cinq points n'a été
+trouvé par les tests, ni par les relectures tâche par tâche, ni par les vérifications en
+navigateur faites pendant l'exécution du plan. Tous l'ont été en relisant la branche entière
+d'un bloc.
+
+**Deux défauts graves, invisibles tâche par tâche parce qu'ils naissent d'une interaction.**
+
+1. **Le jeu devenait injouable dès qu'un chapitre était validé.** Le seul code qui repasse en
+   partie pilotée est déclenché par le bouton du voile de fin de descente ; or en décor, le
+   run est remplacé dès qu'il se ferme, dans le même bloc synchrone que le tick — aucun rendu
+   ne voit jamais une descente close, donc le voile ne s'affiche jamais, donc le bouton
+   n'existe jamais. Le doigt étant par ailleurs inerte en décor, il ne restait aucun moyen de
+   lancer une descente. Chaque moitié de ce mécanisme était correcte et testée ; c'est leur
+   rencontre qui fermait le jeu. Corrigé par l'invite permanente du § 5.1.
+2. **Le plafond de 4 h était contournable en laissant l'app ouverte**, jusqu'à ×11,8 après
+   72 h de veille. Le hors-ligne plafonnait, le paquet en ligne non — deux chemins pour une
+   seule règle, et un seul des deux la portait. Corrigé par `onlineSeconds` (§ 4.1), qui
+   déplace la règle dans `src/sim/farm.ts` où elle est **testable**, et l'y prouve par
+   mutation comme l'exige le § 8.1.
+
+**Trois corrections mineures.**
+
+3. Le farm ne tournait pas pendant qu'une descente pilotée était gelée sur un autre onglet :
+   vingt minutes à la Forge rapportaient zéro là où fermer l'app les aurait payées (§ 5.1).
+4. Le décor tournait pour tout sur un clone du méta pris au montage, écran de fin compris —
+   le clone n'est plus que le puits de récompenses (§ 5.1).
+5. `FarmReport.runs` était du code mort (§ 3.1), et l'écran des toupies annonçait « Tu pilotes
+   X » pendant que le décor tournait, alors que le joueur ne pilotait rien.
+
+**Une correction de conception, décidée par l'auteur du jeu après vérification en navigateur.**
+
+6. **L'invite du décor propose par défaut `maxPlayableChapter`**, et non le chapitre que le
+   décor rejoue. En décor, `run.chapter` vaut `bestChapter` — c'est correct, le farm rejoue le
+   meilleur chapitre validé — mais en hériter renvoyait le joueur qui revient sur du contenu
+   déjà fait, à moins qu'il ne remarque la seconde pastille. Le défaut est donc le chapitre le
+   plus haut qu'il ait le droit de jouer, cohérent avec le voile qui suggère `chapter + 1`
+   après une victoire et avec la descente initiale de l'app avant ce lot. **Seul le défaut
+   change** : les pastilles inférieures restent offertes, farmer un chapitre plus facile reste
+   un choix de joueur.
+
+**L'enseignement, pour les lots suivants.** Une relecture tâche par tâche vérifie que chaque
+pièce fait ce qu'elle annonce. Elle ne peut pas voir qu'une pièce correcte en rend une autre
+inatteignable, ni qu'une règle posée à deux endroits n'est tenue qu'à un seul. Ces deux
+familles de défauts — l'interaction et la règle à moitié appliquée — sont exactement ce que la
+relecture de branche entière attrape, et rien d'autre dans ce projet ne les attrape.

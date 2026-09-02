@@ -173,17 +173,23 @@ revenus viennent de l'idle ») n'avait, jusqu'ici, aucune implémentation.
 Livré : `src/sim/autopilot.ts` porte désormais `steerWithTerrain`, extraite bit à bit de
 `scripts/calibrate.mjs`, qui l'importe au lieu de la définir — mêmes constantes, même ordre de
 tests, même repli d'angle, pas un mot changé · `src/sim/farm.ts` porte `FarmSession` (une
-descente en cours plus un report de reste, `carry`), `farm(meta, session, secondes, graine)`
-et `offlineSeconds(absence)` — un seul mécanisme sert l'AUTO à l'écran et le hors-ligne au
-retour · **le farm s'arrête salle 9 et ne combat jamais le boss** : `applyRunReward` ne fait
-monter `bestChapter` que sur `reward.boss`, donc un farm sans boss ne peut structurellement
-pas déclencher ce `Math.max` — le critère du jalon cesse d'être une convention tenue pour
-devenir une propriété du code, et les gemmes, l'Arène garantie et le Mythique, tous du butin
-de boss, deviennent exclusivement actifs · `MetaState.lastSeenAt` et le schéma de sauvegarde
-5 → 6 · l'AUTO comme décor : quand personne ne pilote, une descente tourne en fond sur un méta
-jetable cloné, qui ne crédite rien — le crédit vient de `farm()` appelée par paquets sur la
-session vivante, si bien que fermer l'app ou la laisser ouverte rapporte exactement la même
-chose par minute · l'écran « Pendant ton absence », bilingue FR/EN, sans ×2 et sans publicité.
+descente en cours plus un report de reste, `carry`), `farm(meta, session, secondes, graine)`,
+`offlineSeconds(absence)` et `onlineSeconds(écoulé)` — un seul mécanisme sert l'AUTO à l'écran
+et le hors-ligne au retour, et les deux conversions du temps réel en temps de jeu vivent côte
+à côte, pures et testées · **le farm s'arrête salle 9 et ne combat jamais le boss** :
+`applyRunReward` ne fait monter `bestChapter` que sur `reward.boss`, donc un farm sans boss ne
+peut structurellement pas déclencher ce `Math.max` — le critère du jalon cesse d'être une
+convention tenue pour devenir une propriété du code, et les gemmes, l'Arène garantie et le
+Mythique, tous du butin de boss, deviennent exclusivement actifs · `MetaState.lastSeenAt` et
+le schéma de sauvegarde 5 → 6 · l'AUTO comme décor : quand personne ne pilote, une descente
+tourne en fond **sur le vrai méta** — la toupie du décor est celle du joueur, pièces achetées
+à l'instant comprises — et un clone jetable ne sert qu'à **encaisser ses récompenses**, qu'on
+jette avec lui : c'est ainsi que « le décor ne crédite rien » est tenu, le crédit venant de
+`farm()` appelée par paquets sur la session vivante, si bien que fermer l'app ou la laisser
+ouverte rapporte exactement la même chose par minute · une **invite permanente** sur l'onglet
+Combat tant que le décor tourne, qui offre le choix du chapitre et le bouton qui part —
+`RunPicker`, le même composant que le voile de fin de descente, monté à deux endroits ·
+l'écran « Pendant ton absence », bilingue FR/EN, sans ×2 et sans publicité.
 
 **Neutralité de l'extraction, prouvée au chiffre près.** Les huit garde-fous mesurés par
 `npm run calibrate` ressortent inchangés d'un bout à l'autre du lot, malgré le déplacement de
@@ -241,6 +247,28 @@ calibration, et les huit garde-fous ci-dessus le confirment en restant inchangé
 balayage. Règle du projet respectée une fois de plus : jamais le combat et l'économie dans la
 même passe ni le même commit — cette passe ne touche qu'à l'économie du farm, et n'a en fait
 rien eu à changer.
+
+**Ce que la relecture de branche entière a trouvé, et que rien d'autre n'a trouvé.** Le lot
+avait livré, à ce stade, une version où **le jeu devenait injouable dès qu'un chapitre était
+validé** : le seul code qui repasse en partie pilotée était déclenché par le bouton du voile
+de fin de descente, mais en décor le run est remplacé dès qu'il se ferme, dans le même bloc
+synchrone que le tick — aucun rendu ne voyait jamais une descente close, donc le voile ne
+s'affichait jamais, donc le bouton n'existait jamais, et le doigt était par ailleurs inerte.
+Il ne restait aucun moyen de lancer une descente. Et **le plafond de 4 h était contournable en
+laissant l'app ouverte** : le hors-ligne plafonnait, le paquet en ligne non, si bien qu'un
+portable refermé 72 h créditait ×11,8 ce que le plafond autorise — l'exact contraire de la
+promesse « fermer l'app ou la laisser ouverte rapporte pareil », et la ruine de la calibration
+du taux idle, qui est bâtie sur ce plafond.
+
+Ni les tests, ni les relectures tâche par tâche, ni les vérifications en navigateur faites
+pendant l'exécution du plan ne les avaient vus. C'est cohérent avec ce qu'ils sont : chaque
+moitié du premier défaut était correcte et testée, c'est leur **rencontre** qui fermait le
+jeu ; et le second est une **règle posée à deux endroits mais tenue à un seul**, invisible
+tant qu'on regarde un chemin à la fois. Une relecture tâche par tâche vérifie que chaque pièce
+fait ce qu'elle annonce ; elle ne peut pas voir qu'une pièce correcte en rend une autre
+inatteignable. Ces deux familles de défauts sont exactement ce que la relecture de branche
+entière attrape, et rien d'autre dans ce projet ne les attrape. Les six correctifs, avec le
+détail de chacun, sont consignés au § 11 de la spec du lot.
 
 Dette ouverte par ce lot : voir « Dette connue (jalon 3, lot B) » en bas de page. La dette de
 performance du jalon 1.5 n'est pas fermée par ce lot, mais elle a été remesurée avec le décor
@@ -791,9 +819,10 @@ ces points n'est bloquant.
 
 **Jeu**
 - **Le décor AUTO ne correspond pas, salle pour salle, à ce que `farm()` crédite.** Le décor
-  affiché est une descente libre, pilotée par le même autopilote mais sur un méta jetable
-  cloné ; la session créditée par `farm()` en parallèle ne vide pas forcément les mêmes salles
-  au même rythme. Le crédit, lui, est exact — c'est ce qui compte pour le pilier « fermer
+  affiché est une descente libre, pilotée par le même autopilote et sur le même méta que le
+  joueur, mais dont les récompenses tombent dans un clone jetable ; la session créditée par
+  `farm()` en parallèle ne vide pas forcément les mêmes salles au même rythme. Le crédit,
+  lui, est exact — c'est ce qui compte pour le pilier « fermer
   l'app ou la laisser ouverte rapporte pareil ». Choix assumé (spec § 5.1), pas un oubli : la
   cadence des paquets n'a aucune conséquence sur les gains, seulement sur le confort visuel du
   décor. À rouvrir si un test joueur montre que l'écart entre ce qui s'affiche et ce qui se
