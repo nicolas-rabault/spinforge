@@ -324,6 +324,8 @@ silencieuse en attente. 300 s la rétablit sans rien coûter.
 - Consumes : rien.
 - Produces : `BUDGET_MS` surchargeable par l'environnement, défaut relevé à 300 000.
 
+> **Note du 2026-09-02, vague de correctifs finale.** Cette surcharge par l'environnement a été retirée : aucun consommateur n'en restait dans le dépôt, hors l'appel manuel du Step 4 ci-dessous. `BUDGET_MS` est maintenant codé en dur à 300000 dans `scripts/verrou.mjs`. Ce plan n'est pas réécrit — c'est l'historique de ce qui a été livré à cette tâche ; l'annotation dit seulement que ce livrable-ci a depuis été retiré.
+
 - [ ] **Step 1: Établir l'état de départ du harnais**
 
 Lancer le serveur de dev sur un port inhabituel, **et vérifier ce qu'il sert** :
@@ -377,6 +379,8 @@ par :
 const BUDGET_MS = Number(process.env.BUDGET_MS ?? 300000);
 ```
 
+> **Note du 2026-09-02, vague de correctifs finale.** Cette ligne a depuis été remplacée par `const BUDGET_MS = 300000;` — `Number(undefined ?? 300000)` était sûr, mais `Number("")` vaut 0 et tout non-numérique vaut `NaN`, deux façons de faire échouer une descente bloquée immédiatement au lieu d'attendre le budget. Sans consommateur de `BUDGET_MS` ailleurs dans le dépôt, l'indirection ne servait plus rien : retirée plutôt que gardée sous garde. Le code ci-dessus reste le relevé de ce que cette tâche a livré.
+
 - [ ] **Step 3: Vérifier le vert**
 
 ```bash
@@ -400,6 +404,14 @@ condition jusqu'à l'obtenir.
 Ce qu'il faut faire à la place : **noter ce qu'on observe**, et le consigner. Si le harnais
 passe à 90 s, c'est la confirmation qu'il est flottant et non cassé — ce qui justifie le
 relèvement tout autant, pour un harnais que rien ne surveille.
+
+> **Note du 2026-09-02, vague de correctifs finale.** La commande de ce Step, telle qu'écrite
+> ci-dessus, est devenue un **no-op silencieux** : `BUDGET_MS` ne fait plus rien depuis le
+> retrait de la surcharge par l'environnement (annotations plus haut dans cette tâche).
+> L'exécuter aujourd'hui lance `npm run verrou` au budget fixe de 300 s, pas 90 s, sans le
+> moindre message d'erreur. Ce Step reste ici comme relevé de ce qui a été exécuté et pourquoi,
+> à cette date-là ; qui voudrait reproduire ce sondage devra éditer la constante dans
+> `scripts/verrou.mjs` directement.
 
 - [ ] **Step 5: Commit**
 
@@ -1326,7 +1338,10 @@ acquiescer par principe.
 **Cohérence des noms :** `fmtMarg` défini en tâche 1 Step 3, consommé en tâche 1 Step 4 et par
 la regex `[+-]?` du pilote (tâche 0 Step 3, où le piège est signalé). `mesure.mjs` produit les
 clés `ch/ecart/chassis/passif/verrou/coffre`, toutes lues telles quelles par les tâches 4 à 8.
-`BUDGET_MS` défini en tâche 2, utilisé en tâche 2 Step 4 et tâche 10 Step 1. Le jeu de quarante
+`BUDGET_MS` défini en tâche 2, utilisé en tâche 2 Step 4 et tâche 10 Step 1 — **note du
+2026-09-02, vague de correctifs finale : cette surcharge par l'environnement a été retirée,
+`BUDGET_MS` est maintenant codé en dur dans `scripts/verrou.mjs`, les deux usages cités ne font
+plus rien.** Le jeu de quarante
 graines défini en tâche 3, vérifié par recalcul au même endroit, utilisé partout ensuite.
 
 **Trous connus, assumés :** la tâche 8 Step 1 porte un `<cinq valeurs autour de la retenue>` et

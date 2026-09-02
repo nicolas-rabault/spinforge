@@ -866,10 +866,12 @@ bloquant.
   quarante graines — pas les ×10,80 cités plus haut, qui viennent d'une mesure à dix graines
   sur un tout autre jeu de graines et ne se comparent pas terme à terme à ×4,88. Sur quatre
   jeux disjoints, les deux distributions ne se recouvrent pas — `[×4,88 ; ×6,63]` contre
-  `[×8,00 ; ×10,78]` (plancher élargi à ×8,00 : un cinquième jeu disjoint de quarante graines,
-  mesuré aux mêmes réglages au § 3 de la spec de cette passe, descend sous le ×8,90 relevé sur
-  ce jeu-ci de quatre — le non-recouvrement tient malgré tout, ×8,00 restant au-dessus du
-  plafond ×6,63 de 1,10) — mais l'amélioration à mesure égale vaut environ ×1,9, pas ×2,2. Refermé
+  `[×8,00 ; ×10,80]` en comptant aussi le jeu disjoint de quarante graines du § 3 de la spec
+  (mêmes réglages, `damageK` figé à 1,30) : son plancher, ×8,00, descend sous le ×8,90 relevé
+  sur ce jeu-ci de quatre, et son plafond, ×10,80 — à ne pas confondre avec le ×10,80 à dix
+  graines cité juste au-dessus, une mesure sans rapport — dépasse le ×10,78 relevé ici. Le
+  non-recouvrement tient malgré tout : ×8,00 reste au-dessus du plafond ×6,63 de 1,10 — mais
+  l'amélioration à mesure égale vaut environ ×1,9, pas ×2,2. Refermé
   par `combat.damageK` seul (1,30 → 1,10). Ce qui reste : ×4,88 est encore très au-dessus de la
   cible affichée < ×2, et aucune valeur de `damageK` balayée sur la grille `[0,80 ; 1,70]` n'en
   approche, pas même la plus basse testée (0,80, ×3,83) — refermer davantage demande le bloc
@@ -881,9 +883,14 @@ bloquant.
   complets du journal — pas comme quatre confirmations indépendantes, mais parce que le
   chapitre 1 et le comparatif châssis ne dépendent que de `damageK` et `rewardBase`, tous deux
   gelés aux mêmes valeurs dans les quatre rapports complets à la valeur retenue, un par
-  balayage — pas dans les quatre balayages eux-mêmes, dont chacun a justement fait varier l'une
-  des deux sur sa propre grille ; c'est la même mesure finale imprimée quatre fois,
-  pas quatre mesures distinctes. Si c'était déjà le cas *avant* `fc827ee` reste **non mesuré
+  balayage. Ce n'est vrai des balayages eux-mêmes que pour deux des quatre : le balayage
+  `spinPerChapter`/`attackPerChapter` (`sc40-*.json`) et celui de `rewardPerChapter`
+  (`rpc40-*.json`) gardent `damageK` et `rewardBase` gelés sur toute leur grille — chapitre 1
+  identique à chaque point, 0,37 h / 17 descentes / s10 46,40 s / écart ×4,88, vérifié dans les
+  deux jeux de données brutes. Faux pour les deux autres : le balayage `damageK` (`dk40-*.json`)
+  et celui de `rewardBase` (`rb40-*.json`) font justement varier l'une des deux sur sa propre
+  grille — c'est leur objet. C'est donc la même mesure finale imprimée quatre fois dans les
+  rapports complets, pas quatre mesures distinctes. Si c'était déjà le cas *avant* `fc827ee` reste **non mesuré
   par cette passe non plus** : aucun de ses balayages ne porte sur l'ancienne physique de
   collision, et rien ici ne permet de trancher dans un sens ou dans l'autre — la question reste
   ouverte pour qui refermera l'écart.

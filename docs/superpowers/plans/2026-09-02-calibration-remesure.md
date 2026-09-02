@@ -174,16 +174,17 @@ canonique, plus trois jeux `k = 100..139`, `200..239`, `300..339`).
 
 **Les deux distributions de l'écart châssis ne se recouvrent à aucun point** :
 `[×4,88 ; ×6,63]` contre `[×8,90 ; ×10,78]` sur ce jeu-ci de quatre échantillons disjoints. Un
-cinquième échantillon disjoint de quarante graines existe déjà dans ce dépôt, aux mêmes
-réglages (`damageK` figé à 1,30) : le jeu 3 du § 3 de la spec mesure ×8,00 — sous le plancher
-de ×8,90 relevé ici. Le plancher honnête, toutes mesures à quarante graines confondues à 1,30,
-est donc `×8,00`, pas `×8,90`. **Le non-recouvrement survit malgré tout** : ×8,00 reste
-au-dessus du plafond ×6,63 mesuré à 1,10, donc `[×4,88 ; ×6,63]` contre `[×8,00 ; ×10,78]` ne se
-touchent toujours pas. C'est une mesure directe, pas une extension de
+autre jeu de quatre échantillons disjoints de quarante graines existe déjà dans ce dépôt, aux
+mêmes réglages (`damageK` figé à 1,30) : le § 3 de la spec, où le plancher (jeu 3, ×8,00) est
+sous le ×8,90 relevé ici et le plafond (jeu 4, ×10,80) dépasse le ×10,78 relevé ici. Le
+plancher et le plafond honnêtes, toutes mesures à quarante graines confondues à 1,30, sont donc
+`×8,00` et `×10,80`, pas `×8,90` et `×10,78`. **Le non-recouvrement survit malgré tout** :
+×8,00 reste au-dessus du plafond ×6,63 mesuré à 1,10, donc `[×4,88 ; ×6,63]` contre
+`[×8,00 ; ×10,80]` ne se touchent toujours pas. C'est une mesure directe, pas une extension de
 l'heuristique — et elle **contredit** l'heuristique : la règle du facteur ~2 aurait déclaré
 ×6,63 (le pire jeu à 1,10) et ×8,90 (le meilleur jeu de ce relevé-ci à 1,30) à égalité (facteur
 1,34, sous 2), alors que les distributions complètes ne se touchent jamais, même en comptant le
-plancher élargi. **Une heuristique a été remplacée
+plancher et le plafond élargis. **Une heuristique a été remplacée
 par une mesure, et la mesure l'a contredite.** C'est le résultat le plus important de ce
 correctif, plus important que la valeur retenue elle-même : la discipline « arbitrer en bandes,
 pas au centième » était la bonne discipline, mais son seuil numérique (« facteur ~2 ») avait été

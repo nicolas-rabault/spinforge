@@ -38,8 +38,7 @@ complet des quatre balayages (quarante graines) :
   d'un ordre de grandeur de temps de jeu. À quarante graines, sur ce même réglage d'avant cette
   passe (`damageK` 1,30), l'écart valait ×9,30 (93 descentes contre 10) — la comparaison à
   mesure égale avec le résultat ci-dessous. Après cette passe (`damageK` 1,10) : **39 descentes
-  contre 8 (×4,88)** — une
-  réduction d'environ ×1,9, pas ×2,2. Le déplacement est entièrement porté par
+  contre 8 (×4,88)** — une réduction d'environ ×1,9, pas ×2,2. Le déplacement est entièrement porté par
   `combat.damageK` ; aucun profil de châssis n'a été touché — ce n'est pas le mandat de cette
   passe. **Ce n'est pas résolu** : ×4,88 reste très au-dessus de la cible affichée < ×2, et
   refermer davantage demande une décision d'équilibrage sur les châssis eux-mêmes — un mandat

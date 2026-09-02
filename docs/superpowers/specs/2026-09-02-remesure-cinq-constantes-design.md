@@ -102,7 +102,7 @@ de ±0,02 h. **Le jeu n'a plus de mur après le chapitre 1, et ça, c'est mesur�
 > (`spinPerChapter` 1,05), les trois marges valent **+0,12 / +0,15 / +0,21 h** pour un
 > chapitre 1 à **0,37 h** — les chapitres 2 à 4 réunis coûtent **0,48 h, plus cher que le
 > chapitre 1**, pas moins cher. **Le mur n'a pas disparu après le chapitre 1 : il est revenu**,
-> et c'est le résultat le plus important de cette passe, pas un détail corrigé au passage.
+> ce n'est pas un détail corrigé au passage : c'est l'issue économique que retient cette passe.
 > Historique complet, chiffres à jour compris : `docs/game-design.md` § Économie et
 > `docs/roadmap.md`, dette « jalon 3, lot A ».
 
