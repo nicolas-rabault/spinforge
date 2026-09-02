@@ -82,6 +82,10 @@ export function App() {
   // sans qu'aucun effet n'ait à la recalculer.
   const [pickedChapter, setPickedChapter] = useState<number | null>(null);
   const [tab, setTab] = useState<Tab>('combat');
+  // Deux usages, et c'est la même vérité : la boucle de jeu ne tourne que sur
+  // cet onglet (`running` de CombatScreen, plus bas), et l'arène y prend tout
+  // l'écran. Déclaré ici parce que `farmActive` en dépend aussi.
+  const combat = tab === 'combat';
   const [, setFrame] = useState(0);
   const redraw = () => setFrame((f) => f + 1);
 
@@ -161,10 +165,12 @@ export function App() {
   const [farmSeed] = useState(() => (Date.now() ^ 0x2545f491) >>> 0);
   const lastPacketRef = useRef(0);
 
-  // Le farm crédite dès que le joueur ne pilote pas une descente vivante
-  // (R4c) : aussi pendant le voile de fin de descente (`playing` vrai,
-  // `run.phase` clos), et sur tous les onglets hors combat.
-  const farmActive = !(playing && run.phase === 'fighting');
+  // Le farm crédite dès que la descente pilotée N'AVANCE PAS (R4c) : pendant
+  // le voile de fin de descente (`playing` vrai, `run.phase` clos), et hors de
+  // l'onglet Combat, où `running={combat}` gèle la boucle de jeu. Sans la
+  // condition d'onglet, vingt minutes passées à la Forge pendant une descente
+  // ne rapportaient rien — là où fermer l'app les aurait payées.
+  const farmActive = !(playing && combat && run.phase === 'fighting');
 
   useEffect(() => {
     if (!farmActive || metaRef.current.bestChapter < 1) return;
@@ -219,10 +225,10 @@ export function App() {
     setLangState(next);
   };
 
-  // En combat, l'arène occupe tout l'écran et le reste se pose dessus. Ailleurs,
-  // la colonne ordinaire avec ses marges. C'est le seul endroit où la disposition
-  // dépend de l'onglet — les écrans eux-mêmes n'en savent rien.
-  const combat = tab === 'combat';
+  // En combat (`combat`, déclaré plus haut), l'arène occupe tout l'écran et le
+  // reste se pose dessus. Ailleurs, la colonne ordinaire avec ses marges. C'est
+  // le seul endroit où la disposition dépend de l'onglet — les écrans eux-mêmes
+  // n'en savent rien.
   const overlay = { position: 'absolute' as const, left: 0, right: 0, zIndex: 3 };
 
   // Recalculé à chaque rendu : le point rouge est dérivé de l'état, jamais
