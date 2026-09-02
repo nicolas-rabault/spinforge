@@ -200,6 +200,11 @@ const results = SEEDS.map((seed) => simulate(seed, { buyChests: true, steer: ste
 const passive = SEEDS.map((seed) => simulate(seed, { buyChests: true, steer: () => null, upTo: 1 }));
 
 const fmt = (x) => (x === null ? 'jamais' : x.toFixed(2));
+/** Comme `fmt`, mais porte son propre signe : le `+` était codé en dur dans la
+ *  chaîne de format, ce qui imprimait `+-0.21 h` sur une marge négative. Une
+ *  marge l'est dès qu'un chapitre est validé par moins de graines que son
+ *  prédécesseur — `hoursOf` écarte les graines qui n'ont pas validé. */
+const fmtMarg = (x) => (x === null ? 'jamais' : (x < 0 ? '' : '+') + x.toFixed(2));
 const medianOf = (rs, key) => median(rs.map((r) => r[key]));
 
 console.log('=== Calibration — %d graines ===', SEEDS.length);
@@ -232,8 +237,8 @@ for (let chapter = 1; chapter <= MAX_CHAPTER; chapter++) {
   }
   const deadliestRate = salleStats.reduce((best, s) => (best === null || s.rate > best.rate ? s : best), null);
 
-  console.log('\n--- Chapitre %d : validé par %d/%d graines · %s h cumulées (+%s h) · %s descentes · salle la plus meurtrière %j',
-    chapter, validated, SEEDS.length, fmt(heures), fmt(marginal), fmt(chapterField(results, chapter, 'runs')), deadliest);
+  console.log('\n--- Chapitre %d : validé par %d/%d graines · %s h cumulées (%s h) · %s descentes · salle la plus meurtrière %j',
+    chapter, validated, SEEDS.length, fmt(heures), fmtMarg(marginal), fmt(chapterField(results, chapter, 'runs')), deadliest);
   // Garde-fou : « le mur n'est jamais un bug, c'est le produit » doit tenir dans
   // CHAQUE chapitre, pas seulement dans le premier. Le verdict reste sur le
   // décompte absolu — la lecture par tentative ci-dessous ne le fait jamais basculer.
