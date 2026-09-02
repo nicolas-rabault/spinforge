@@ -171,7 +171,18 @@ export function App() {
     lastPacketRef.current = Date.now();
     const id = setInterval(() => {
       const now = Date.now();
-      const elapsed = Math.max(0, (now - lastPacketRef.current) / 1000);
+      // Le plafond du hors-ligne vaut AUSSI ici. Les minuteries d'un onglet
+      // suspendu (portable refermé) ne tournent pas : au réveil, un unique
+      // paquet tirerait sinon toute la durée de la veille — 24 h donneraient
+      // 288 min de jeu simulé au lieu des 72 que le plafond autorise, en
+      // gelant le fil principal deux dixièmes de seconde. Un plafond qui ne
+      // vaut que sur un chemin n'est pas un plafond, et la calibration du taux
+      // idle est bâtie sur celui-ci. Le bonus de retour, lui, ne s'applique
+      // pas : c'est un ressort de retour d'absence, pas de veille.
+      const elapsed = Math.min(
+        Math.max(0, (now - lastPacketRef.current) / 1000),
+        OFFLINE.capHours * 3600,
+      );
       lastPacketRef.current = now;
       const report = farm(metaRef.current, farmSessionRef.current, elapsed * OFFLINE.rate, farmSeed);
       if (report.salles > 0) metaChanged();
