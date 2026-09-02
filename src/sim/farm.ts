@@ -132,3 +132,30 @@ export function offlineSeconds(absenceSeconds: number): number {
   const bonus = absenceSeconds >= OFFLINE.winbackAfterHours * 3600 ? OFFLINE.winbackMult : 1;
   return capped * OFFLINE.rate * bonus;
 }
+
+/**
+ * Secondes de JEU que vaut un paquet de farm EN LIGNE, pour un temps réel
+ * écoulé depuis le paquet précédent.
+ *
+ * Même plafond que le hors-ligne — un plafond qui ne vaut que sur un chemin
+ * n'est pas un plafond. Les minuteries d'un onglet suspendu ne tournent pas :
+ * sans cette borne, un portable refermé 24 h faisait tirer 86 400 s au premier
+ * paquet du réveil, soit 288 min de jeu créditées au lieu des 72 que le
+ * plafond autorise, et deux dixièmes de seconde de gel du fil principal.
+ *
+ * **Pas de bonus de retour ici** : le bonus récompense une absence, pas une
+ * veille. C'est la seule différence avec `offlineSeconds`, et elle est
+ * délibérée.
+ *
+ * Pas de `minSeconds` non plus : le seuil d'absence n'existe que pour ne pas
+ * ouvrir un écran de bilan sur un simple rechargement de page. Un paquet en
+ * ligne n'ouvre aucun écran, et le `carry` de la session reporte de toute façon
+ * ce qui ne fait pas un tick entier.
+ *
+ * Une durée nulle ou négative (horloge système reculée) vaut zéro, comme pour
+ * le hors-ligne : ni gain ni dette.
+ */
+export function onlineSeconds(elapsedSeconds: number): number {
+  if (!(elapsedSeconds > 0)) return 0;
+  return Math.min(elapsedSeconds, OFFLINE.capHours * 3600) * OFFLINE.rate;
+}

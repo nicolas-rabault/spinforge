@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { farm, newFarmSession, offlineSeconds } from './farm';
+import { farm, newFarmSession, offlineSeconds, onlineSeconds } from './farm';
 import { createInitialMeta } from './meta';
 import { MAX_CHAPTER, OFFLINE, SALLES_PER_CHAPTER } from './config';
 import type { MetaState } from './types';
@@ -184,5 +184,53 @@ describe('offlineSeconds', () => {
     // que du bonus : cette assertion ne peut échouer que si le bonus a bougé.
     expect(juste / avant).toBeCloseTo(OFFLINE.winbackMult, 6);
     expect(juste).toBeGreaterThan(avant);
+  });
+});
+
+/** Le pendant EN LIGNE du plafond. Ces tests existent parce que le garde-fou
+ *  qu'ils protègent avait vécu sans eux dans `App.tsx` : le paquet en ligne ne
+ *  plafonnait rien, et une veille de 72 h créditait ×11,8 ce que le plafond
+ *  autorise. Un garde-fou critique sans test est un garde-fou qui disparaîtra à
+ *  la prochaine refonte, sans que rien ne le signale. */
+describe('onlineSeconds', () => {
+  const H = 3600;
+
+  it('applique le taux à un paquet ordinaire', () => {
+    // Une minute réelle, très en deçà du plafond : le taux, et rien que lui.
+    expect(onlineSeconds(60)).toBeCloseTo(60 * OFFLINE.rate, 6);
+  });
+
+  it('plafonne un paquet absurdement long avant d’appliquer le taux', () => {
+    // Le portable refermé un jour entier, puis trois : les minuteries d'un
+    // onglet suspendu ne tournent pas, et le paquet du réveil tire toute la
+    // veille d'un coup. Les deux doivent rendre EXACTEMENT le plafond — s'ils
+    // rendaient des valeurs différentes, la veille paierait encore.
+    const plafond = OFFLINE.capHours * H;
+    expect(onlineSeconds(24 * H)).toBeCloseTo(plafond * OFFLINE.rate, 6);
+    expect(onlineSeconds(72 * H)).toBeCloseTo(plafond * OFFLINE.rate, 6);
+    expect(onlineSeconds(72 * H)).toBeCloseTo(onlineSeconds(24 * H), 6);
+  });
+
+  it('ignore une durée nulle ou négative (horloge reculée)', () => {
+    expect(onlineSeconds(0)).toBe(0);
+    expect(onlineSeconds(-5000)).toBe(0);
+  });
+
+  it('rend toujours strictement moins que le temps écoulé', () => {
+    // Le pilier : le jeu actif paie mieux à la minute que le farm, quelle que
+    // soit l'échelle — sous le plafond c'est le taux qui l'assure, au-dessus
+    // c'est le plafond. Aucun bonus de retour ne vient renverser le rapport
+    // ici, contrairement au hors-ligne.
+    for (const elapsed of [0.1, 1, 60, H, OFFLINE.capHours * H, 24 * H, 72 * H]) {
+      expect(onlineSeconds(elapsed)).toBeLessThan(elapsed);
+    }
+  });
+
+  it('paie le même tarif que le hors-ligne sous le plafond, bonus de retour mis à part', () => {
+    // La promesse de la spec : « fermer l'app ou la laisser ouverte rapporte
+    // exactement la même chose par minute ». Une heure est au-dessus de
+    // `minSeconds` et au-dessous du seuil de bonus : les deux chemins doivent
+    // rendre la même valeur, au bit près.
+    expect(onlineSeconds(H)).toBeCloseTo(offlineSeconds(H), 6);
   });
 });

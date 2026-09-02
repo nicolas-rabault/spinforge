@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { maxPlayableChapter, startRun } from '../sim/sim';
-import { farm, newFarmSession, offlineSeconds, type FarmReport } from '../sim/farm';
-import { OFFLINE, SALLES_PER_CHAPTER } from '../sim/config';
+import { farm, newFarmSession, offlineSeconds, onlineSeconds, type FarmReport } from '../sim/farm';
+import { SALLES_PER_CHAPTER } from '../sim/config';
 import { attention, shoppingToupie } from './attention';
 import { flushSave, installFlushOnHide, loadMeta, scheduleSave } from '../storage/localSave';
 import { audio } from '../audio/audio';
@@ -177,20 +177,12 @@ export function App() {
     lastPacketRef.current = Date.now();
     const id = setInterval(() => {
       const now = Date.now();
-      // Le plafond du hors-ligne vaut AUSSI ici. Les minuteries d'un onglet
-      // suspendu (portable refermé) ne tournent pas : au réveil, un unique
-      // paquet tirerait sinon toute la durée de la veille — 24 h donneraient
-      // 288 min de jeu simulé au lieu des 72 que le plafond autorise, en
-      // gelant le fil principal deux dixièmes de seconde. Un plafond qui ne
-      // vaut que sur un chemin n'est pas un plafond, et la calibration du taux
-      // idle est bâtie sur celui-ci. Le bonus de retour, lui, ne s'applique
-      // pas : c'est un ressort de retour d'absence, pas de veille.
-      const elapsed = Math.min(
-        Math.max(0, (now - lastPacketRef.current) / 1000),
-        OFFLINE.capHours * 3600,
-      );
+      // Plafond ET taux vivent dans `onlineSeconds`, sœur d'`offlineSeconds` :
+      // c'est le seul endroit du projet où la règle est écrite, et le seul où
+      // elle est testable. Ici, on ne fait que mesurer l'horloge.
+      const gameSeconds = onlineSeconds((now - lastPacketRef.current) / 1000);
       lastPacketRef.current = now;
-      const report = farm(metaRef.current, farmSessionRef.current, elapsed * OFFLINE.rate, farmSeed);
+      const report = farm(metaRef.current, farmSessionRef.current, gameSeconds, farmSeed);
       if (report.salles > 0) metaChanged();
     }, 1000);
     return () => clearInterval(id);
