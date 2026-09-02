@@ -1051,10 +1051,18 @@ Verrou actif : changer de châssis en cours de descente ne rapporte rien.
 Relevé obtenu par exécution directe de `npm run calibrate` sur `src/content/balance.json`
 inchangé (aucune ligne éditée par cette tâche), pas seulement rejoué depuis le balayage —
 identique au chiffre près au point `rewardBase = 104` du balayage (`ecart.x = 4,88`,
-`s10 = 46,40 s`, `ch1 = 0,37 h / 17 descentes`, marges `+0,12 / +0,15 / +0,21`) et identique au
-rapport complet déjà relevé aux deux sections précédentes de ce journal (`damageK` et
-`spinPerChapter`/`attackPerChapter`), puisqu'aucune des quatre constantes gelées ni
-`rewardBase` n'a changé depuis : contrôle croisé passé, à trois reprises indépendantes.
+`s10 = 46,40 s`, `ch1 = 0,37 h / 17 descentes`, marges `+0,12 / +0,15 / +0,21`). Le bloc
+chapitre 1 (`0,37 h / 17 descentes`, salle 10 à `46,40 s`, 229 morts) est identique aux trois
+rapports complets déjà relevés dans ce journal (`damageK`, `spinPerChapter`/`attackPerChapter`,
+et celui-ci) : c'est exactement ce que prédit l'instrument, puisque le chapitre 1 ne dépend que
+de `damageK` et `rewardBase`, tous deux inchangés (1,10 et 104) sur les trois captures, et
+jamais des trois constantes à exposant `chapitre − 1`. Les chapitres 2 à 4, en revanche, ne
+coïncident dans leur intégralité qu'avec la section `spinPerChapter`/`attackPerChapter` — les
+deux rapports partagent les quatre mêmes constantes gelées. Ils **ne coïncident pas** avec le
+rapport `damageK` : celui-ci a été capturé au commit `cee2661`, avant que la tâche 5 ne déplace
+`spinPerChapter` de 1,02 à 1,05 — ses chapitres 3 et 4 y lisent +0,06 h et +0,16 h (salle 10 du
+chapitre 4 à 43,50 s / 117 morts), contre +0,15 h et +0,21 h ici (52,10 s / 141 morts). Contrôle
+croisé réel : le chapitre 1, sur trois captures indépendantes — pas le rapport complet.
 
 `npm run test` : 490 tests, 35 fichiers, tous verts.
 
@@ -1306,6 +1314,22 @@ nécessaires et ni l'une ni l'autre seule suffisante — est un résultat que la
 passe (un bouton à la fois) ne pouvait produire qu'à la toute fin, en mettant deux sections en
 regard l'une de l'autre.
 
+### 4. Une relecture (fix round 1/5) a trouvé la même erreur ici et dans la section `rewardBase` — copiée, pas réécrite
+
+Les phrases de contrôle croisé des sections `rewardBase` et `rewardPerChapter` affirmaient
+chacune que le rapport complet coïncidait avec *tous* les rapports précédents du journal, `damageK`
+compris. C'est faux pour `damageK` : son rapport a été capturé au commit `cee2661`, avant que la
+tâche 5 ne déplace `spinPerChapter` de 1,02 à 1,05 — seul le bloc chapitre 1 (invariant à
+l'exposant `chapitre − 1`, et aux deux constantes qui restent gelées de bout en bout) coïncide
+réellement sur les quatre captures ; les chapitres 2 à 4 divergent dès qu'un rapport a été pris
+avant ce déplacement. Les deux phrases corrigées ci-dessus et à la section `rewardBase`. C'est la
+**cinquième** instance de ce même défaut dans cette passe — une phrase dont les deux moitiés
+viennent de mesures différentes — et la **deuxième** fois qu'il se propage par copie d'une
+section voisine plutôt que par une phrase réécrite à neuf : la phrase de `rewardPerChapter`
+avait été calquée sur celle, déjà fausse, de `rewardBase`. C'est cette propagation-là, plus que
+l'erreur elle-même, qui vaut d'être notée : une correction qui laisse l'instance d'origine
+debout n'est pas une correction, elle en garde une copie active.
+
 ## Lecture des garde-fous et départages à la valeur retenue (`rewardPerChapter = 1,15`)
 
 | Garde-fou / départage | État | Mesure |
@@ -1403,10 +1427,18 @@ Verrou actif : changer de châssis en cours de descente ne rapporte rien.
 Relevé obtenu par exécution directe de `npm run calibrate` sur `src/content/balance.json`
 inchangé (aucune ligne éditée par cette tâche) — identique au chiffre près au point
 `rewardPerChapter = 1,15` du balayage (`ecart.x = 4,88`, `s10 = 46,40 s`, `ch1 = 0,37 h / 17
-descentes`, marges `+0,12 / +0,15 / +0,21`) et identique au rapport complet déjà relevé aux
-trois sections précédentes de ce journal (`damageK`, `spinPerChapter`/`attackPerChapter`,
-`rewardBase`), puisqu'aucune des cinq constantes de la passe n'a changé depuis la tâche 6 :
-contrôle croisé passé, à quatre reprises indépendantes.
+descentes`, marges `+0,12 / +0,15 / +0,21`). Le bloc chapitre 1 (`0,37 h / 17 descentes`,
+salle 10 à `46,40 s`, 229 morts) est identique aux quatre rapports complets de ce journal
+(`damageK`, `spinPerChapter`/`attackPerChapter`, `rewardBase`, et celui-ci) : c'est
+l'instrument, pas une coïncidence — le chapitre 1 ne dépend que de `damageK` et `rewardBase`
+(inchangés à 1,10 et 104 sur les quatre captures), jamais des trois constantes à exposant
+`chapitre − 1`. Les chapitres 2 à 4, eux, ne coïncident dans leur intégralité qu'avec les
+sections `spinPerChapter`/`attackPerChapter` et `rewardBase` — les trois rapports partagent les
+quatre mêmes constantes gelées depuis la tâche 5. Ils **ne coïncident pas** avec le rapport
+`damageK`, capturé au commit `cee2661` avant que la tâche 5 ne déplace `spinPerChapter` de 1,02
+à 1,05 (ses chapitres 3 et 4 y lisent +0,06 h et +0,16 h, salle 10 du chapitre 4 à
+43,50 s / 117 morts, contre +0,15 h et +0,21 h ici). Contrôle croisé réel : le chapitre 1, sur
+quatre captures indépendantes — pas le rapport complet.
 
 `npm run test` : 490 tests, 35 fichiers, tous verts.
 
