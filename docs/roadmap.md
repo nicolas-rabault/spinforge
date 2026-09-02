@@ -312,10 +312,59 @@ mobile milieu de gamme) : **médiane 58,8 images/s**, mais **p90 à 25,5 ms** �
 image sur dix est doublée. Le critère d'acceptation n° 4, « 60 fps sur mobile milieu de
 gamme », est donc tenu à la médiane et manqué dans la queue de distribution. Reporté
 sciemment : le jalon 2a ajoute surtout des écrans React (coffres, inventaire, fusion) et
-non de la charge d'arène, donc la mesure ne devrait pas se dégrader d'ici là. Deux suspects
-sont déjà nommés plus haut dans cette section — la texture du sol régénérée à chaque pixel
-de redimensionnement, et la porte retracée en `Graphics` à chaque image. À reprendre au
-jalon 3, quand le farm AUTO fera tourner l'arène en continu et rendra la queue visible.
+non de la charge d'arène, donc la mesure ne devrait pas se dégrader d'ici là. ~~Deux
+suspects sont déjà nommés plus haut dans cette section — la texture du sol régénérée à
+chaque pixel de redimensionnement, et la porte retracée en `Graphics` à chaque image. À
+reprendre au jalon 3, quand le farm AUTO fera tourner l'arène en continu et rendra la
+queue visible.~~ Les deux suspects nommés plus haut dans cette section ont été remesurés
+au jalon 3 (lot B) et **innocentés tous les deux** — voir la mise à jour ci-dessous ; ce
+n'est plus une piste à suivre.
+
+**Mise à jour (jalon 3, lot B)** : remesuré en navigateur, throttling processeur ×4,
+avec le décor AUTO de ce lot qui tourne — exactement la situation que cette entrée
+annonçait comme celle qui « rendra la queue visible ». Trois constats.
+
+Primo, la refonte graphique n'a rien dégradé. On aurait pu croire que tout ce que les
+jalons 2a, 2b, 2.5 et 3 (lot A) ont ajouté au rendu de l'arène depuis la mesure d'origine
+avait alourdi le rendu ; la mesure dément cette hypothèse. Décor AUTO, équipement de
+départ : médiane 17,2 ms, soit **58,1 images/s**, p90 **25,5 ms**, p99 32,2 ms, 64,3 %
+des images au-delà de 16,7 ms. C'est indiscernable de la mesure du jalon 1.5 — 58,1
+contre 58,8 images/s, 25,5 ms de p90 dans les deux cas. Décor AUTO armé (salles
+profondes, trois bots) : médiane 18,2 ms (54,9 images/s), p90 25,9 ms, p99 33,5 ms,
+72,6 % au-delà de 16,7 ms — une charge un peu plus lourde, mais du même ordre.
+
+Secundo, **les deux suspects nommés sont innocentés**. Les neutraliser tous les deux à
+la fois pour la mesure ne déplace pas la queue de distribution : p90 25,7 ms, p99
+33,6 ms, 66,4 % au-delà de 16,7 ms — l'épaisseur du bruit face aux 25,5 ms et 64,3 % de
+la situation de référence, pas un gain. La texture du sol ne pouvait d'ailleurs pas être
+en cause dans cette mesure de toute façon : elle n'est régénérée qu'au redimensionnement
+du conteneur (`layout()` dans `arena.ts`), et la mesure ne redimensionne jamais rien.
+Un troisième candidat, que la roadmap n'avait pas nommé, a été testé de sa propre
+initiative : la résolution de rendu de PixiJS
+(`resolution: Math.min(window.devicePixelRatio || 1, 2)`). Forcée à 1, la médiane tombe
+à 17,0 ms, le p90 à 25,2 ms, 60,7 % au-delà de 16,7 ms — un mieux marginal, dans le même
+ordre de grandeur que le bruit de mesure, pas une explication de la queue. Lui aussi est
+innocenté.
+
+Tertio, le coût est réel et vient bien du rendu de l'arène, mais il est **réparti, pas
+localisé**. Le témoin le montre : sur l'onglet Forge, boucle de jeu arrêtée et arène
+masquée, la même page tient **120,5 images/s** (médiane 8,3 ms, p90 9,6 ms, p99
+10,2 ms), avec **zéro image doublée**. La queue de distribution n'est donc pas un
+artefact du harnais de mesure — le même navigateur, sous le même throttling, l'atteint
+sans peine dès que l'arène ne tourne pas. Ce n'est pas non plus la simulation : un tick
+coûte environ 0,95 microseconde (mesuré par ailleurs sur ce lot, pour le hors-ligne : 4 h
+de jeu simulées en 136 ms). Reste le rendu PixiJS de l'arène lui-même, sans point chaud
+isolable parmi les trois candidats testés.
+
+Conclusion : rien n'est corrigé, et c'est délibéré — le principe posé par ce lot est de
+ne jamais corriger un suspect nommé sans l'avoir vu coupable, et aucun des trois ne l'a
+été. Réduire cette dette demande une passe de profilage du rendu, hors périmètre du lot
+B. La dette reste donc ouverte, exactement au niveau où elle était, sans régression.
+
+Réserve : la mesure tourne en navigateur headless, où `devicePixelRatio` vaut déjà 1. Le
+test sur la résolution de rendu ne conclut donc pas pour un vrai appareil mobile, où ce
+facteur vaut souvent 3 — à refaire sur un appareil réel avant de rayer ce candidat
+définitivement.
 
 **Équilibrage**
 - La taille des toupies à l'écran (~28 px de diamètre, soit `PLAYER_BASE.radius` /
