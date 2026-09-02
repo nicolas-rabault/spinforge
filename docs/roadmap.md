@@ -221,27 +221,39 @@ d'échantillonnage. À quarante graines l'étendue tombe à 0,02 h ; à quatre-v
 plus. Les valeurs à dix graines n'étaient donc pas fausses : elles étaient **imprécises**, et
 l'ordre des trois marges entre elles (ch. 2, ch. 3, ch. 4) en faisait partie — +0,12 h / +0,15 h
 / +0,08 h à dix graines contre +0,10 h / +0,08 h / +0,10 h à quarante, l'ordre change d'un jeu
-à l'autre. Nouvelle ligne de base, à quarante graines :
+à l'autre.
+
+**Ce lot n'a contribué à aucun de ces deux premiers déplacements, et c'est mesuré, pas
+plaidé** : la ligne de base à quarante graines, constantes encore inchangées, est identique sur
+`main` seul et sur l'arbre fusionné. La démonstration de neutralité du paragraphe
+« Neutralité de l'extraction » ci-dessus reste donc entièrement valide — elle disait
+« l'extraction ne déplace aucun chiffre », pas « ces chiffres sont éternels ». Ce qui change
+est la référence à laquelle une remesure doit se comparer, et rien d'autre.
+
+**Troisième mise à jour, même date encore : la ligne de base à quarante graines ci-dessus était
+elle-même mesurée à `combat.damageK` et `bot.scaling.spinPerChapter` encore inchangés, et la
+passe de remesure des cinq constantes les a ensuite recalés sous cette même physique.**
+Détail : `docs/superpowers/specs/2026-09-02-remesure-cinq-constantes-design.md` (mandat) et
+`docs/superpowers/plans/2026-09-02-calibration-remesure.md` (journal des quatre balayages).
+Ligne de base finale, à quarante graines, valeurs retenues (`combat.damageK` 1,30 → **1,10**,
+`bot.scaling.spinPerChapter` 1,02 → **1,05**, `bot.scaling.attackPerChapter` confirmée 1,10,
+`econ.rewardBase` confirmée 104, `econ.rewardPerChapter` confirmée 1,15) :
 
 | | validé | coût cumulé | coût marginal | descentes | plus meurtrière (absolu) | garde-fou 1 | par tentative |
 |---|---|---|---|---|---|---|---|
-| ch. 1 | 40/40 | 0,40 h | +0,40 h | 20 | salle 10, 300 morts | oui | salle 10, 88 % |
-| ch. 2 | 40/40 | 0,51 h | +0,10 h | 3 | salle 10, 104 morts | oui | salle 10, 72 % |
-| ch. 3 | 40/40 | 0,58 h | +0,08 h | 3 | salle 10, 62 morts | oui | salle 10, 61 % |
-| ch. 4 | 40/40 | 0,68 h | +0,10 h | 3 | salle 10, 91 morts | oui | salle 10, 69 % |
+| ch. 1 | 40/40 | 0,37 h | +0,37 h | 17 | salle 10, 229 morts | oui | salle 10, 85 % |
+| ch. 2 | 40/40 | 0,49 h | +0,12 h | 3 | salle 10, 93 morts | oui | salle 10, 70 % |
+| ch. 3 | 40/40 | 0,64 h | +0,15 h | 3 | salle 10, 90 morts | oui | salle 10, 69 % |
+| ch. 4 | 40/40 | 0,85 h | +0,21 h | 5 | salle 10, 141 morts | oui | salle 10, 78 % |
 
 Inchangés : premier coffre 0,00 h · passivité jamais validée · verrou du châssis actif · salle
-10 la plus meurtrière dans les quatre chapitres. Vecteur de morts par salle du chapitre 1 :
-`0,0,0,1,15,17,34,25,35,72`, contre `0,0,1,0,10,9,21,18,15,23`. Le huitième garde-fou, lui,
-n'est pas un recalage mais une **alerte** : l'écart entre châssis passe de ×3,80 à ×10,80 pour
-une cible de ×2 — voir « Née de l'intégration » dans la dette du jalon 2.5, où elle est
-consignée.
-
-**Ce lot n'a contribué à aucun de ces déplacements, et c'est mesuré, pas plaidé** : la ligne de
-base ci-dessus est identique sur `main` seul et sur l'arbre fusionné. La démonstration de
-neutralité du paragraphe précédent reste donc entièrement valide — elle disait « l'extraction
-ne déplace aucun chiffre », pas « ces chiffres sont éternels ». Ce qui change est la référence
-à laquelle une remesure doit se comparer, et rien d'autre.
+10 la plus meurtrière dans les quatre chapitres. Vecteur de morts par salle du chapitre 1, à la
+valeur retenue : `0,0,3,5,47,63,103,111,129,229`, contre le relevé dix graines d'origine du lot
+A, `0,0,1,0,10,9,21,18,15,23`. Le huitième garde-fou, lui, n'était pas un recalage mais une
+**alerte** : l'écart entre châssis, passé de ×3,80 à ×10,80 sous l'effet de `fc827ee`, est
+depuis retombé à **×4,88** — refermé par `combat.damageK` seul, aucun profil de châssis touché,
+et toujours loin de la cible < ×2. Détail complet : « Née de l'intégration » dans la dette du
+jalon 2.5, ci-dessous.
 
 **Le coût du fast-forward a fait écarter la formule fermée que prescrivait la spec de
 référence.** Mesuré sur la machine de développement, autopilote branché : 1 h de jeu simulée
@@ -704,6 +716,16 @@ bloquant.
   `arena.breach.ejectSpeed`, `boss.mass` ou le jeu de graines du harnais changent encore, les
   deux valeurs devront être vérifiées à nouveau — ne pas supposer qu'elles restent stables.
   Détail du balayage : `docs/superpowers/plans/2026-08-28-calibration-integration.md`.
+
+  **Mise à jour (2026-09-02) : les deux valeurs, remesurées sous `fc827ee`.** La passe de
+  remesure des cinq constantes (`docs/superpowers/plans/2026-09-02-calibration-remesure.md`) a
+  revérifié les deux à quarante graines, sous la physique de collision actuelle :
+  `econ.rewardBase` **confirmée à 104**, dans un palier démontré `[90 ; 116]` — sept points
+  consécutifs qui tiennent les cinq garde-fous durs ; `combat.damageK` **déplacée de 1,30 à
+  1,10**, dans un palier qui couvre cette fois la grille balayée tout entière, `[0,80 ; 1,70]`
+  — aucun des quatorze points testés ne casse un seul des cinq garde-fous durs, c'est
+  entièrement aux départages (écart entre châssis, durée du boss) qu'est revenu le choix à
+  l'intérieur du palier, pas aux garde-fous eux-mêmes.
 - Tout l'équilibrage de ce jalon a été mesuré au harnais avec la politique `steerWithTerrain`
   (`scripts/calibrate.mjs`), dont la manœuvre distinctive — dépenser son budget de pilotage à
   se placer derrière la cible, du côté opposé à la brèche la plus proche, pour l'y pousser —
@@ -722,6 +744,12 @@ bloquant.
   1,6, coûte six minutes de chapitre. Voir « Équilibrage du chapitre 1 » ci-dessus pour
   l'arbitrage d'origine, et `docs/superpowers/plans/2026-08-28-calibration-integration.md`
   pour le balayage complet.
+
+  **Mise à jour (2026-09-02) : la cible est tenue.** La passe de remesure des cinq constantes a
+  déplacé `combat.damageK` de 1,30 à 1,10 (ci-dessus). À quarante graines, la salle 10 du
+  chapitre 1 dure désormais **46,40 s** — à 1,4 s de la cible ~45 s, tenue pour la première
+  fois depuis les 87 s du jalon 2.5 et les 64,8 s de l'intégration. Détail :
+  `docs/superpowers/plans/2026-09-02-calibration-remesure.md`.
 - **L'éjection du boss est devenue atteignable pour une toupie lourde, et ne l'était pas
   avant l'intégration.** Mesuré au jalon 2.5, quand la masse du joueur valait encore 1 : il
   fallait ~615 px/s de vitesse de charge pour éjecter le boss (`arena.breach.ejectSpeed`
@@ -803,6 +831,26 @@ bloquant.
   profils de châssis ou aux cinq constantes calibrées — une décision d'équilibrage qui revient
   à l'auteur du jeu, pas à la passe d'intégration qui a constaté le déplacement. Ce qui est
   livré ici est la mesure et l'alerte ; le mandat reste à donner.
+
+  **Mise à jour (2026-09-02) : l'écart se referme partiellement, sans qu'aucun profil de
+  châssis n'ait été touché.** La passe de remesure des cinq constantes
+  (`docs/superpowers/specs/2026-09-02-remesure-cinq-constantes-design.md`, journal :
+  `docs/superpowers/plans/2026-09-02-calibration-remesure.md`) n'a jamais ouvert le bloc
+  `chassis` — l'écart n'y entre que comme critère de départage à l'intérieur d'un palier déjà
+  démontré (borne 2 du mandat de cette passe). Mesuré à quarante graines, aux cinq valeurs
+  retenues : **×4,88** (Tigre Foudre : 39 descentes médianes ; Carapace Abyssale : 8), contre
+  ×10,80 avant cette passe — refermé par `combat.damageK` seul (1,30 → 1,10). Ce qui reste :
+  ×4,88 est encore très au-dessus de la cible affichée < ×2, et aucune valeur de `damageK`
+  balayée sur la grille `[0,80 ; 1,70]` n'en approche, pas même la plus basse testée (0,80,
+  ×3,83) — refermer davantage demande le bloc `chassis`, et ce mandat-là n'a toujours pas été
+  donné.
+
+  **Réponse à la question laissée ouverte ci-dessus.** Aux valeurs retenues par cette passe,
+  Tigre Foudre meurt toujours surtout en salle 9, pas en salle 10 (662 morts en salle 9 sur le
+  relevé châssis du rapport final, à chacun des quatre balayages du journal). Si c'était déjà
+  le cas *avant* `fc827ee` reste **non mesuré par cette passe non plus** : aucun de ses
+  balayages ne porte sur l'ancienne physique de collision, et rien ici ne permet de trancher
+  dans un sens ou dans l'autre — la question reste ouverte pour qui refermera l'écart.
 - **Les identités d'arène des chapitres 2 à 8** : le jalon 2.5 a livré le système de terrain,
   pas les huit arènes qui l'utilisent. Les chapitres 1 à 4 sont devenus atteignables au
   jalon 3, lot A ; leurs identités de terrain (murs élastiques, piliers mobiles, geysers…)
@@ -851,6 +899,27 @@ de ces points n'est bloquant.
   structurellement hors de portée de `rewardPerChapter` seul : la seule valeur du balayage qui
   la produit (1,19) avait ses deux voisines qui inversaient la marche et une marge d'une seule
   mort au chapitre 4 — exactement la forme du piège qu'avait laissé `rewardBase = 86`.
+
+  **Mise à jour (2026-09-02) : ni confirmée fausse, ni simplement reconduite — remesurée à
+  quarante graines, avec un mécanisme désormais mesuré.** Ce que la mesure à dix graines ne
+  pouvait pas trancher : l'ordre des coûts marginaux entre chapitres y était en bonne partie du
+  bruit d'échantillonnage — la seule marge du chapitre 3, prise isolément, variait de +0,04 h à
+  +0,20 h entre cinq jeux de graines disjoints sans qu'aucune constante n'ait bougé (spec de la
+  remesure, § 3). Ce que quarante graines tranchent : sous la physique de `fc827ee` et aux cinq
+  valeurs désormais retenues, **le chapitre 4 est bien le marginal le plus cher** — relevé
+  canonique +0,21 h, contre +0,12 h (ch. 2) et +0,15 h (ch. 3) — et **de façon robuste sur trois
+  jeux de graines disjoints** : son étendue, `[+0,19 ; +0,24]`, ne recouvre à aucun point celle
+  du chapitre 3, `[+0,11 ; +0,15]`, ni celle du chapitre 2, `[+0,09 ; +0,12]`. Nouveau, et
+  mesuré directement par cette passe : **le mur tient à deux
+  constantes, aucune des deux ne suffit seule.** À `rewardPerChapter = 1,00` (point de
+  diagnostic isolant la difficulté seule, `spinPerChapter` gelé à sa valeur retenue 1,05), la
+  courbe de coût marginal est plate — +0,13 / +0,13 / +0,12 h, sans mur. À
+  `spinPerChapter = 1,02` (l'ancienne valeur, `rewardPerChapter` gelé à 1,15), le mur n'est pas
+  robuste — le chapitre 4 devient le marginal le moins cher sur un jeu de graines disjoint sur
+  trois. Seules les deux valeurs retenues ensemble (`spinPerChapter = 1,05` et
+  `rewardPerChapter = 1,15`) produisent un mur mesurablement robuste. Ce ne sont que deux points
+  du domaine `spinPerChapter × rewardPerChapter`, jamais balayé en deux dimensions — pas une
+  carte, à ne pas lire au-delà. Détail : `docs/superpowers/plans/2026-09-02-calibration-remesure.md`.
 - **La « salle la plus meurtrière » du harnais reste un décompte absolu.** Pour un chapitre
   que certaines graines ne valident jamais, elle mesure la longueur de l'entonnoir plutôt que
   la difficulté des salles. Les deux lectures sont désormais imprimées côte à côte
@@ -874,6 +943,18 @@ de ces points n'est bloquant.
   d'équilibrage à part entière, avec son mandat et ses deux temps — combat puis économie,
   jamais dans le même commit — pas un correctif d'intégration.
 
+  **Seconde mise à jour, même date : l'obligation est honorée.** La passe de remesure des cinq
+  constantes (`docs/superpowers/specs/2026-09-02-remesure-cinq-constantes-design.md`, journal :
+  `docs/superpowers/plans/2026-09-02-calibration-remesure.md`) a revérifié les cinq à quarante
+  graines, sous la physique de `fc827ee` : `combat.damageK` 1,30 → 1,10, `bot.scaling.spinPerChapter`
+  1,02 → 1,05 (déplacées) ; `bot.scaling.attackPerChapter` 1,10, `econ.rewardBase` 104,
+  `econ.rewardPerChapter` 1,15 (confirmées inchangées). La clause reste ouverte pour l'avenir,
+  telle qu'écrite ci-dessus — et l'un de ses propres déclencheurs vient justement de se produire
+  une seconde fois : **le jeu de graines du harnais passe de dix à quarante dans cette même
+  passe**, ce qui la rouvre pour quiconque la lira ensuite. Ce n'est pas une contradiction :
+  l'obligation est honorée pour ce qui l'a déclenchée la première fois (`fc827ee`), et
+  immédiatement redevenue vivante pour son propre changement de jeu de graines.
+
 **Interface**
 - Rejouer son propre meilleur chapitre affiche encore « Le chapitre N+1 s'ouvre »
   (`CombatScreen.tsx`) : après le `Math.max` d'`applyRunReward`, une première validation et
@@ -881,8 +962,12 @@ de ces points n'est bloquant.
   d'une ligne : un état plutôt qu'un événement (« Le chapitre {N+1} t'attend. »).
 
 **Tests et harnais**
-- `scripts/calibrate.mjs` imprime `+-0.21 h` quand un coût marginal est négatif : le `+` du
-  format d'affichage est codé en dur.
+- ~~`scripts/calibrate.mjs` imprime `+-0.21 h` quand un coût marginal est négatif : le `+` du
+  format d'affichage est codé en dur.~~ **Fermée (2026-09-02, temps 0 de la remesure des cinq
+  constantes).** `fmtMarg` porte désormais son propre signe (`scripts/calibrate.mjs`) : le `+`
+  n'est plus préfixé que pour une marge positive ou nulle. Corrigée avant les balayages qui en
+  avaient besoin — des marges négatives étaient probables pendant les balayages, et l'ont
+  effectivement été.
 - `scripts/shots.mjs` injecte toujours un blob de sauvegarde en schéma 4 — correct
   fonctionnellement, ça exerce la migration à chaque capture d'écran, mais ce n'est plus le
   schéma courant.
@@ -956,3 +1041,44 @@ ces points n'est bloquant.
 - `format.hour` est une clé i18n à usage unique, là où les clés voisines (`absence.duration`,
   …) portent leur unité dans le gabarit de phrase plutôt que dans une clé séparée. À replier
   dans son consommateur si aucun second usage n'apparaît.
+
+## Dette connue (remesure des cinq constantes)
+
+Constatée pendant la passe de remesure du 2026-09-02 — spec :
+`docs/superpowers/specs/2026-09-02-remesure-cinq-constantes-design.md`, journal complet des
+quatre balayages : `docs/superpowers/plans/2026-09-02-calibration-remesure.md`. Aucun de ces
+points n'est bloquant.
+
+**Équilibrage**
+- **Le modèle du harnais de calibration reste faux, et cette passe l'a hérité sans le
+  toucher.** `scripts/calibrate.mjs` n'équipe toujours jamais une pièce tirée et n'appelle
+  toujours jamais la fusion (dette du jalon 3, lot A, ci-dessus — toujours ouverte). Le
+  corriger ici aurait changé l'instrument pendant qu'on mesurait, exactement pour la raison
+  déjà écrite au lot A et au lot B. **Les cinq valeurs retenues par cette passe ne disent donc
+  rien d'un équilibrage des coffres ou de la fusion** — c'est un joueur pour qui acheter un
+  coffre est une perte sèche qui a été mesuré, à chaque point de chaque balayage.
+- **L'écart entre châssis reste ouvert, à ×4,88 pour une cible < ×2.** Détail complet, mesure
+  et ce qui reste : « Née de l'intégration » dans la dette du jalon 2.5, ci-dessus. Le mandat
+  sur les profils de châssis (`chassis` dans `src/content/balance.json`) reste à donner ; sans
+  lui, aucune passe future ne peut légitimement rouvrir ce bouton.
+- **`spinPerChapter × rewardPerChapter` n'a jamais été balayé en deux dimensions.** Chaque
+  constante a été mesurée à l'autre fixée sur sa valeur finale (ou son point de diagnostic) ;
+  le résultat « le mur tient aux deux ensemble » repose sur trois points du domaine, pas sur
+  une carte. Une passe future qui voudrait localiser précisément où, entre `spin = 1,02` et
+  `spin = 1,05`, le mur devient robuste, gagnerait à la balayer.
+- **Pour `combat.damageK`, le groupe à égalité `{0,95 ; 1,00 ; 1,05 ; 1,10}` n'est confirmé sur
+  jeux de graines disjoints qu'à une seule de ses bornes** (1,10, contre la valeur commitée
+  1,30) ; 0,95, 1,00 et 1,05 ne portent qu'une mesure canonique chacun. Une passe future qui
+  rouvrirait ce bouton gagnerait à les remesurer sur jeux disjoints avant de leur faire porter
+  une conclusion.
+- **Pour `econ.rewardPerChapter`, trois des sept candidats intérieurs (`1,05`, `1,08`, `1,10`)
+  restent, de même, sur une seule mesure canonique** — `1,15` (retenue) est le seul confirmé
+  sur jeux disjoints, par un recouvrement fortuit avec le balayage de `spinPerChapter`.
+- **Le départage 7 (durée de la salle 10 du chapitre 1) reste ambigu dans la spec de cette
+  passe** : sa formulation pose une borne (« sous 60 s, sans rendre le boss expédié »), mais le
+  § 2.1 y accole une cible chiffrée (~45 s) qui invite à lire un critère de proximité qu'elle
+  n'énonce pas. Défaut du texte de la spec, pas seulement de sa première lecture — à corriger
+  si la spec sert de modèle à une passe suivante.
+- **Pour `econ.rewardBase`, le seuil exact où le garde-fou de passivité casse n'est localisé
+  qu'à l'intervalle `]132 ; 140]`** — huit points d'écart sur la grille balayée, jamais
+  affinés.
