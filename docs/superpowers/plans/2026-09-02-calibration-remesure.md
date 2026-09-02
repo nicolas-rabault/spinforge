@@ -1324,11 +1324,14 @@ l'exposant `chapitre − 1`, et aux deux constantes qui restent gelées de bout 
 réellement sur les quatre captures ; les chapitres 2 à 4 divergent dès qu'un rapport a été pris
 avant ce déplacement. Les deux phrases corrigées ci-dessus et à la section `rewardBase`. C'est la
 **cinquième** instance de ce même défaut dans cette passe — une phrase dont les deux moitiés
-viennent de mesures différentes — et la **deuxième** fois qu'il se propage par copie d'une
-section voisine plutôt que par une phrase réécrite à neuf : la phrase de `rewardPerChapter`
-avait été calquée sur celle, déjà fausse, de `rewardBase`. C'est cette propagation-là, plus que
-l'erreur elle-même, qui vaut d'être notée : une correction qui laisse l'instance d'origine
-debout n'est pas une correction, elle en garde une copie active.
+viennent de mesures différentes — et elle s'est propagée par copie d'une section voisine plutôt
+que par une phrase réécrite à neuf : la phrase de `rewardPerChapter` avait été calquée sur celle,
+déjà fausse, de `rewardBase`. Ce mécanisme précis — la copie d'une phrase fautive d'une section à
+l'autre — n'a pas d'antécédent vérifié ailleurs dans ce journal : la surenchère de la section
+`damageK` (« Cycle 2/5 », § « Le départage terminal ») est un mécanisme différent, une erreur qui
+renaît *à l'intérieur* de la correction d'une précédente, pas une copie venue d'ailleurs. C'est
+cette propagation-là, plus que l'erreur elle-même, qui vaut d'être notée : une correction qui
+laisse l'instance d'origine debout n'est pas une correction, elle en garde une copie active.
 
 ## Lecture des garde-fous et départages à la valeur retenue (`rewardPerChapter = 1,15`)
 
@@ -1468,3 +1471,154 @@ quatre captures indépendantes — pas le rapport complet.
   ont été confirmées inchangées — les cinq sous la même physique de collision, celle de
   `fc827ee`, mesurée avec le même protocole (quarante graines, cinq garde-fous durs, départages
   dans le même ordre) plutôt que supposée d'un bloc à l'autre.
+
+---
+
+# Le contrôle de fin de passe (temps 3) — pourquoi sa moitié était sans objet
+
+> Tâche 8 de `docs/superpowers/plans/2026-09-02-remesure-cinq-constantes.md` — le contrôle de
+> fin de passe. Les cinq constantes retenues aux tâches 4 à 7 sont gelées sur tout ce qui suit :
+> `combat.damageK` 1,10, `bot.scaling.spinPerChapter` 1,05, `bot.scaling.attackPerChapter` 1,10,
+> `econ.rewardBase` 104, `econ.rewardPerChapter` 1,15.
+
+## Pourquoi ce temps existait
+
+Le mandat de cette tâche reproduisait, terme à terme, un trou déjà documenté par ce dépôt
+lui-même (`docs/game-design.md`, `bot.scaling.spinPerChapter` ; « Dette connue (jalon 3, lot A) »,
+`docs/roadmap.md`) : au jalon 3, lot A, `spinPerChapter = 1,02` avait été choisi par un balayage
+de combat qui tournait avec `econ.rewardPerChapter` gelé à sa valeur provisoire de 1,25 — puis la
+passe d'économie qui a suivi l'a porté à 1,15, ce qui a aplati la marche que 1,02 achetait. « La
+justification de 1,02 vaut pour le balayage du combat, pas pour le jeu livré. » Rien dans ce
+lot-là n'avait jamais revérifié le combat contre l'économie qui a fini par être livrée.
+
+Les tâches 6 et 7 de cette passe venaient de déplacer l'économie (`rewardBase`, puis
+`rewardPerChapter`) sous les trois constantes de combat des tâches 4 et 5. Cette tâche devait
+remesurer si ces trois-là y étaient encore chez elles — exactement le contrôle que le lot A
+n'avait jamais fait.
+
+## La première moitié du mandat était sans objet : l'économie n'a pas bougé
+
+Elle ne l'a pas fait, et ce n'est pas une coïncidence à établir ici : c'est déjà écrit à la
+section précédente de ce même journal (« L'économie n'a pas bougé dans cette passe »). `damageK`
+(tâche 4) et `spinPerChapter`/`attackPerChapter` (tâche 5) ont tous deux été balayés avec
+`econ.rewardBase` et `econ.rewardPerChapter` gelés à 104 et 1,15 dès le premier balayage de cette
+passe (« Protocole de mesure », en tête de ce journal). Les tâches 6 et 7 ont ensuite balayé ces
+deux constantes d'économie et les ont **confirmées**, sans changement, à ces mêmes valeurs — 104
+et 1,15.
+
+La boucle se referme donc exactement là où elle a commencé : les trois constantes de combat ont
+été mesurées, du tout premier point du tout premier balayage, sous l'économie que la passe finit
+par livrer. Il n'y a pas de rupture à vérifier à la frontière combat/économie, parce que rien n'a
+changé de ce côté-là entre le moment où le combat a été calibré et le moment où l'économie a été
+close — pas parce que le contrôle a été sauté, mais parce que la condition qui l'aurait rendu
+nécessaire ne s'est jamais produite. C'est un résultat de cette tâche, pas une absence de
+résultat : à la connaissance de l'historique documenté de ce dépôt (dette du jalon 2,5, puis
+invalidation effective au jalon 3, lot A), c'est la **première fois** que les valeurs de combat
+de ce projet ne se trouvent pas invalidées par la passe d'économie qui les suit — le lot A est
+précisément le contre-exemple qui a rendu ce contrôle obligatoire.
+
+## Le trou qui, lui, existait réellement : à l'intérieur même du combat
+
+Le mandat visait la frontière combat/économie. Mais la même forme de défaut existait **à
+l'intérieur du temps combat**, entre deux de ses propres tâches : `combat.damageK` a été choisi à
+la tâche 4 par un balayage qui tournait avec `bot.scaling.spinPerChapter` encore gelé à 1,02 (sa
+valeur d'avant cette passe) — puis la tâche 5, immédiatement après, a déplacé `spinPerChapter` à
+1,05. La justification de `damageK = 1,10` (départages 6, 7 et 8, tous trois section `damageK`
+ci-dessus) a donc été formée sous une valeur de `spinPerChapter` que la tâche suivante a changée
+— la forme exacte du trou du lot A, un niveau plus bas : pas entre deux temps de la passe, mais
+entre deux tâches du même temps.
+
+## La revérification — cinq points, quarante graines
+
+Cinq valeurs de `damageK` : la valeur retenue et ses deux voisines de part et d'autre sur la
+grille de la tâche 4 (`0,80 · 0,90 · 0,95 · 1,00 · 1,05 · 1,10 · 1,15 · 1,20 · …`), balayées sous
+les cinq constantes désormais closes de cette passe — `spinPerChapter = 1,05`,
+`attackPerChapter = 1,10`, `rewardBase = 104`, `rewardPerChapter = 1,15` — quarante graines par
+point.
+
+| `damageK` | ch. 1 (h/desc.) | s10 ch. 1 | écart châssis | GF1 (ch1→4) | graines (ch1→4) | marges ch. 2/3/4 |
+|---|---|---|---|---|---|---|
+| 1,00 | 0,37 h / 15 | 52,50 s | ×5,14 | oui·oui·oui·oui | 40·40·40·40 | +0,16 / +0,15 / +0,19 |
+| 1,05 | 0,37 h / 16 | 49,40 s | ×5,00 | oui·oui·oui·oui | 40·40·40·40 | +0,14 / +0,14 / +0,19 |
+| **1,10 (retenue)** | **0,37 h / 17** | **46,40 s** | **×4,88** | **oui·oui·oui·oui** | **40·40·40·40** | **+0,12 / +0,15 / +0,21** |
+| 1,15 | 0,36 h / 18 | 43,40 s | ×9,00 | oui·oui·oui·oui | 40·40·40·40 | +0,10 / +0,11 / +0,20 |
+| 1,20 | 0,38 h / 19 | 40,80 s | ×8,56 | oui·oui·oui·oui | 40·40·40·40 | +0,12 / +0,12 / +0,19 |
+
+Les cinq points tiennent les cinq garde-fous durs sans exception : `GF1` à `oui` aux quatre
+chapitres, `40/40` graines aux quatre chapitres, passivité « jamais », verrou actif, premier
+coffre à 0,00 h — partout, sur les cinq points. À `damageK = 1,10`, le relevé (`0,37 h / 17`,
+`46,40 s`, `×4,88`, marges `+0,12 / +0,15 / +0,21`) coïncide au chiffre près avec les rapports
+complets déjà pris à ce même point aux sections `spinPerChapter`/`attackPerChapter`, `rewardBase`
+et `rewardPerChapter` de ce journal — un contrôle croisé de plus, gratuit, sur un point déjà
+mesuré quatre fois par cette passe.
+
+## Le résultat bit à bit identique au chapitre 1 — et pourquoi il ne pouvait pas en être autrement
+
+Les cinq valeurs de `damageK` ci-dessus ont déjà été balayées une fois, à la tâche 4, sous
+`spinPerChapter = 1,02` (`dk40-*.json`, section `damageK` de ce journal). Comparées champ à champ
+avec le relevé JSON brut de cette tâche (`revef-*.json`) — pas seulement les colonnes résumées
+du tableau ci-dessus, mais `h`, `marg`, `desc`, `mort`, `s10`, `let10`, l'objet `ecart` complet,
+le détail par châssis et les trois garde-fous transversaux (`passif`, `verrou`, `coffre`) — les
+cinq points sont **bit à bit identiques au chapitre 1** entre les deux tâches, aux cinq valeurs
+de `damageK` :
+
+```
+1,00 : ch1 identique · écart identique · détail châssis identique · passif/verrou/coffre identiques
+1,05 : ch1 identique · écart identique · détail châssis identique · passif/verrou/coffre identiques
+1,10 : ch1 identique · écart identique · détail châssis identique · passif/verrou/coffre identiques
+1,15 : ch1 identique · écart identique · détail châssis identique · passif/verrou/coffre identiques
+1,20 : ch1 identique · écart identique · détail châssis identique · passif/verrou/coffre identiques
+```
+
+Les chapitres 2 à 4, en revanche, divergent bien entre les deux tâches à chacune des cinq
+valeurs — c'est attendu, puisque `spinPerChapter` a changé entre elles, et que son exposant
+`chapitre − 1` façonne précisément ces trois chapitres-là.
+
+Ce n'est pas une coïncidence de plus à ajouter aux contrôles croisés déjà accumulés dans ce
+journal — c'est **structurel**, et ça se déduit sans mesurer, comme le contrôle d'instrument des
+tâches 5 et 7 l'a déjà établi pour `spinPerChapter` et `rewardPerChapter` : les deux facteurs
+portent l'exposant `chapitre − 1`, qui vaut 0 au chapitre 1, donc `spinPerChapter` ne peut
+*structurellement* rien changer à ce que le chapitre 1 mesure — ni à `1,02` (tâche 4) ni à
+`1,05` (cette tâche). Or les trois critères qui ont justifié `damageK = 1,10` (départages 6, 7 et
+8, section `damageK`) sont **tous les trois des grandeurs du chapitre 1** : l'écart entre
+châssis, la durée de la salle 10 du chapitre 1, la durée du chapitre 1 lui-même. Aucun des trois
+ne pouvait donc être affecté par le déplacement de `spinPerChapter` — pas seulement « la
+revérification n'a rien trouvé », mais **le trou qu'elle cherchait ne pouvait pas exister**, par
+construction du bouton. C'est plus fort qu'un résultat négatif : c'est une démonstration, pas
+seulement une mesure qui échoue à trouver un problème.
+
+## Conclusion : les valeurs retenues tiennent, telles quelles
+
+`combat.damageK = 1,10` reste au centre d'un plateau à cinq points où les cinq garde-fous durs
+tiennent sans exception, et sa justification — formée sous `spinPerChapter = 1,02` à la tâche 4
+— ne pouvait pas être compromise par le passage à `1,05` (tâche 5), puisqu'aucun des critères qui
+l'ont établie ne peut voir ce facteur. Aucune des cinq constantes de cette passe ne change à
+cette tâche. `src/content/balance.json` reste inchangé — vérifié par `git diff` en fin de tâche.
+
+## Ce que cette tâche apprend
+
+### 1. Un mandat à deux moitiés peut voir l'une des deux se révéler sans objet, et c'est un résultat, pas un renoncement
+
+Le mandat de cette tâche visait une frontière précise (combat/économie) parce que c'est celle-là
+que le lot A avait laissée non vérifiée. La mesure a montré que cette frontière n'avait jamais
+bougé sous les pieds du combat pendant cette passe — un résultat aussi réel que s'il avait fallu
+recaler une constante, et le premier de ce genre dans l'historique documenté de ce projet pour ce
+couple précis de temps.
+
+### 2. La forme d'un défaut ne s'arrête pas à l'échelle où elle a été repérée la première fois
+
+Le trou du lot A avait été décrit et corrigé à l'échelle de la passe (combat, puis économie).
+Cette tâche montre qu'exactement la même forme — une constante justifiée sous une valeur qu'une
+tâche suivante déplace — peut se reproduire une échelle plus bas, entre deux tâches du même
+temps. Vérifier la frontière annoncée par le mandat ne suffisait pas à couvrir toutes les
+frontières où ce défaut pouvait se reproduire ; il a fallu la chercher aussi là où le mandat ne
+pointait pas.
+
+### 3. Une propriété structurelle, une fois établie, transforme une revérification en démonstration
+
+Le contrôle d'instrument des tâches 5 et 7 (l'exposant `chapitre − 1` vaut 0 au chapitre 1) avait
+été introduit comme garde-fou de non-régression. Réutilisé ici sur un autre facteur du même
+type, il ne se contente pas de confirmer l'absence de problème : il établit que le problème
+cherché ne pouvait structurellement pas exister, puisque les trois départages qui ont justifié
+`damageK` ne portent que sur le chapitre 1. La même discipline — vérifier une propriété
+structurelle avant de conclure d'une mesure — qui avait servi à départager sert ici à clore.
