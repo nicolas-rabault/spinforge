@@ -332,3 +332,57 @@ describe('takeShard', () => {
     expect(dead.spin).toBe(0);
   });
 });
+
+/**
+ * Épingle de non-régression du chapitre 1 (jalon 3, lot C1).
+ *
+ * Le chapitre 1, Hangar Rouillé, n'a aucun piège et ne doit jamais en avoir.
+ * Le lot C1 fait apprendre le chapitre au gabarit ; « neutre au chapitre 1 »
+ * y veut dire bit à bit, pas « à peu près comme avant ». Ces valeurs sont
+ * relevées sur `origin/main` à d6991fa, AVANT la couture, et aucune tâche du
+ * lot n'a le droit de les faire bouger.
+ *
+ * La salle 10 tient le cas du repli déterministe (`awayFromSpawn`) : sa
+ * dernière zone est exactement (0, -122), qu'aucun tirage ne produit.
+ */
+describe('chapitre 1 — épingle de non-régression (lot C1)', () => {
+  const pins = [
+    {
+      salle: 1, seed: 3, rngState: -631835667, shardTimer: 72,
+      zones: [['accelerateur', -4.242, -22.410789, 34]],
+      breaches: [] as number[][],
+    },
+    {
+      salle: 5, seed: 999, rngState: -1327611538, shardTimer: 72,
+      zones: [
+        ['accelerateur', 90.773443, -17.371635, 34],
+        ['pointes', -89.244967, 24.937261, 28],
+        ['pointes', 27.862806, -42.312898, 28],
+      ],
+      breaches: [[2.232355, 0.593412], [5.373948, 0.593412]],
+    },
+    {
+      salle: 10, seed: 221, rngState: -951541434, shardTimer: 72,
+      zones: [
+        ['accelerateur', -62.301051, -38.964414, 34],
+        ['pointes', -3.852297, -75.613901, 28],
+        ['pointes', -109.751949, 24.860843, 28],
+        ['pointes', 0, -122, 28],
+      ],
+      breaches: [[0.026905, 0.593412], [3.168497, 0.593412]],
+    },
+  ];
+
+  for (const pin of pins) {
+    it(`salle ${pin.salle} rend exactement le gabarit relevé`, () => {
+      const { layout, rngState } = buildLayout(pin.salle, pin.seed);
+      expect(rngState).toBe(pin.rngState);
+      expect(layout.shardTimer).toBe(pin.shardTimer);
+      expect(layout.shard).toBeNull();
+      expect(layout.zones.map((z) => [z.kind, +z.x.toFixed(6), +z.y.toFixed(6), z.radius]))
+        .toEqual(pin.zones);
+      expect(layout.breaches.map((b) => [+b.angle.toFixed(6), +b.halfWidth.toFixed(6)]))
+        .toEqual(pin.breaches);
+    });
+  }
+});
