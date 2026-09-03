@@ -4,7 +4,7 @@ import { decaySpin, resolveCollision } from './combat';
 import { applySteering, clampToArena, moveAndBounce } from './physics';
 import { nextRandom } from './rng';
 import { spawnSalle } from './salle';
-import { buildLayout, takeShard, updateShard, zoneModsAt } from './terrain';
+import { bouncePillars, buildLayout, takeShard, updatePillars, updateShard, zoneModsAt } from './terrain';
 import { resolveTalents } from './talents';
 import { toupieById, type ToupieId } from '../content/toupies';
 import type { Input, MetaState, RunReward, RunState, Top, Vec } from './types';
@@ -151,6 +151,9 @@ export function tick(run: RunState, input: Input): RunReward | null {
   run.tick++;
   if (run.phase !== 'fighting') return null;
   run.ejected = [];
+  // Les piliers avancent AVANT les toupies : une toupie est ainsi repoussée par
+  // la position que le pilier occupe à la fin du tick, celle que le joueur voit.
+  updatePillars(run.arena);
   if (run.tick % BOT_AI.retargetEveryTicks === 1) refreshBotAims(run);
   // Le terrain est lu UNE fois par toupie et par tick, avant le pilotage, et la
   // même valeur sert au pilotage et à la décroissance : une toupie qui traverse
@@ -162,6 +165,13 @@ export function tick(run: RunState, input: Input): RunReward | null {
   run.bots.forEach((bot, i) => applySteering(bot, bot.aim, botZones[i]));
   moveTop(run, run.player);
   for (const bot of run.bots) moveTop(run, bot);
+  // Après le déplacement — donc après l'éjection, qui ne se décide qu'en un
+  // seul endroit — et avant les collisions entre toupies. Un pilier qui pousse
+  // vers une brèche éjecte au tick SUIVANT, quand `moveAndBounce` verra la
+  // vitesse sortante : c'est déjà ainsi qu'une toupie poussée par une autre est
+  // éjectée, et ça évite un second site d'éjection.
+  bouncePillars(run.arena, run.player);
+  for (const bot of run.bots) bouncePillars(run.arena, bot);
   for (const bot of run.bots) resolveCollision(run.player, bot);
   for (let i = 0; i < run.bots.length; i++) {
     for (let j = i + 1; j < run.bots.length; j++) {

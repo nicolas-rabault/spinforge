@@ -1,4 +1,4 @@
-import { ARENA, ARENA_RADIUS, BREACH, chapterArena, LAYOUTS, PLAYER_SPAWN, SHARD, ZONES, type ZoneKind } from './config';
+import { ARENA, ARENA_RADIUS, BREACH, chapterArena, LAYOUTS, PLAYER_SPAWN, RESTITUTION, SHARD, TICK_S, ZONES, type ZoneKind } from './config';
 import { nextRandom } from './rng';
 import type { Top, Vec } from './types';
 
@@ -122,6 +122,16 @@ function clearOfZones(candidate: Zone, placed: Zone[]): boolean {
   );
 }
 
+/** Le point de repli : diamétralement opposé au point d'apparition, à la limite
+ *  intérieure de l'anneau. Une seule formule, deux appelants — les zones et les
+ *  piliers. */
+function spotAwayFromSpawn(radius: number): { x: number; y: number } {
+  const span = ARENA_RADIUS - radius;
+  const d = Math.hypot(PLAYER_SPAWN.x, PLAYER_SPAWN.y) || 1;
+  const k = Math.min(span, d + radius + ARENA.spawnClearance) / d;
+  return { x: -PLAYER_SPAWN.x * k, y: -PLAYER_SPAWN.y * k };
+}
+
 /**
  * Repli déterministe : diamétralement opposé au point d'apparition, à la limite
  * intérieure de l'anneau. Il rend la garantie « jamais sur le point d'apparition »
@@ -130,10 +140,7 @@ function clearOfZones(candidate: Zone, placed: Zone[]): boolean {
  * reste toléré : il ne coûte qu'un peu de lisibilité, jamais du spin imparable.
  */
 function awayFromSpawn(kind: ZoneKind, radius: number): Zone {
-  const span = ARENA_RADIUS - radius;
-  const d = Math.hypot(PLAYER_SPAWN.x, PLAYER_SPAWN.y) || 1;
-  const k = Math.min(span, d + radius + ARENA.spawnClearance) / d;
-  return { kind, x: -PLAYER_SPAWN.x * k, y: -PLAYER_SPAWN.y * k, radius };
+  return { kind, ...spotAwayFromSpawn(radius), radius };
 }
 
 export function buildLayout(
@@ -184,6 +191,37 @@ export function buildLayout(
     }
   }
 
+  // Les piliers arrivent APRÈS les brèches dans le flux : au chapitre 1 la
+  // boucle ne tourne pas, aucun tirage n'est consommé, et le gabarit du
+  // Hangar Rouillé reste bit à bit celui d'avant ce lot.
+  const pillars: Pillar[] = [];
+  if (def.pillars) {
+    const { count, radius, speed } = def.pillars;
+    const span = ARENA_RADIUS - radius;
+    for (let i = 0; i < count; i++) {
+      const drawPos = (): { x: number; y: number } => {
+        const ra = nextRandom(rng);
+        rng = ra.state;
+        const rr = nextRandom(rng);
+        rng = rr.state;
+        const angle = ra.value * TWO_PI;
+        const dist = Math.sqrt(rr.value) * span;
+        return { x: Math.cos(angle) * dist, y: Math.sin(angle) * dist };
+      };
+      const clear = (p: { x: number; y: number }): boolean =>
+        Math.hypot(p.x - PLAYER_SPAWN.x, p.y - PLAYER_SPAWN.y) >= radius + ARENA.spawnClearance;
+      let pos = drawPos();
+      for (let t = 1; t < PLACEMENT_TRIES && !clear(pos); t++) pos = drawPos();
+      // Même repli déterministe que les zones : la garantie « jamais sur le point
+      // d'apparition » doit être absolue, pas probable.
+      if (!clear(pos)) pos = spotAwayFromSpawn(radius);
+      const rc = nextRandom(rng);
+      rng = rc.state;
+      const cap = rc.value * TWO_PI;
+      pillars.push({ x: pos.x, y: pos.y, radius, vx: Math.cos(cap) * speed, vy: Math.sin(cap) * speed });
+    }
+  }
+
   return {
     layout: {
       zones,
@@ -191,10 +229,66 @@ export function buildLayout(
       shard: null,
       shardTimer: SHARD.everyTicks,
       wallRestitution: def.wallRestitution ?? ARENA.wallRestitution,
-      pillars: [],
+      pillars,
     },
     rngState: rng,
   };
+}
+
+/**
+ * Fait dériver les piliers d'un tick. Aucun RNG : leur trajectoire est décidée
+ * une fois pour toutes au gabarit, et se déroule ensuite. Le rebond de bord est
+ * parfait (restitution 1) — un pilier qui perdrait de l'énergie finirait
+ * immobile et cesserait d'être mobile.
+ */
+export function updatePillars(layout: ArenaLayout): void {
+  for (const p of layout.pillars) {
+    p.x += p.vx * TICK_S;
+    p.y += p.vy * TICK_S;
+    const d = Math.hypot(p.x, p.y);
+    const limit = ARENA_RADIUS - p.radius;
+    if (d <= limit || d === 0) continue;
+    const nx = p.x / d;
+    const ny = p.y / d;
+    p.x = nx * limit;
+    p.y = ny * limit;
+    const out = p.vx * nx + p.vy * ny;
+    if (out > 0) {
+      p.vx -= 2 * out * nx;
+      p.vy -= 2 * out * ny;
+    }
+  }
+}
+
+/**
+ * Repousse une toupie hors des piliers qu'elle recouvre. Un pilier est de masse
+ * infinie : il ne bouge pas, et il ne retire JAMAIS de spin. La menace d'un
+ * pilier est indirecte — il coupe une ligne d'attaque et pousse vers une
+ * brèche. Ajouter des dégâts aurait donné deux axes à équilibrer là où un
+ * suffit.
+ *
+ * La restitution est celle du monde (`RESTITUTION`) : un choc rend plus
+ * d'énergie qu'il n'en absorbe, ici comme entre deux toupies. C'est ce qui rend
+ * un pilier réellement dangereux près d'un bord percé.
+ */
+export function bouncePillars(layout: ArenaLayout, top: Top): void {
+  for (const p of layout.pillars) {
+    const dx = top.pos.x - p.x;
+    const dy = top.pos.y - p.y;
+    const d = Math.hypot(dx, dy);
+    const touch = p.radius + top.radius;
+    if (d >= touch) continue;
+    // Centres exactement confondus : direction arbitraire mais déterministe.
+    const nx = d === 0 ? 1 : dx / d;
+    const ny = d === 0 ? 0 : dy / d;
+    top.pos.x = p.x + nx * touch;
+    top.pos.y = p.y + ny * touch;
+    const into = top.vel.x * nx + top.vel.y * ny;
+    if (into < 0) {
+      top.vel.x -= (1 + RESTITUTION) * into * nx;
+      top.vel.y -= (1 + RESTITUTION) * into * ny;
+    }
+  }
 }
 
 /** Vrai si cet angle de bord tombe dans un secteur mortel. */

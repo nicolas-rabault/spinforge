@@ -145,6 +145,21 @@ describe('déterminisme', () => {
     expect(a).not.toBe(runTicksThroughBreaches(132, 300));
   });
 
+  it('reste déterministe dans les quatre chapitres', () => {
+    for (const chapter of [1, 2, 3, 4]) {
+      const a = createInitialMeta(4242);
+      const b = createInitialMeta(4242);
+      a.bestChapter = b.bestChapter = 3;
+      const ra = startRun(a, chapter, 777);
+      const rb = startRun(b, chapter, 777);
+      for (let i = 0; i < 600; i++) {
+        tick(ra, { steer: { x: 1, y: 0 } });
+        tick(rb, { steer: { x: 1, y: 0 } });
+      }
+      expect(JSON.stringify(rb), `chapitre ${chapter}`).toBe(JSON.stringify(ra));
+    }
+  });
+
   it('ouvrir des coffres entre deux salles ne change pas l’issue du run', () => {
     const playWithChests = (openChests: boolean) => {
       const meta = createInitialMeta(42);

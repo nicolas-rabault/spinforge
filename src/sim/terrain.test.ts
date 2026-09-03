@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { buildLayout, inBreach, NEUTRAL_ZONE, takeShard, updateShard, zoneModsAt, type ArenaLayout, type Zone } from './terrain';
-import { ARENA, ARENA_RADIUS, BREACH, LAYOUTS, PLAYER_SPAWN, SHARD, ZONES } from './config';
+import {
+  bouncePillars,
+  buildLayout,
+  inBreach,
+  NEUTRAL_ZONE,
+  takeShard,
+  updatePillars,
+  updateShard,
+  zoneModsAt,
+  type ArenaLayout,
+  type Zone,
+} from './terrain';
+import { ARENA, ARENA_RADIUS, BREACH, chapterArena, LAYOUTS, PLAYER_SPAWN, SHARD, ZONES } from './config';
 import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
 
@@ -188,6 +199,60 @@ describe('buildLayout', () => {
   it('le Dojo Néon a des murs plus élastiques que le Hangar Rouillé', () => {
     expect(buildLayout(2, 1, 7).layout.wallRestitution)
       .toBeGreaterThan(buildLayout(1, 1, 7).layout.wallRestitution);
+  });
+});
+
+describe('piliers', () => {
+  it("le Hangar Rouillé n'a aucun pilier", () => {
+    for (let salle = 1; salle <= 10; salle++) {
+      expect(buildLayout(1, salle, 42).layout.pillars, `salle ${salle}`).toEqual([]);
+    }
+  });
+
+  it('le Marché Souterrain en pose le nombre déclaré, dégagés du spawn', () => {
+    const def = chapterArena(3).pillars!;
+    for (const seed of [1, 77, 4242, 99991]) {
+      const { layout } = buildLayout(3, 5, seed);
+      expect(layout.pillars).toHaveLength(def.count);
+      for (const p of layout.pillars) {
+        expect(Math.hypot(p.x, p.y)).toBeLessThanOrEqual(ARENA_RADIUS - p.radius + 1e-9);
+        expect(Math.hypot(p.x - PLAYER_SPAWN.x, p.y - PLAYER_SPAWN.y))
+          .toBeGreaterThanOrEqual(p.radius + ARENA.spawnClearance - 1e-9);
+        expect(Math.hypot(p.vx, p.vy)).toBeCloseTo(def.speed, 6);
+      }
+    }
+  });
+
+  it('un pilier avance à sa vitesse et ne sort jamais de l’arène', () => {
+    const l = layout({ pillars: [{ x: 0, y: 0, radius: 16, vx: 300, vy: 0 }] });
+    for (let i = 0; i < 200; i++) {
+      updatePillars(l);
+      expect(Math.hypot(l.pillars[0].x, l.pillars[0].y))
+        .toBeLessThanOrEqual(ARENA_RADIUS - l.pillars[0].radius + 1e-9);
+    }
+  });
+
+  it('un pilier garde sa vitesse en rebondissant sur le bord', () => {
+    const l = layout({ pillars: [{ x: 0, y: 0, radius: 16, vx: 300, vy: 0 }] });
+    for (let i = 0; i < 200; i++) updatePillars(l);
+    expect(Math.hypot(l.pillars[0].vx, l.pillars[0].vy)).toBeCloseTo(300, 6);
+  });
+
+  it('un pilier repousse une toupie sans jamais lui retirer de spin', () => {
+    const l = layout({ pillars: [{ x: 0, y: 0, radius: 16, vx: 0, vy: 0 }] });
+    const top = shardTop({ pos: { x: 8, y: 0 }, vel: { x: -100, y: 0 } });
+    const spinAvant = top.spin;
+    bouncePillars(l, top);
+    expect(top.spin).toBe(spinAvant);
+    expect(Math.hypot(top.pos.x, top.pos.y)).toBeCloseTo(16 + top.radius, 6);
+    expect(top.vel.x).toBeGreaterThan(0);
+  });
+
+  it('un pilier repousse un bot comme le joueur', () => {
+    const l = layout({ pillars: [{ x: 0, y: 0, radius: 16, vx: 0, vy: 0 }] });
+    const bot = shardTop({ isPlayer: false, pos: { x: 8, y: 0 }, vel: { x: -100, y: 0 } });
+    bouncePillars(l, bot);
+    expect(bot.vel.x).toBeGreaterThan(0);
   });
 });
 
