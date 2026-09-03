@@ -1,4 +1,4 @@
-import { ARENA, ARENA_RADIUS, BREACH, LAYOUTS, PLAYER_SPAWN, SHARD, ZONES, type ZoneKind } from './config';
+import { ARENA, ARENA_RADIUS, BREACH, chapterArena, LAYOUTS, PLAYER_SPAWN, SHARD, ZONES, type ZoneKind } from './config';
 import { nextRandom } from './rng';
 import type { Top, Vec } from './types';
 
@@ -27,12 +27,28 @@ export interface Shard {
   ttl: number;
 }
 
+/** Obstacle circulaire qui dérive dans l'arène et rebondit sur son bord. Ne fait
+ *  aucun dégât : il repousse. La menace est indirecte — couper une ligne
+ *  d'attaque, pousser vers une brèche. */
+export interface Pillar {
+  x: number;
+  y: number;
+  radius: number;
+  vx: number;
+  vy: number;
+}
+
 export interface ArenaLayout {
   zones: Zone[];
   breaches: Breach[];
   shard: Shard | null;
   /** Ticks avant la prochaine apparition d'éclat. */
   shardTimer: number;
+  /** Restitution du bord pour ce chapitre. Vaut `ARENA.wallRestitution` partout
+   *  où le chapitre n'en déclare pas d'autre. */
+  wallRestitution: number;
+  /** Piliers mobiles. Vide hors chapitre à piliers. */
+  pillars: Pillar[];
 }
 
 /** Modificateurs de terrain appliqués à une toupie. Même principe que
@@ -120,7 +136,12 @@ function awayFromSpawn(kind: ZoneKind, radius: number): Zone {
   return { kind, x: -PLAYER_SPAWN.x * k, y: -PLAYER_SPAWN.y * k, radius };
 }
 
-export function buildLayout(salle: number, rngState: number): { layout: ArenaLayout; rngState: number } {
+export function buildLayout(
+  chapter: number,
+  salle: number,
+  rngState: number,
+): { layout: ArenaLayout; rngState: number } {
+  const def = chapterArena(chapter);
   let rng = rngState;
   const zones: Zone[] = [];
 
@@ -164,7 +185,14 @@ export function buildLayout(salle: number, rngState: number): { layout: ArenaLay
   }
 
   return {
-    layout: { zones, breaches, shard: null, shardTimer: SHARD.everyTicks },
+    layout: {
+      zones,
+      breaches,
+      shard: null,
+      shardTimer: SHARD.everyTicks,
+      wallRestitution: def.wallRestitution ?? ARENA.wallRestitution,
+      pillars: [],
+    },
     rngState: rng,
   };
 }

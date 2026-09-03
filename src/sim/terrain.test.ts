@@ -5,7 +5,11 @@ import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
 
 function layout(over: Partial<ArenaLayout> = {}): ArenaLayout {
-  return { zones: [], breaches: [], shard: null, shardTimer: 0, ...over };
+  return {
+    zones: [], breaches: [], shard: null, shardTimer: 0,
+    wallRestitution: ARENA.wallRestitution, pillars: [],
+    ...over,
+  };
 }
 
 function zone(kind: Zone['kind'], x: number, y: number): Zone {
@@ -78,7 +82,7 @@ describe('zoneModsAt', () => {
 describe('buildLayout', () => {
   it('suit le gabarit de la salle', () => {
     for (const entry of LAYOUTS) {
-      const { layout } = buildLayout(entry.fromSalle, 12345);
+      const { layout } = buildLayout(1, entry.fromSalle, 12345);
       expect(layout.zones.map((z) => z.kind)).toEqual(entry.zones);
     }
   });
@@ -86,19 +90,19 @@ describe('buildLayout', () => {
   it('garde le gabarit du dernier palier franchi', () => {
     // La salle 5 n'a pas d'entrée propre : elle hérite du palier 4.
     const palier4 = LAYOUTS.find((e) => e.fromSalle === 4)!;
-    const { layout } = buildLayout(5, 999);
+    const { layout } = buildLayout(1, 5, 999);
     expect(layout.zones.map((z) => z.kind)).toEqual(palier4.zones);
   });
 
   it('rend exactement le même gabarit pour la même graine', () => {
-    const a = buildLayout(8, 4242);
-    const b = buildLayout(8, 4242);
+    const a = buildLayout(1, 8, 4242);
+    const b = buildLayout(1, 8, 4242);
     expect(a.layout).toEqual(b.layout);
     expect(a.rngState).toBe(b.rngState);
   });
 
   it('fait avancer l’état du RNG', () => {
-    const { rngState } = buildLayout(8, 4242);
+    const { rngState } = buildLayout(1, 8, 4242);
     expect(rngState).not.toBe(4242);
   });
 
@@ -109,7 +113,7 @@ describe('buildLayout', () => {
     // graine qui l'active, 221, tombait hors de la plage 1..200 initiale — voir
     // le test suivant, qui l'épingle explicitement).
     for (let seed = 1; seed <= 300; seed++) {
-      const { layout } = buildLayout(10, seed);
+      const { layout } = buildLayout(1, 10, seed);
       for (const z of layout.zones) {
         const d = Math.hypot(z.x - PLAYER_SPAWN.x, z.y - PLAYER_SPAWN.y);
         expect(d, `graine ${seed}, zone ${z.kind}`).toBeGreaterThanOrEqual(z.radius + ARENA.spawnClearance);
@@ -126,7 +130,7 @@ describe('buildLayout', () => {
     // `ZONES` change, cette graine peut cesser de déclencher le repli : il faut
     // alors la rechercher à nouveau (même recherche linéaire), jamais supprimer
     // le test.
-    const { layout } = buildLayout(10, 221);
+    const { layout } = buildLayout(1, 10, 221);
     const d = Math.hypot(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
     // Même calcul que la production, pour ne jamais dupliquer un rayon ou une
     // clearance en dur : la position attendue suit `balance.json`.
@@ -146,7 +150,7 @@ describe('buildLayout', () => {
 
   it('garde chaque zone entièrement dans l’anneau', () => {
     for (let seed = 1; seed <= 200; seed++) {
-      const { layout } = buildLayout(10, seed);
+      const { layout } = buildLayout(1, 10, seed);
       for (const z of layout.zones) {
         expect(Math.hypot(z.x, z.y) + z.radius, `graine ${seed}`).toBeLessThanOrEqual(ARENA_RADIUS + 1e-9);
       }
@@ -155,14 +159,14 @@ describe('buildLayout', () => {
 
   it('n’ouvre aucune brèche avant la salle prévue', () => {
     for (let salle = 1; salle < BREACH.fromSalle; salle++) {
-      expect(buildLayout(salle, 7).layout.breaches).toHaveLength(0);
+      expect(buildLayout(1, salle, 7).layout.breaches).toHaveLength(0);
     }
-    expect(buildLayout(BREACH.fromSalle, 7).layout.breaches).toHaveLength(BREACH.count);
+    expect(buildLayout(1, BREACH.fromSalle, 7).layout.breaches).toHaveLength(BREACH.count);
   });
 
   it('répartit les brèches régulièrement — il reste toujours du bord plein', () => {
     for (let seed = 1; seed <= 100; seed++) {
-      const { layout } = buildLayout(10, seed);
+      const { layout } = buildLayout(1, 10, seed);
       for (let i = 1; i < layout.breaches.length; i++) {
         const gap = layout.breaches[i].angle - layout.breaches[i - 1].angle;
         expect(gap).toBeCloseTo((Math.PI * 2) / BREACH.count, 10);
@@ -171,15 +175,21 @@ describe('buildLayout', () => {
   });
 
   it('arme le compte à rebours de l’éclat sans éclat présent', () => {
-    const { layout } = buildLayout(1, 3);
+    const { layout } = buildLayout(1, 1, 3);
     expect(layout.shard).toBeNull();
     expect(layout.shardTimer).toBe(SHARD.everyTicks);
+  });
+
+  it('un chapitre sans identité propre garde la restitution de l’arène', () => {
+    expect(buildLayout(1, 1, 7).layout.wallRestitution).toBe(ARENA.wallRestitution);
+    expect(buildLayout(1, 1, 7).layout.pillars).toEqual([]);
   });
 });
 
 describe('inBreach', () => {
   const l: ArenaLayout = {
     zones: [], breaches: [{ angle: 0, halfWidth: 0.4 }], shard: null, shardTimer: 0,
+    wallRestitution: ARENA.wallRestitution, pillars: [],
   };
 
   it('reconnaît un angle dans le secteur', () => {
@@ -198,12 +208,16 @@ describe('inBreach', () => {
     // sont au même endroit, et un écart calculé naïvement les croirait opposés.
     const wrapped: ArenaLayout = {
       zones: [], breaches: [{ angle: 6.2, halfWidth: 0.4 }], shard: null, shardTimer: 0,
+      wallRestitution: ARENA.wallRestitution, pillars: [],
     };
     expect(inBreach(wrapped, 0.05)).toBe(true);
   });
 
   it('rend faux sans aucune brèche', () => {
-    expect(inBreach({ zones: [], breaches: [], shard: null, shardTimer: 0 }, 0)).toBe(false);
+    expect(inBreach(
+      { zones: [], breaches: [], shard: null, shardTimer: 0, wallRestitution: ARENA.wallRestitution, pillars: [] },
+      0,
+    )).toBe(false);
   });
 });
 
@@ -375,7 +389,7 @@ describe('chapitre 1 — épingle de non-régression (lot C1)', () => {
 
   for (const pin of pins) {
     it(`salle ${pin.salle} rend exactement le gabarit relevé`, () => {
-      const { layout, rngState } = buildLayout(pin.salle, pin.seed);
+      const { layout, rngState } = buildLayout(1, pin.salle, pin.seed);
       expect(rngState).toBe(pin.rngState);
       expect(layout.shardTimer).toBe(pin.shardTimer);
       expect(layout.shard).toBeNull();

@@ -1,4 +1,4 @@
-import { BOT_AI, MAX_CHAPTER, PLAYER_BASE, PLAYER_SPAWN, SALLES_PER_CHAPTER } from './config';
+import { ARENA, BOT_AI, MAX_CHAPTER, PLAYER_BASE, PLAYER_SPAWN, SALLES_PER_CHAPTER } from './config';
 import { salleReward, playerStats } from './economy';
 import { decaySpin, resolveCollision } from './combat';
 import { applySteering, clampToArena, moveAndBounce } from './physics';
@@ -39,7 +39,7 @@ function startSalle(run: RunState): void {
   run.bots = spawned.bots;
   // Bots d'abord, terrain ensuite : l'ordre de consommation du flux fait partie
   // du contrat de déterminisme.
-  const built = buildLayout(run.salle, spawned.rngState);
+  const built = buildLayout(run.chapter, run.salle, spawned.rngState);
   run.arena = built.layout;
   run.rngState = built.rngState;
   run.player.pos = { x: PLAYER_SPAWN.x, y: PLAYER_SPAWN.y };
@@ -80,7 +80,7 @@ export function startRun(meta: MetaState, chapter: number, seed: number): RunSta
     bots: [],
     // Remplacé par startSalle juste après ; l'initialiser vide évite un état
     // partiellement construit que le typage refuserait.
-    arena: { zones: [], breaches: [], shard: null, shardTimer: 0 },
+    arena: { zones: [], breaches: [], shard: null, shardTimer: 0, wallRestitution: ARENA.wallRestitution, pillars: [] },
     phase: 'fighting',
     secondSouffleUsed: false,
     ejected: [],

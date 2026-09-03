@@ -6,7 +6,10 @@ import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
 
 function layout(breaches: ArenaLayout['breaches'] = []): ArenaLayout {
-  return { zones: [], breaches, shard: null, shardTimer: 0 };
+  return {
+    zones: [], breaches, shard: null, shardTimer: 0,
+    wallRestitution: ARENA.wallRestitution, pillars: [],
+  };
 }
 
 function top(over: Partial<Top> = {}): Top {

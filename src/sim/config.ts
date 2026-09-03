@@ -57,6 +57,16 @@ export interface FusionRule {
   sacrifice: number;
 }
 
+/** Ce qu'un chapitre change à son arène. Tout est optionnel : un chapitre sans
+ *  entrée — le chapitre 1, Hangar Rouillé — ne change rien du tout, et c'est ce
+ *  qui rend sa neutralité structurelle plutôt que conventionnelle. */
+export interface ChapterArenaDef {
+  /** Restitution du bord. Absente = `arena.wallRestitution`. */
+  wallRestitution?: number;
+  pillars?: { count: number; radius: number; speed: number };
+  geysers?: { count: number; periodTicks: number; activeTicks: number; spinDrain: number };
+}
+
 export interface Balance {
   version: number;
   tickSeconds: number;
@@ -71,6 +81,9 @@ export interface Balance {
     };
     zones: Record<ZoneKind, ZoneDef>;
     layouts: LayoutDef[];
+    /** Identité d'arène par chapitre, indexée par numéro en chaîne. Un chapitre
+     *  absent joue l'arène de base — c'est le cas du chapitre 1. */
+    chapters: Record<string, ChapterArenaDef>;
   };
   combat: { damageK: number; chargeBonus: number; healBetweenSalles: number };
   types: { dominantBonus: number; equilibreBonus: number };
@@ -174,3 +187,10 @@ export const SHARD = BALANCE.arena.shard;
 export const ZONES = BALANCE.arena.zones;
 export const LAYOUTS = BALANCE.arena.layouts;
 export const LOOT = BALANCE.loot;
+
+const CHAPTER_ARENAS = BALANCE.arena.chapters;
+/** L'identité d'arène d'un chapitre. Objet vide pour un chapitre sans entrée :
+ *  l'appelant multiplie et boucle sans jamais tester la présence d'un gimmick. */
+export function chapterArena(chapter: number): ChapterArenaDef {
+  return CHAPTER_ARENAS[String(chapter)] ?? {};
+}

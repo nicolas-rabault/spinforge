@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ARENA, BALANCE, BOTS_PER_SALLE, BOT_TYPES, BREACH, CHESTS, FUSION, LAYOUTS, LOOT,
+  ARENA, BALANCE, BOTS_PER_SALLE, BOT_TYPES, BREACH, CHESTS, chapterArena, FUSION, LAYOUTS, LOOT,
   MAX_CHAPTER, OFFLINE, PLAYER_SPAWN, RARITY, SALLES_PER_CHAPTER, SHARD, TALENTS, TOUPIE_SHOP,
   TYPES, ZONES,
 } from './config';
@@ -192,6 +192,41 @@ describe('balance.json', () => {
     for (const [name, zone] of Object.entries(ZONES)) {
       expect(d + ARENA.radius - zone.radius, `zone ${name}`)
         .toBeGreaterThanOrEqual(zone.radius + ARENA.spawnClearance);
+    }
+  });
+
+  it("le chapitre 1 n'a aucune identité d'arène propre", () => {
+    // Hangar Rouillé n'a aucun piège (docs/game-design.md § 8) et c'est le
+    // contrôle exact de toute mesure du lot C1.
+    expect(chapterArena(1)).toEqual({});
+  });
+
+  it("chaque identité d'arène déclarée est complète et bornée", () => {
+    for (const [n, def] of Object.entries(BALANCE.arena.chapters)) {
+      expect(Number(n), `chapitre ${n}`).toBeGreaterThan(1);
+      expect(Number(n), `chapitre ${n}`).toBeLessThanOrEqual(MAX_CHAPTER);
+      if (def.wallRestitution !== undefined) {
+        expect(def.wallRestitution, `chapitre ${n}`).toBeGreaterThan(0);
+      }
+      if (def.pillars) {
+        expect(def.pillars.count, `chapitre ${n}`).toBeGreaterThan(0);
+        expect(def.pillars.radius, `chapitre ${n}`).toBeGreaterThan(0);
+        expect(def.pillars.speed, `chapitre ${n}`).toBeGreaterThan(0);
+        // Un pilier doit tenir dans l'anneau en laissant le spawn dégagé, comme
+        // une zone (voir « le repli de placement reste géométriquement possible »).
+        const d = Math.hypot(PLAYER_SPAWN.x, PLAYER_SPAWN.y);
+        expect(d + ARENA.radius - def.pillars.radius, `chapitre ${n}`)
+          .toBeGreaterThanOrEqual(def.pillars.radius + ARENA.spawnClearance);
+      }
+      if (def.geysers) {
+        expect(def.geysers.count, `chapitre ${n}`).toBeGreaterThan(0);
+        expect(def.geysers.activeTicks, `chapitre ${n}`).toBeGreaterThan(0);
+        // Une fenêtre plus longue que la période ferait un geyser toujours allumé,
+        // c'est-à-dire une zone de pointes déguisée.
+        expect(def.geysers.periodTicks, `chapitre ${n}`)
+          .toBeGreaterThan(def.geysers.activeTicks);
+        expect(def.geysers.spinDrain, `chapitre ${n}`).toBeGreaterThan(0);
+      }
     }
   });
 
