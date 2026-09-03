@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applySteering, clampToArena, moveAndBounce } from './physics';
-import { ARENA, ARENA_RADIUS, FRICTION, TICK_S, ZONES } from './config';
+import { ARENA, ARENA_RADIUS, BREACH, FRICTION, TICK_S, ZONES } from './config';
 import { NEUTRAL_ZONE, type ArenaLayout, type ZoneMods } from './terrain';
 import { NEUTRAL_TALENTS } from './talents';
 import type { Top } from './types';
@@ -175,6 +175,33 @@ describe('moveAndBounce — brèches', () => {
     const t = top({ pos: atRim(), vel: { x: 100, y: 0 } });
     moveAndBounce(t, layout([{ angle: Math.PI, halfWidth: 0.4 }]));
     expect(t.vel.x).toBeLessThan(0);
+  });
+});
+
+describe('moveAndBounce — restitution du gabarit', () => {
+  it('rebondit avec la restitution du gabarit, pas avec celle de l’arène', () => {
+    const t = top({ pos: { x: ARENA_RADIUS - 12, y: 0 }, vel: { x: 200, y: 0 } });
+    const elastique = { ...layout(), wallRestitution: 1.5 };
+    expect(moveAndBounce(t, elastique)).toBe(false);
+    // v' = v - (1 + r) × v_sortante = 200 - 2,5 × 200 = -300
+    expect(t.vel.x).toBeCloseTo(-300, 6);
+  });
+
+  it('un mur élastique ne déplace pas le seuil d’éjection', () => {
+    // L'éjection se décide AVANT le rebond : à vitesse sortante sous le seuil,
+    // aucune restitution ne peut éjecter ; au-dessus, toutes éjectent.
+    const dans = layout([{ angle: 0, halfWidth: 0.5 }]);
+    const sous = top({
+      pos: { x: ARENA_RADIUS - 12, y: 0 },
+      vel: { x: BREACH.ejectSpeed - 1, y: 0 },
+    });
+    expect(moveAndBounce(sous, { ...dans, wallRestitution: 9 })).toBe(false);
+
+    const au = top({
+      pos: { x: ARENA_RADIUS - 12, y: 0 },
+      vel: { x: BREACH.ejectSpeed + 1, y: 0 },
+    });
+    expect(moveAndBounce(au, { ...dans, wallRestitution: 0.01 })).toBe(true);
   });
 });
 

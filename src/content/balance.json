@@ -23,7 +23,9 @@
       { "fromSalle": 8, "zones": ["accelerateur", "pointes", "pointes", "glisse"] },
       { "fromSalle": 10, "zones": ["accelerateur", "pointes", "pointes", "pointes"] }
     ],
-    "chapters": {}
+    "chapters": {
+      "2": { "wallRestitution": 1.5 }
+    }
   },
   "combat": { "damageK": 1.1, "chargeBonus": 0.3, "healBetweenSalles": 0.2 },
   "types": { "dominantBonus": 0.25, "equilibreBonus": 0.1 },

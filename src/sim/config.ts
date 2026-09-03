@@ -148,7 +148,6 @@ export const BALANCE = raw as unknown as Balance;
 export const TICK_S = BALANCE.tickSeconds;
 export const ARENA_RADIUS = BALANCE.arena.radius;
 export const FRICTION = BALANCE.arena.friction;
-export const WALL_RESTITUTION = BALANCE.arena.wallRestitution;
 export const RESTITUTION = BALANCE.arena.restitution;
 export const DAMAGE_K = BALANCE.combat.damageK;
 /**

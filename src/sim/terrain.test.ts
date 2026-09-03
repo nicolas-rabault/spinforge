@@ -184,6 +184,11 @@ describe('buildLayout', () => {
     expect(buildLayout(1, 1, 7).layout.wallRestitution).toBe(ARENA.wallRestitution);
     expect(buildLayout(1, 1, 7).layout.pillars).toEqual([]);
   });
+
+  it('le Dojo Néon a des murs plus élastiques que le Hangar Rouillé', () => {
+    expect(buildLayout(2, 1, 7).layout.wallRestitution)
+      .toBeGreaterThan(buildLayout(1, 1, 7).layout.wallRestitution);
+  });
 });
 
 describe('inBreach', () => {

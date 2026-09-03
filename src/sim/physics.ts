@@ -1,4 +1,4 @@
-import { ARENA, ARENA_RADIUS, TICK_S, WALL_RESTITUTION } from './config';
+import { ARENA, ARENA_RADIUS, TICK_S } from './config';
 import { inBreach, type ArenaLayout, type ZoneMods } from './terrain';
 import type { Top, Vec } from './types';
 
@@ -81,8 +81,13 @@ export function moveAndBounce(top: Top, layout: ArenaLayout): boolean {
     return true;
   }
   if (out > 0) {
-    top.vel.x -= (1 + WALL_RESTITUTION) * out * nx;
-    top.vel.y -= (1 + WALL_RESTITUTION) * out * ny;
+    // La restitution vient du GABARIT et non d'une constante de module : c'est
+    // ce qui donne au Dojo Néon ses murs élastiques sans toucher aux autres
+    // chapitres. Au-dessus de 1, le bord rend plus qu'il ne prend et cesse
+    // d'être un refuge. L'éjection, elle, s'est décidée plus haut : un mur
+    // élastique ne déplace pas le seuil de brèche.
+    top.vel.x -= (1 + layout.wallRestitution) * out * nx;
+    top.vel.y -= (1 + layout.wallRestitution) * out * ny;
   }
   return false;
 }
